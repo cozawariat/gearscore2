@@ -1,0 +1,15 @@
+## Interface: 30300
+## Title: GearScoreAI
+## Notes: Helps you quickly and easily judge a player's level of gear.
+## Version: 3x06
+## Author: Mirrikat45, Gnomezilla [Warmane-Icecrown(A)]
+## SavedVariables: GS2_Settings
+
+informationLite.lua
+enchant_data.lua
+core.lua
+item_logic.lua
+score_logic.lua
+inspect_logic.lua
+tooltip_logic.lua
+ui.lua
