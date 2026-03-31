@@ -1,5 +1,64 @@
 # GearScoreAI Algorithm Specification
 
+## Table of Contents
+
+- [1. Purpose](#1-purpose)
+- [2. Runtime Sources of Truth](#2-runtime-sources-of-truth)
+- [3. Outputs](#3-outputs)
+  - [3.1 Legacy GearScore](#31-legacy-gearscore)
+  - [3.2 GearScore2](#32-gearscore2)
+  - [3.3 PvP GearScore](#33-pvp-gearscore)
+- [4. Data Normalization Pipeline](#4-data-normalization-pipeline)
+  - [4.1 Item Link Parsing](#41-item-link-parsing)
+  - [4.2 Base Item Data](#42-base-item-data)
+  - [4.3 Base Stats](#43-base-stats)
+  - [4.4 Gem Data](#44-gem-data)
+  - [4.5 Enchant Data](#45-enchant-data)
+- [5. Legacy GearScore Exact Formula](#5-legacy-gearscore-exact-formula)
+  - [5.1 Legacy Base Computation](#51-legacy-base-computation)
+  - [5.2 Quality Normalization](#52-quality-normalization)
+  - [5.3 Formula Selection](#53-formula-selection)
+  - [5.4 Hunter Legacy Exception](#54-hunter-legacy-exception)
+- [6. Profile Resolution](#6-profile-resolution)
+  - [6.1 Spec Selection](#61-spec-selection)
+  - [6.2 Inspect-Side Spec Detection](#62-inspect-side-spec-detection)
+- [7. Item Compatibility Rules](#7-item-compatibility-rules)
+- [8. GearScore2 and PvP GearScore Exact Item Algorithm](#8-gearscore2-and-pvp-gearscore-exact-item-algorithm)
+  - [8.1 Start Value](#81-start-value)
+  - [8.2 Base Item Stat Bonus](#82-base-item-stat-bonus)
+  - [8.3 Gem Bonus](#83-gem-bonus)
+  - [8.4 Enchant Bonus](#84-enchant-bonus)
+  - [8.5 Pre-Multiplier Base](#85-pre-multiplier-base)
+  - [8.6 Resilience Multiplier](#86-resilience-multiplier)
+- [9. Character Score Aggregation](#9-character-score-aggregation)
+  - [9.1 Snapshot Collection](#91-snapshot-collection)
+  - [9.2 Base Character Totals Before Caps](#92-base-character-totals-before-caps)
+  - [9.3 Character-Level Cap Layer](#93-character-level-cap-layer)
+  - [9.4 Character Stat Aggregation](#94-character-stat-aggregation)
+  - [9.5 Cap Context](#95-cap-context)
+  - [9.6 Segment Model](#96-segment-model)
+  - [9.7 Threshold Resolution](#97-threshold-resolution)
+  - [9.8 What the Runtime Currently Models](#98-what-the-runtime-currently-models)
+  - [9.9 Final Character Record](#99-final-character-record)
+  - [9.10 Average Item Level](#910-average-item-level)
+- [10. Explain Tooltip Semantics](#10-explain-tooltip-semantics)
+- [11. Character Cap UI Semantics](#11-character-cap-ui-semantics)
+- [12. Enchant Data Semantics](#12-enchant-data-semantics)
+  - [12.1 `kind = "stats"`](#121-kind--stats)
+  - [12.2 `kind = "special"`](#122-kind--special)
+  - [12.3 `special = true`](#123-special--true)
+  - [12.4 Unknown Enchant](#124-unknown-enchant)
+- [13. Worked Examples](#13-worked-examples)
+  - [13.1 Example A: PvE Melee Item With Matching Stats](#131-example-a-pve-melee-item-with-matching-stats)
+  - [13.2 Example B: Matching Gem](#132-example-b-matching-gem)
+  - [13.3 Example C: Non-Matching Gem](#133-example-c-non-matching-gem)
+  - [13.4 Example D: Recognized Stat Enchant](#134-example-d-recognized-stat-enchant)
+  - [13.5 Example E: Special Enchant](#135-example-e-special-enchant)
+  - [13.6 Example F: PvP Item With Resilience](#136-example-f-pvp-item-with-resilience)
+  - [13.7 Example G: Rejected Item](#137-example-g-rejected-item)
+- [14. Runtime Limitations to Keep in Mind](#14-runtime-limitations-to-keep-in-mind)
+- [15. Appendix Reference](#15-appendix-reference)
+
 ## 1. Purpose
 
 This document describes the runtime scoring behavior of the addon exactly as implemented in the current codebase.
@@ -60,6 +119,13 @@ It does not use:
 - gem bonuses,
 - enchant bonuses,
 - a PvE resilience multiplier.
+
+For characters only, it also uses:
+
+- a character-level cap adjustment layer applied after all item scores are summed,
+- aggregated character stats from gear, gems, and scoreable enchants,
+- spec-specific cap profiles for `HIT`, `EXPERTISE`, `DEFENSE`, and `ARP`,
+- visible live aura modifiers when runtime can read them.
 
 ### 3.3 PvP GearScore
 
@@ -284,8 +350,8 @@ pvpStatRaw = GS_ScoreStats(item.stats, profile.pvp)
 Bonuses:
 
 ```text
-pveStatBonus = floor(pveStatRaw * 0.12)
-pvpStatBonus = floor(pvpStatRaw * 0.12)
+pveStatBonus = floor(pveStatRaw * GS_GS2_STAT_SCALE)
+pvpStatBonus = floor(pvpStatRaw * GS_GS2_STAT_SCALE)
 ```
 
 Applied as:
@@ -406,7 +472,7 @@ PvP GearScore(item) = floor(pvpBaseScore * pvpMultiplier)
   - average item level
   - fingerprint composed from GUID, class, spec, and item links
 
-### 9.2 Final Character Record
+### 9.2 Base Character Totals Before Caps
 
 `GS_BuildRecord(snapshot)` sums per-item scores:
 
@@ -416,17 +482,155 @@ legacy = sum(itemLegacy)
 pvp = sum(itemPvp)
 ```
 
-Then stores:
+At this stage:
+
+- `legacy` is already final,
+- `pvp` is already final,
+- `gs2` is only the pre-cap total.
+
+### 9.3 Character-Level Cap Layer
+
+After the per-item sums are built, `GS_BuildRecord(snapshot)` calls:
+
+```text
+capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot)
+gs2 = gs2 + capAdjustedGs2
+```
+
+This layer affects only final character `GearScore2`.
+
+It does **not** affect:
+
+- item tooltip `GearScore2`,
+- `Legacy GearScore`,
+- `PvP GearScore`.
+
+### 9.4 Character Stat Aggregation
+
+`GS_ApplyCharacterCaps(snapshot)` first aggregates total character stats through `GS_CollectSnapshotStats(snapshot)`.
+
+The stat pool is built from:
+
+- `item.stats`
+- all normalized gem stats in `item.gemStats`
+- enchant stats from `GS_GetEnchantStats(item)` when present
+
+The cap layer does not read:
+
+- temporary proc effects,
+- unsupported special enchants,
+- hidden target assumptions,
+- manually assumed raid debuffs.
+
+### 9.5 Cap Context
+
+`GS_GetCapContext(unit, specKey)` builds a runtime context containing:
+
+- `meleeHitBonus`
+- `spellHitBonus`
+- `targetSpellHitBonus`
+- `expertiseBonus`
+- `defenseSkillBonus`
+
+The context starts from spec-defined passive bonuses in `GS_CapProfiles`.
+
+Then runtime adds live aura bonuses when it can actually read them from the unit.
+
+Important runtime rule:
+
+- live helpful buffs are only counted when `UnitExists(unit)` and `UnitIsVisible(unit)` are true
+- target debuffs are only counted for the player and only when the current target actually has the debuff
+- there is no hidden assumption that common raid debuffs are always present
+
+### 9.6 Segment Model
+
+Every cap-aware stat pool is processed in ordered segments.
+
+For each pool:
+
+1. runtime reads the full pool value from aggregated character stats
+2. runtime resolves each segment threshold into rating-space
+3. runtime consumes the same pool from left to right
+4. each segment uses a different multiplier
+5. overflow past the final segment uses the pool overflow multiplier
+
+Core algorithm per pool:
+
+```text
+defaultRaw = statValue * baseWeight
+
+for each segment in order:
+    threshold = resolved threshold in rating space
+    segmentValue = clamp(statValue - segmentStart, 0, threshold - segmentStart)
+    segmentRaw = segmentValue * baseWeight * segmentMultiplier
+    adjustedRaw += segmentRaw
+    segmentStart = threshold
+
+overflow = max(0, statValue - segmentStart)
+adjustedRaw += overflow * baseWeight * overflowMultiplier
+
+deltaRaw = adjustedRaw - defaultRaw
+deltaGs2 = floor(deltaRaw * GS_GS2_STAT_SCALE)
+```
+
+The delta is additive:
+
+- positive when the early capped portion is boosted more than the overflow is penalized,
+- negative when the character has large overcap waste,
+- zero when no cap profile applies.
+
+### 9.7 Threshold Resolution
+
+Thresholds are resolved by `GS_ResolveCapThreshold(segment, context)`:
+
+- `MELEE_HIT_PERCENT`
+  - `(thresholdPercent - meleeHitBonus) * GS_RatingConversions.MELEE_HIT`
+- `SPELL_HIT_PERCENT`
+  - `(thresholdPercent - spellHitBonus - targetSpellHitBonus) * GS_RatingConversions.SPELL_HIT`
+- `EXPERTISE_POINTS`
+  - `(thresholdPoints - expertiseBonus) * GS_RatingConversions.EXPERTISE`
+- `DEFENSE_SKILL`
+  - `(thresholdDefenseSkill - 400 - defenseSkillBonus) * GS_RatingConversions.DEFENSE`
+- `RATING`
+  - raw threshold is already in rating
+
+All resolved thresholds are clamped to at least `0`.
+
+### 9.8 What the Runtime Currently Models
+
+The current runtime includes spec profiles for:
+
+- melee/ranged hit caps
+- spell-hit caps
+- rogue poison-hit progression through the same `HIT` pool
+- enhancement spell-hit progression through the same `HIT` pool
+- DPS expertise soft caps
+- tank expertise `26 -> 56`
+- tank defense `540`
+- physical `ARP` hard cap `1400`
+
+Important runtime semantics:
+
+- `Defense` is **not** zeroed after `540`; its overflow uses a reduced multiplier
+- `Assassination`, `Combat`, `Subtlety`, and `Enhancement` do **not** double-count the same `HIT` rating into separate independent pools
+- `Legacy` and `PvP` scores do not use cap profiles
+
+### 9.9 Final Character Record
+
+The final cached record stores:
 
 ```text
 record.gs2 = floor(gs2)
 record.legacy = floor(legacy)
 record.pvp = floor(pvp)
+record.capAdjustedGs2 = capAdjustedGs2
+record.capBreakdown = capBreakdown
+record.capStats = capStats
 ```
 
 `detailLinks[slotId]` stores the exact link used by tooltip details.
 
-### 9.3 Average Item Level
+### 9.10 Average Item Level
 
 Average item level is:
 
@@ -461,16 +665,32 @@ Important runtime detail:
 - `Top PvE stats` and `Top PvP stats` are built only from `item.stats`
 - they do not include gem stats
 - they do not include enchant stats
+- they do not include the character-level cap layer
 
-## 11. Enchant Data Semantics
+## 11. Character Cap UI Semantics
+
+Character tooltip and paper doll may show a short cap summary built from `record.capBreakdown.summary`.
+
+Examples:
+
+- `GS2 Caps: Hit capped, Expertise capped`
+- `GS2 Caps: Defense 537/540`
+
+Summary rules:
+
+- if a pool reached its final threshold, it is shown as `<Summary> capped`
+- otherwise it is shown as `<Summary> current/target`
+- summary lines are informational only; they do not expose the full segment breakdown
+
+## 12. Enchant Data Semantics
 
 `enchant_data.lua` is generated from WotLKDB enchant pages.
 
-### 11.1 `kind = "stats"`
+### 12.1 `kind = "stats"`
 
 This means the dataset currently exposes at least one static stat payload that runtime can score.
 
-### 11.2 `kind = "special"`
+### 12.2 `kind = "special"`
 
 This means the enchant is recognized, but runtime does not have a usable static stat payload for scoring.
 
@@ -481,7 +701,7 @@ Examples of effects that often fall into this class:
 - weapon chains
 - special movement or utility effects
 
-### 11.3 `special = true`
+### 12.3 `special = true`
 
 This is a supplemental marker meaning the source page exposed mixed or special behavior in addition to any extracted static stats.
 
@@ -492,16 +712,16 @@ Runtime behavior does **not** suppress scoring when:
 
 In that case the static stats are scored, even if `special = true`.
 
-### 11.4 Unknown Enchant
+### 12.4 Unknown Enchant
 
 An enchant is treated as `unknown` only when:
 
 - an `enchantId` exists on the item,
 - but no matching entry exists in `GS_EnchantValues`.
 
-## 12. Worked Examples
+## 13. Worked Examples
 
-### 12.1 Example A: PvE Melee Item With Matching Stats
+### 13.1 Example A: PvE Melee Item With Matching Stats
 
 Normalized item:
 
@@ -534,7 +754,7 @@ multiplier = 1
 GearScore2 = floor(116 * 1) = 116
 ```
 
-### 12.2 Example B: Matching Gem
+### 13.2 Example B: Matching Gem
 
 Additional gem:
 
@@ -554,7 +774,7 @@ PvE gem bonus:
 floor(28.8 * 0.35) = floor(10.08) = 10
 ```
 
-### 12.3 Example C: Non-Matching Gem
+### 13.3 Example C: Non-Matching Gem
 
 Gem:
 
@@ -577,7 +797,7 @@ PvE gem bonus:
 
 The gem gives no penalty. It simply contributes `+0`.
 
-### 12.4 Example D: Recognized Stat Enchant
+### 13.4 Example D: Recognized Stat Enchant
 
 Enchant:
 
@@ -597,7 +817,7 @@ PvE enchant bonus:
 floor(36 * 0.35) = 12
 ```
 
-### 12.5 Example E: Special Enchant
+### 13.5 Example E: Special Enchant
 
 Enchant:
 
@@ -613,7 +833,7 @@ Enchant bonus = 0
 
 The enchant is recognized, but not statically scored.
 
-### 12.6 Example F: PvP Item With Resilience
+### 13.6 Example F: PvP Item With Resilience
 
 Inputs:
 
@@ -641,7 +861,7 @@ GearScore2 = floor(160 * 0.85) = 136
 PvP GearScore = floor(150 * 1.20) = 180
 ```
 
-### 12.7 Example G: Rejected Item
+### 13.7 Example G: Rejected Item
 
 If `GS_IsItemCompatible(...)` returns `false`:
 
@@ -651,7 +871,7 @@ PvP GearScore = 0
 Legacy GearScore = unchanged legacy base logic
 ```
 
-## 13. Runtime Limitations to Keep in Mind
+## 14. Runtime Limitations to Keep in Mind
 
 - explain tooltip top-stat lists are limited to 4 entries
 - top-stat lists only use base item stats
@@ -659,7 +879,7 @@ Legacy GearScore = unchanged legacy base logic
 - generated enchant data may contain mixed entries where static stats are only partially exposed
 - character scores depend on inspect availability for non-player units
 
-## 14. Appendix Reference
+## 15. Appendix Reference
 
 The following runtime tables are documented in `docs/GS_RUNTIME_TABLES.md`:
 

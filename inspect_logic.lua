@@ -62,7 +62,7 @@ function GS_CollectSnapshot(unit, inspect)
 			end
 		end
 	end
-	return { name = name, guid = guid, classToken = classToken, specKey = specKey, items = items, itemCount = itemCount, fingerprint = table.concat(fingerprint, "|"), average = itemCount > 0 and floor(levelTotal / itemCount) or 0 }
+	return { name = name, guid = guid, unit = unit, classToken = classToken, specKey = specKey, items = items, itemCount = itemCount, fingerprint = table.concat(fingerprint, "|"), average = itemCount > 0 and floor(levelTotal / itemCount) or 0 }
 end
 
 function GS_BuildRecord(snapshot)
@@ -75,7 +75,9 @@ function GS_BuildRecord(snapshot)
 		gs2, legacy, pvp = gs2 + itemGS2, legacy + entry.legacy, pvp + itemPVP
 		detailLinks[entry.slotId] = entry.item.link
 	end
-	cached = { guid = snapshot.guid, name = snapshot.name, classToken = snapshot.classToken, specKey = snapshot.specKey, fingerprint = snapshot.fingerprint, average = snapshot.average, gs2 = floor(gs2), legacy = floor(legacy), pvp = floor(pvp), detailLinks = detailLinks, expiresAt = GetTime() + GS_CACHE_TTL, freshUntil = GetTime() + GS_FRESH_TTL }
+	local capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot)
+	gs2 = gs2 + (capAdjustedGs2 or 0)
+	cached = { guid = snapshot.guid, name = snapshot.name, classToken = snapshot.classToken, specKey = snapshot.specKey, fingerprint = snapshot.fingerprint, average = snapshot.average, gs2 = floor(gs2), legacy = floor(legacy), pvp = floor(pvp), capAdjustedGs2 = capAdjustedGs2 or 0, capBreakdown = capBreakdown, capStats = capStats, detailLinks = detailLinks, expiresAt = GetTime() + GS_CACHE_TTL, freshUntil = GetTime() + GS_FRESH_TTL }
 	GS_InspectCache[snapshot.guid] = cached
 	return cached
 end

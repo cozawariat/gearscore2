@@ -10,6 +10,9 @@ function GS_AddScoreLines(tooltip, record)
 	r, g, b = GearScore_GetQuality(record.pvp)
 	tooltip:AddDoubleLine("PvP GearScore", tostring(record.pvp), r, g, b, r, g, b)
 	if GS_Settings["Level"] == 1 then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
+	if record.capBreakdown and record.capBreakdown.summary then
+		tooltip:AddLine("GS2 Caps: " .. record.capBreakdown.summary, 0.75, 0.9, 1, true)
+	end
 end
 
 function GS_HideExplainTooltip()

@@ -21,6 +21,7 @@ GS_PVE_RESILIENCE_RATE = 0.0015
 GS_PVP_RESILIENCE_RATE = 0.0020
 GS_PVE_RESILIENCE_FLOOR = 0.70
 GS_PVP_RESILIENCE_CAP = 1.35
+GS_GS2_STAT_SCALE = 0.12
 
 GS_InspectQueue = {}
 GS_InspectCache = {}
@@ -57,6 +58,19 @@ end
 
 function GS_AppendExplainLine(lines, text)
 	lines[#lines + 1] = text
+end
+
+function GS_AddStats(target, source)
+	if not target or not source then
+		return target
+	end
+	for stat, value in pairs(source) do
+		value = tonumber(value) or 0
+		if value ~= 0 then
+			target[stat] = (target[stat] or 0) + value
+		end
+	end
+	return target
 end
 
 function GS_BuildTopStats(stats, weights)

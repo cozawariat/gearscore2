@@ -1,15 +1,71 @@
 # GearScoreAI Runtime Tables
 
+## Table of Contents
+
+- [1. Global Scoring Constants](#1-global-scoring-constants)
+  - [1.1 Rating Conversions (`GS_RatingConversions`)](#11-rating-conversions-gs_ratingconversions)
+  - [1.2 Cap Segment Defaults (`GS_CapSegmentDefaults`)](#12-cap-segment-defaults-gs_capsegmentdefaults)
+  - [1.3 Live Aura Cap Modifiers (`GS_LiveCapBuffs`)](#13-live-aura-cap-modifiers-gs_livecapbuffs)
+- [2. Legacy Slot Modifiers (`GS_ItemTypes`)](#2-legacy-slot-modifiers-gs_itemtypes)
+- [3. Legacy Formula Tables (`GS_Formula`)](#3-legacy-formula-tables-gs_formula)
+  - [3.1 Formula A (`itemLevel > 120`)](#31-formula-a-itemlevel--120)
+  - [3.2 Formula B (`itemLevel <= 120`)](#32-formula-b-itemlevel--120)
+- [4. Enchantable Slots (`GS_EnchantSlots`)](#4-enchantable-slots-gs_enchantslots)
+- [5. Armor Rank Order (`GS_ArmorClassOrder`)](#5-armor-rank-order-gs_armorclassorder)
+- [6. Class Default Specs (`GS_ClassDefaults`)](#6-class-default-specs-gs_classdefaults)
+- [7. Specialization Profiles (`GS_SpecProfiles`)](#7-specialization-profiles-gs_specprofiles)
+- [8. Enchant Data Runtime Shape](#8-enchant-data-runtime-shape)
+- [9. Character Cap Profiles (`GS_CapProfiles`)](#9-character-cap-profiles-gs_capprofiles)
+  - [9.1 Melee / Physical Specs](#91-melee--physical-specs)
+  - [9.2 Tanks](#92-tanks)
+  - [9.3 Rogues / Enhancement Shared Progressive Hit Pool](#93-rogues--enhancement-shared-progressive-hit-pool)
+  - [9.4 Casters / Spell-Hit Specs](#94-casters--spell-hit-specs)
+  - [9.5 Spec-Defined Passive Bonuses Used In Threshold Resolution](#95-spec-defined-passive-bonuses-used-in-threshold-resolution)
+
 ## 1. Global Scoring Constants
 
 | Constant | Value |
 |---|---:|
+| `GS_GS2_STAT_SCALE` | `0.12` |
 | `GS_GEM_SCALE` | `0.35` |
 | `GS_ENCHANT_SCALE` | `0.35` |
 | `GS_PVE_RESILIENCE_RATE` | `0.0015` |
 | `GS_PVP_RESILIENCE_RATE` | `0.0020` |
 | `GS_PVE_RESILIENCE_FLOOR` | `0.70` |
 | `GS_PVP_RESILIENCE_CAP` | `1.35` |
+
+## 1.1 Rating Conversions (`GS_RatingConversions`)
+
+| Conversion | Value |
+|---|---:|
+| `MELEE_HIT` | `32.78998947` |
+| `SPELL_HIT` | `26.231992` |
+| `EXPERTISE` | `8.196` |
+| `DEFENSE` | `4.9185` |
+
+## 1.2 Cap Segment Defaults (`GS_CapSegmentDefaults`)
+
+| Multiplier | Value |
+|---|---:|
+| `CRITICAL` | `1.25` |
+| `USEFUL` | `0.60` |
+| `OVERFLOW` | `0.20` |
+| `DEFENSE_OVERFLOW` | `0.55` |
+| `ARP_OVERFLOW` | `0.05` |
+
+## 1.3 Live Aura Cap Modifiers (`GS_LiveCapBuffs`)
+
+### Helpful auras
+
+| Spell ID | Name | Effect |
+|---|---|---|
+| `6562` | `Heroic Presence` | `+1% melee hit`, `+1% spell hit` |
+
+### Harmful auras on target
+
+| Spell ID | Name | Effect |
+|---|---|---|
+| `33198` | `Misery` | `+3% target spell hit bonus` |
 
 ## 2. Legacy Slot Modifiers (`GS_ItemTypes`)
 
@@ -158,3 +214,66 @@ Entries in `enchant_data.lua` use:
 | `stats` | normalized stat payload used by scoring |
 | `special = true` | mixed or special behavior was also detected in source data |
 | `unknownTraits` | source-side traits that were not normalized into runtime stat keys |
+
+## 9. Character Cap Profiles (`GS_CapProfiles`)
+
+Cap profiles affect only final character `GearScore2`.
+
+Each pool is processed in order. The same stat pool is consumed progressively across its segments.
+
+### 9.1 Melee / Physical Specs
+
+| Spec | Pools |
+|---|---|
+| `ARMS` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
+| `FURY` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
+| `RETRIBUTION` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow` |
+| `FROST` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow` |
+| `UNHOLY` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow` |
+| `FERAL` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
+
+### 9.2 Tanks
+
+| Spec | Pools |
+|---|---|
+| `PROTECTION` | `DEFENSE: 540 -> reduced overflow`, `EXPERTISE: 26 -> 56 -> overflow`, `HIT: 8% special -> overflow` |
+| `BLOOD` | `DEFENSE: 540 -> reduced overflow`, `EXPERTISE: 26 -> 56 -> overflow`, `HIT: 8% special -> overflow` |
+
+### 9.3 Rogues / Enhancement Shared Progressive Hit Pool
+
+| Spec | Pools |
+|---|---|
+| `ASSASSINATION` | `HIT: 8% melee special -> 17% poison/spell -> overflow`, `EXPERTISE: 26 -> overflow` |
+| `COMBAT` | `HIT: 8% melee special -> 17% poison/spell -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
+| `SUBTLETY` | `HIT: 8% melee special -> 17% poison/spell -> overflow`, `EXPERTISE: 26 -> overflow` |
+| `ENHANCEMENT` | `HIT: 8% melee special -> 17% spell hit -> overflow`, `EXPERTISE: 26 -> overflow` |
+
+### 9.4 Casters / Spell-Hit Specs
+
+| Spec | Pools |
+|---|---|
+| `SHADOW` | `HIT: 17% spell hit -> overflow` |
+| `ELEMENTAL` | `HIT: 17% spell hit -> overflow` |
+| `ARCANE` | `HIT: 17% spell hit -> overflow` |
+| `FIRE` | `HIT: 17% spell hit -> overflow` |
+| `MAGE_FROST` | `HIT: 17% spell hit -> overflow` |
+| `AFFLICTION` | `HIT: 17% spell hit -> overflow` |
+| `DEMONOLOGY` | `HIT: 17% spell hit -> overflow` |
+| `DESTRUCTION` | `HIT: 17% spell hit -> overflow` |
+| `BALANCE` | `HIT: 17% spell hit -> overflow` |
+
+### 9.5 Spec-Defined Passive Bonuses Used In Threshold Resolution
+
+| Spec | Passive Context |
+|---|---|
+| `ASSASSINATION` | `meleeHitBonus 5`, `spellHitBonus 5` |
+| `COMBAT` | `meleeHitBonus 5`, `spellHitBonus 5` |
+| `SUBTLETY` | `meleeHitBonus 5`, `spellHitBonus 5` |
+| `ENHANCEMENT` | `meleeHitBonus 3`, `spellHitBonus 3` |
+| `SHADOW` | `spellHitBonus 3` |
+| `ELEMENTAL` | `spellHitBonus 3` |
+| `ARCANE` | `spellHitBonus 3` |
+| `FIRE` | `spellHitBonus 3` |
+| `MAGE_FROST` | `spellHitBonus 3` |
+| `AFFLICTION` | `spellHitBonus 3` |
+| `BALANCE` | `spellHitBonus 4` |

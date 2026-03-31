@@ -17,6 +17,8 @@ function GS_UpdatePaperDoll()
 	PersonalGearScore:SetText(tostring(record.gs2)) PersonalGearScore:SetTextColor(r, g, b, 1)
 	LegacyGearScoreText:SetText(tostring(record.legacy)) LegacyGearScoreText:SetTextColor(0.8, 0.8, 0.8, 1)
 	PvPGearScoreText:SetText(tostring(record.pvp)) PvPGearScoreText:SetTextColor(0.95, 0.55, 0.25, 1)
+	CapSummaryText:SetText(record.capBreakdown and record.capBreakdown.summary or "")
+	CapSummaryText:SetTextColor(0.72, 0.88, 1, 1)
 end
 
 function GS_MANSET(command)
@@ -34,6 +36,7 @@ function GS_OnEvent(_, event, ...)
 	if event == "PLAYER_REGEN_DISABLED" then GS_PlayerIsInCombat = true return end
 	if event == "PLAYER_EQUIPMENT_CHANGED" then GS_InspectCache[UnitGUID("player")] = nil GS_UpdatePaperDoll() return end
 	if event == "UNIT_INVENTORY_CHANGED" then local unit = ... if unit and UnitGUID(unit) then GS_InspectCache[UnitGUID(unit)] = nil end return end
+	if event == "UNIT_AURA" then local unit = ... if unit and UnitGUID(unit) then GS_InspectCache[UnitGUID(unit)] = nil if UnitIsUnit(unit, "player") then GS_UpdatePaperDoll() end end return end
 	if event == "MODIFIER_STATE_CHANGED" then
 		local key, pressed = ...
 		if key == "LCTRL" or key == "RCTRL" then
@@ -79,6 +82,7 @@ GS_MainFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 GS_MainFrame:RegisterEvent("INSPECT_READY")
 GS_MainFrame:RegisterEvent("MODIFIER_STATE_CHANGED")
 GS_MainFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+GS_MainFrame:RegisterEvent("UNIT_AURA")
 
 GS_ExplainTooltip = CreateFrame("GameTooltip", "GS2ExplainTooltip", UIParent, "GameTooltipTemplate")
 GS_ExplainTooltip:SetFrameStrata("TOOLTIP")
@@ -101,6 +105,7 @@ PaperDollFrame:CreateFontString("LegacyGearScoreText")
 PaperDollFrame:CreateFontString("LegacyGearScoreLabel")
 PaperDollFrame:CreateFontString("PvPGearScoreText")
 PaperDollFrame:CreateFontString("PvPGearScoreLabel")
+PaperDollFrame:CreateFontString("CapSummaryText")
 
 PersonalGearScore:SetFont("Fonts\\FRIZQT__.TTF", 12) PersonalGearScore:SetText("0") PersonalGearScore:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 72, -248) PersonalGearScore:Show()
 GearScore2Label:SetFont("Fonts\\FRIZQT__.TTF", 12) GearScore2Label:SetText("GearScore2") GearScore2Label:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 72, -260) GearScore2Label:Show()
@@ -108,6 +113,7 @@ LegacyGearScoreText:SetFont("Fonts\\FRIZQT__.TTF", 12) LegacyGearScoreText:SetTe
 LegacyGearScoreLabel:SetFont("Fonts\\FRIZQT__.TTF", 12) LegacyGearScoreLabel:SetText("Legacy") LegacyGearScoreLabel:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 152, -260) LegacyGearScoreLabel:Show()
 PvPGearScoreText:SetFont("Fonts\\FRIZQT__.TTF", 12) PvPGearScoreText:SetText("0") PvPGearScoreText:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 232, -248) PvPGearScoreText:Show()
 PvPGearScoreLabel:SetFont("Fonts\\FRIZQT__.TTF", 12) PvPGearScoreLabel:SetText("PvP") PvPGearScoreLabel:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 232, -260) PvPGearScoreLabel:Show()
+CapSummaryText:SetFont("Fonts\\FRIZQT__.TTF", 11) CapSummaryText:SetText("") CapSummaryText:SetPoint("TOPLEFT", PaperDollFrame, "TOPLEFT", 72, -62) CapSummaryText:SetWidth(220) CapSummaryText:SetJustifyH("LEFT") CapSummaryText:Show()
 
 GearScore_Original_SetInventoryItem = GameTooltip.SetInventoryItem
 GameTooltip.SetInventoryItem = GearScore_OnEnter

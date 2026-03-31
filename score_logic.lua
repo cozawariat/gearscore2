@@ -7,6 +7,209 @@ function GS_GetProfile(classToken, specKey)
 	return GS_SpecProfiles[specKey], specKey
 end
 
+function GS_GetAuraNameFromId(spellId)
+	local name = spellId and GetSpellInfo(spellId)
+	return name
+end
+
+function GS_UnitHasAuraByName(unit, filter, auraName)
+	if not unit or not auraName or not UnitExists(unit) then
+		return false
+	end
+	for index = 1, 40 do
+		local name = UnitAura(unit, index, filter)
+		if not name then
+			break
+		end
+		if name == auraName then
+			return true
+		end
+	end
+	return false
+end
+
+function GS_GetCapContext(unit, specKey)
+	local capProfile = GS_CapProfiles[specKey]
+	local context = { meleeHitBonus = 0, spellHitBonus = 0, targetSpellHitBonus = 0, expertiseBonus = 0, defenseSkillBonus = 0, unit = unit }
+	if capProfile and capProfile.pools then
+		for _, pool in pairs(capProfile.pools) do
+			context.meleeHitBonus = max(context.meleeHitBonus, pool.meleeHitBonus or 0)
+			context.spellHitBonus = max(context.spellHitBonus, pool.spellHitBonus or 0)
+			context.expertiseBonus = max(context.expertiseBonus, pool.expertiseBonus or 0)
+			context.defenseSkillBonus = max(context.defenseSkillBonus, pool.defenseSkillBonus or 0)
+		end
+	end
+	if unit and UnitExists(unit) and UnitIsVisible(unit) then
+		for index = 1, #(GS_LiveCapBuffs.HELPFUL or {}) do
+			local aura = GS_LiveCapBuffs.HELPFUL[index]
+			local auraName = GS_GetAuraNameFromId(aura.spellId)
+			if auraName and GS_UnitHasAuraByName(unit, "HELPFUL", auraName) then
+				context.meleeHitBonus = context.meleeHitBonus + (aura.meleeHitBonus or 0)
+				context.spellHitBonus = context.spellHitBonus + (aura.spellHitBonus or 0)
+				context.expertiseBonus = context.expertiseBonus + (aura.expertiseBonus or 0)
+				context.defenseSkillBonus = context.defenseSkillBonus + (aura.defenseSkillBonus or 0)
+			end
+		end
+	end
+	if unit and UnitIsUnit(unit, "player") and UnitExists("target") then
+		for index = 1, #(GS_LiveCapBuffs.HARMFUL or {}) do
+			local aura = GS_LiveCapBuffs.HARMFUL[index]
+			local auraName = GS_GetAuraNameFromId(aura.spellId)
+			if auraName and GS_UnitHasAuraByName("target", "HARMFUL", auraName) then
+				context.targetSpellHitBonus = context.targetSpellHitBonus + (aura.targetSpellHitBonus or 0)
+			end
+		end
+	end
+	return context
+end
+
+function GS_CollectSnapshotStats(snapshot)
+	local totals = {}
+	if not snapshot or not snapshot.items then
+		return totals
+	end
+	for index = 1, #snapshot.items do
+		local item = snapshot.items[index].item
+		GS_AddStats(totals, item and item.stats)
+		if item and item.gemStats then
+			for gemIndex = 1, 4 do
+				GS_AddStats(totals, item.gemStats[gemIndex])
+			end
+		end
+		if item then
+			GS_AddStats(totals, GS_GetEnchantStats(item))
+		end
+	end
+	return totals
+end
+
+function GS_ResolveCapThreshold(segment, context)
+	if not segment then
+		return 0
+	end
+	if segment.mode == "MELEE_HIT_PERCENT" then
+		return max(0, (segment.threshold - (context.meleeHitBonus or 0)) * GS_RatingConversions.MELEE_HIT)
+	end
+	if segment.mode == "SPELL_HIT_PERCENT" then
+		return max(0, (segment.threshold - (context.spellHitBonus or 0) - (context.targetSpellHitBonus or 0)) * GS_RatingConversions.SPELL_HIT)
+	end
+	if segment.mode == "EXPERTISE_POINTS" then
+		return max(0, (segment.threshold - (context.expertiseBonus or 0)) * GS_RatingConversions.EXPERTISE)
+	end
+	if segment.mode == "DEFENSE_SKILL" then
+		return max(0, (segment.threshold - 400 - (context.defenseSkillBonus or 0)) * GS_RatingConversions.DEFENSE)
+	end
+	return max(0, segment.threshold or 0)
+end
+
+function GS_GetCapSummaryValue(poolStat, statValue, resolvedThreshold, context)
+	if poolStat == "DEFENSE" then
+		return 400 + floor(((statValue or 0) / GS_RatingConversions.DEFENSE) + (context.defenseSkillBonus or 0) + 0.5), resolvedThreshold > 0 and 540 or 540, false
+	end
+	if poolStat == "EXPERTISE" then
+		return floor(((statValue or 0) / GS_RatingConversions.EXPERTISE) + (context.expertiseBonus or 0) + 0.5), floor((resolvedThreshold or 0) / GS_RatingConversions.EXPERTISE), false
+	end
+	return floor((statValue or 0) + 0.5), floor((resolvedThreshold or 0) + 0.5), true
+end
+
+function GS_ApplyCapPool(poolStat, statValue, baseWeight, pool, context)
+	local adjustedRaw, defaultRaw = 0, (statValue or 0) * (baseWeight or 0)
+	local segments, start, lastThreshold = {}, 0, 0
+	for index = 1, #(pool.segments or {}) do
+		local segment = pool.segments[index]
+		local threshold = GS_ResolveCapThreshold(segment, context)
+		if threshold < start then
+			threshold = start
+		end
+		local segmentValue = min(max((statValue or 0) - start, 0), threshold - start)
+		local segmentRaw = segmentValue * baseWeight * (segment.mult or 1)
+		adjustedRaw = adjustedRaw + segmentRaw
+		segments[#segments + 1] = {
+			label = segment.label,
+			value = segmentValue,
+			start = start,
+			threshold = threshold,
+			multiplier = segment.mult or 1,
+			score = segmentRaw,
+		}
+		start = threshold
+		lastThreshold = threshold
+	end
+	local overflow = max(0, (statValue or 0) - start)
+	if overflow > 0 then
+		adjustedRaw = adjustedRaw + (overflow * baseWeight * (pool.overflow or GS_CapSegmentDefaults.OVERFLOW))
+		segments[#segments + 1] = {
+			label = (pool.summary or poolStat) .. " overflow",
+			value = overflow,
+			start = start,
+			threshold = nil,
+			multiplier = pool.overflow or GS_CapSegmentDefaults.OVERFLOW,
+			score = overflow * baseWeight * (pool.overflow or GS_CapSegmentDefaults.OVERFLOW),
+		}
+	end
+	local current, target, ratingSummary = GS_GetCapSummaryValue(poolStat, statValue, lastThreshold, context)
+	return {
+		stat = poolStat,
+		summary = pool.summary or poolStat,
+		rawValue = statValue or 0,
+		defaultRaw = defaultRaw,
+		adjustedRaw = adjustedRaw,
+		deltaRaw = adjustedRaw - defaultRaw,
+		segments = segments,
+		capped = (statValue or 0) >= lastThreshold and lastThreshold > 0,
+		current = current,
+		target = target,
+		ratingSummary = ratingSummary,
+	}
+end
+
+function GS_FormatCapSummary(capBreakdown)
+	if not capBreakdown or not capBreakdown.pools then
+		return nil
+	end
+	local parts = {}
+	for index = 1, #capBreakdown.pools do
+		local pool = capBreakdown.pools[index]
+		if pool.capped then
+			parts[#parts + 1] = pool.summary .. " capped"
+		elseif pool.target and pool.target > 0 then
+			parts[#parts + 1] = pool.summary .. " " .. tostring(pool.current) .. "/" .. tostring(pool.target)
+		end
+	end
+	return #parts > 0 and table.concat(parts, ", ") or nil
+end
+
+function GS_ApplyCharacterCaps(snapshot)
+	if not snapshot or not snapshot.specKey then
+		return 0, nil, nil
+	end
+	local capProfile = GS_CapProfiles[snapshot.specKey]
+	local profile = GS_SpecProfiles[snapshot.specKey]
+	local totalStats = GS_CollectSnapshotStats(snapshot)
+	if not capProfile or not profile or not profile.pve then
+		return 0, nil, totalStats
+	end
+	local context = GS_GetCapContext(snapshot.unit, snapshot.specKey)
+	local breakdown = { pools = {}, summary = nil, context = context }
+	local totalDeltaRaw = 0
+	local order = capProfile.order or {}
+	for index = 1, #order do
+		local stat = order[index]
+		local pool = capProfile.pools and capProfile.pools[stat]
+		local baseWeight = profile.pve[stat]
+		local statValue = totalStats[stat] or 0
+		if pool and baseWeight and statValue > 0 then
+			local poolBreakdown = GS_ApplyCapPool(stat, statValue, baseWeight, pool, context)
+			totalDeltaRaw = totalDeltaRaw + poolBreakdown.deltaRaw
+			breakdown.pools[#breakdown.pools + 1] = poolBreakdown
+		end
+	end
+	breakdown.summary = GS_FormatCapSummary(breakdown)
+	breakdown.deltaRaw = totalDeltaRaw
+	breakdown.deltaGs2 = floor(totalDeltaRaw * GS_GS2_STAT_SCALE)
+	return breakdown.deltaGs2, breakdown, totalStats
+end
+
 function GS_ScoreStats(stats, weights)
 	local total = 0
 	if not stats or not weights then return total end
@@ -67,13 +270,13 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 	local pveScore, pvpScore = item.legacyBase, item.legacyBase
 	local pveStatRaw = GS_ScoreStats(item.stats, profile.pve)
 	local pvpStatRaw = GS_ScoreStats(item.stats, profile.pvp)
-	local pveStatBonus = floor(pveStatRaw * 0.12)
-	local pvpStatBonus = floor(pvpStatRaw * 0.12)
+	local pveStatBonus = floor(pveStatRaw * GS_GS2_STAT_SCALE)
+	local pvpStatBonus = floor(pvpStatRaw * GS_GS2_STAT_SCALE)
 	pveScore = pveScore + pveStatBonus
 	pvpScore = pvpScore + pvpStatBonus
 	if explain then
-		explain.pve.parts[#explain.pve.parts + 1] = { label = "Matched stats", formula = "(" .. GS_FormatNumber(pveStatRaw) .. " * 0.12)", delta = pveStatBonus }
-		explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Matched PvP stats", formula = "(" .. GS_FormatNumber(pvpStatRaw) .. " * 0.12)", delta = pvpStatBonus }
+		explain.pve.parts[#explain.pve.parts + 1] = { label = "Matched stats", formula = "(" .. GS_FormatNumber(pveStatRaw) .. " * " .. GS_FormatNumber(GS_GS2_STAT_SCALE) .. ")", delta = pveStatBonus }
+		explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Matched PvP stats", formula = "(" .. GS_FormatNumber(pvpStatRaw) .. " * " .. GS_FormatNumber(GS_GS2_STAT_SCALE) .. ")", delta = pvpStatBonus }
 	end
 
 	for index = 1, 4 do
@@ -93,8 +296,8 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 				if gemPvpRaw <= 0 then explain.flags[#explain.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey .. " (PvP)" end
 			end
 		elseif explain and item.socketCount >= index then
-			explain.pve.parts[#explain.pve.parts + 1] = { label = "Gem " .. index, formula = "(pusty socket => +0)", delta = 0 }
-			explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Gem " .. index, formula = "(pusty socket => +0)", delta = 0 }
+			explain.pve.parts[#explain.pve.parts + 1] = { label = "Gem " .. index, formula = "(empty socket => +0)", delta = 0 }
+			explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Gem " .. index, formula = "(empty socket => +0)", delta = 0 }
 		end
 	end
 	if GS_EnchantSlots[item.equipLoc] then
