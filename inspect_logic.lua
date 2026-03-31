@@ -31,22 +31,40 @@ function GS_ResolveUnitByGUID(guid)
 	if tooltipUnit and UnitGUID(tooltipUnit) == guid then return tooltipUnit end
 end
 
-function GS_DetectSpec(classToken, inspect)
+function GS_DetectSpec(unit, classToken, inspect)
 	local order = GS_ClassSpecOrder[classToken]
-	if not order then return GS_ClassDefaults[classToken] end
-	local bestPoints, bestSpec = -1, GS_ClassDefaults[classToken]
-	for tab = 1, 3 do
-		local _, _, _, _, points = GetTalentTabInfo(tab, inspect, false)
-		if points and points > bestPoints then bestPoints, bestSpec = points, (order[tab] or bestSpec) end
+	if not order then return GS_ClassDefaults[classToken], not inspect end
+	local numTabs = GetNumTalentTabs and GetNumTalentTabs(inspect, false) or 3
+	if not numTabs or numTabs < 1 then
+		numTabs = 3
 	end
-	return bestSpec
+	local bestPoints, bestSpec, sawPointValue = -1, nil, false
+	for tab = 1, numTabs do
+		local _, _, _, _, points = GetTalentTabInfo(tab, inspect, false)
+		if points ~= nil then
+			sawPointValue = true
+			if points > bestPoints then
+				bestPoints, bestSpec = points, (order[tab] or bestSpec)
+			elseif not bestSpec then
+				bestSpec = order[tab] or bestSpec
+			end
+		end
+	end
+	if inspect then
+		if sawPointValue and bestSpec then
+			return bestSpec, true
+		end
+		return nil, false
+	end
+	return bestSpec or GS_ClassDefaults[classToken], true
 end
 
 function GS_CollectSnapshot(unit, inspect)
 	local name, guid = UnitName(unit), UnitGUID(unit)
 	local _, classToken = UnitClass(unit)
 	if not name or not guid or not classToken then return nil end
-	local specKey = GS_DetectSpec(classToken, inspect)
+	local specKey, specResolved = GS_DetectSpec(unit, classToken, inspect)
+	local specSource = specResolved and "live" or "none"
 	local items, fingerprint, levelTotal, itemCount = {}, { guid, classToken, specKey }, 0, 0
 	for slotId = 1, 18 do
 		if slotId ~= 4 then
@@ -62,22 +80,117 @@ function GS_CollectSnapshot(unit, inspect)
 			end
 		end
 	end
-	return { name = name, guid = guid, unit = unit, classToken = classToken, specKey = specKey, items = items, itemCount = itemCount, fingerprint = table.concat(fingerprint, "|"), average = itemCount > 0 and floor(levelTotal / itemCount) or 0 }
+	return {
+		name = name,
+		guid = guid,
+		unit = unit,
+		classToken = classToken,
+		specKey = specKey,
+		specResolved = specResolved and specKey ~= nil,
+		specSource = specSource,
+		scanExpired = false,
+		items = items,
+		itemCount = itemCount,
+		fingerprint = table.concat(fingerprint, "|"),
+		average = itemCount > 0 and floor(levelTotal / itemCount) or 0,
+	}
+end
+
+function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
+	if not snapshot then
+		return nil
+	end
+	snapshot.specKey = specKey
+	snapshot.specResolved = specKey ~= nil and specSource ~= "none"
+	snapshot.specSource = specSource or (snapshot.specResolved and "live" or "none")
+	snapshot.scanExpired = scanExpired and true or false
+	return snapshot
+end
+
+function GS_GetScanRecord(guid)
+	if not guid then
+		return nil
+	end
+	local cached = GS_InspectCache[guid]
+	if cached and cached.expiresAt > GetTime() then
+		return cached
+	end
+	local active = GS_InspectState.active
+	if active and active.guid == guid then
+		return {
+			guid = guid,
+			specResolved = false,
+			specSource = "none",
+			scanExpired = false,
+			gs2Available = false,
+			scanStatusText = GS_SCAN_TEXT,
+		}
+	end
+	if GS_InspectState.queued[guid] then
+		return {
+			guid = guid,
+			specResolved = false,
+			specSource = "none",
+			scanExpired = false,
+			gs2Available = false,
+			scanStatusText = GS_SCAN_TEXT,
+		}
+	end
 end
 
 function GS_BuildRecord(snapshot)
 	local cached = GS_InspectCache[snapshot.guid]
-	if cached and cached.fingerprint == snapshot.fingerprint and cached.expiresAt > GetTime() then return cached end
+	if cached and cached.fingerprint == snapshot.fingerprint and cached.expiresAt > GetTime() and cached.specKey == snapshot.specKey and cached.specSource == (snapshot.specSource or "none") and cached.gs2Available == (snapshot.specResolved and snapshot.specKey ~= nil) then
+		return cached
+	end
 	local gs2, legacy, pvp, detailLinks = 0, 0, 0, {}
 	for index = 1, #snapshot.items do
 		local entry = snapshot.items[index]
-		local itemGS2, itemPVP = GS_ScoreItem(entry.item, snapshot.classToken, snapshot.specKey)
-		gs2, legacy, pvp = gs2 + itemGS2, legacy + entry.legacy, pvp + itemPVP
+		local itemGS2, itemPVP = 0, nil
+		if snapshot.specResolved and snapshot.specKey then
+			itemGS2, itemPVP = GS_ScoreItem(entry.item, snapshot.classToken, snapshot.specKey)
+			gs2 = gs2 + itemGS2
+			pvp = (pvp or 0) + itemPVP
+		end
+		legacy = legacy + entry.legacy
 		detailLinks[entry.slotId] = entry.item.link
 	end
-	local capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot)
-	gs2 = gs2 + (capAdjustedGs2 or 0)
-	cached = { guid = snapshot.guid, name = snapshot.name, classToken = snapshot.classToken, specKey = snapshot.specKey, fingerprint = snapshot.fingerprint, average = snapshot.average, gs2 = floor(gs2), legacy = floor(legacy), pvp = floor(pvp), capAdjustedGs2 = capAdjustedGs2 or 0, capBreakdown = capBreakdown, capStats = capStats, detailLinks = detailLinks, expiresAt = GetTime() + GS_CACHE_TTL, freshUntil = GetTime() + GS_FRESH_TTL }
+	local capAdjustedGs2, capBreakdown, capStats = 0, nil, nil
+	if snapshot.specResolved and snapshot.specKey then
+		capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot)
+		gs2 = gs2 + (capAdjustedGs2 or 0)
+		if snapshot.specSource == "live" then
+			GS_InspectState.lastConfirmedSpecByGuid[snapshot.guid] = snapshot.specKey
+		end
+	end
+	local specLabel = snapshot.specKey and GS_GetSpecLabel(snapshot.specKey) or "Unknown"
+	local scanStatusText = snapshot.specResolved and specLabel or "Spec unknown"
+	if snapshot.specResolved and snapshot.specSource == "cached" then
+		scanStatusText = specLabel .. " [CACHED]"
+	end
+	cached = {
+		guid = snapshot.guid,
+		name = snapshot.name,
+		classToken = snapshot.classToken,
+		specKey = snapshot.specKey,
+		specLabel = specLabel,
+		specResolved = snapshot.specResolved and true or false,
+		specSource = snapshot.specSource or "none",
+		scanExpired = snapshot.scanExpired and true or false,
+		gs2Available = snapshot.specResolved and snapshot.specKey ~= nil,
+		scanStatusText = scanStatusText,
+		fingerprint = snapshot.fingerprint,
+		average = snapshot.average,
+		gs2 = snapshot.specResolved and floor(gs2) or nil,
+		legacy = floor(legacy),
+		pvp = snapshot.specResolved and floor(pvp or 0) or nil,
+		capAdjustedGs2 = capAdjustedGs2 or 0,
+		capBreakdown = capBreakdown,
+		capStats = capStats,
+		detailLinks = detailLinks,
+		expiresAt = GetTime() + GS_CACHE_TTL,
+		freshUntil = GetTime() + GS_FRESH_TTL,
+	}
 	GS_InspectCache[snapshot.guid] = cached
 	return cached
 end
@@ -104,6 +217,10 @@ end
 
 function GS_RefreshTooltip(guid)
 	if not GameTooltip:IsShown() then return end
+	if GS_TooltipInventoryContext.guid and GS_TooltipInventoryContext.guid == guid and GS_TooltipInventoryContext.unit and GS_TooltipInventoryContext.slot then
+		GearScore_Original_SetInventoryItem(GameTooltip, GS_TooltipInventoryContext.unit, GS_TooltipInventoryContext.slot)
+		return
+	end
 	local _, unit = GameTooltip:GetUnit()
 	if unit and UnitGUID(unit) == guid then GameTooltip:SetUnit(unit) end
 end
@@ -114,14 +231,29 @@ function GS_ProcessInspectQueue()
 		local inspectUnit = UnitGUID(active.unit) == active.guid and active.unit or GS_ResolveUnitByGUID(active.guid)
 		local snapshot = inspectUnit and GS_CollectSnapshot(inspectUnit, true) or nil
 		local itemCount = snapshot and snapshot.itemCount or 0
-		if snapshot and (itemCount >= GS_MIN_INSPECT_ITEMS or active.readyRetries >= GS_READY_RETRY_LIMIT) then
+		local timedOut = (now - active.startedAt) >= GS_SCAN_TIMEOUT
+		if snapshot and snapshot.specResolved and itemCount >= GS_MIN_INSPECT_ITEMS then
+			GS_FinalizeSnapshotSpec(snapshot, snapshot.specKey, "live", false)
 			GS_BuildRecord(snapshot)
 			ClearInspectPlayer()
 			GS_InspectState.active = nil
 			GS_RefreshTooltip(active.guid)
 			return
 		end
-		if active.readyRetries >= GS_READY_RETRY_LIMIT then
+		if timedOut then
+			if snapshot then
+				if snapshot.specResolved and snapshot.specKey then
+					GS_FinalizeSnapshotSpec(snapshot, snapshot.specKey, "live", true)
+				else
+					local cachedSpec = GS_InspectState.lastConfirmedSpecByGuid[active.guid]
+					if cachedSpec then
+						GS_FinalizeSnapshotSpec(snapshot, cachedSpec, "cached", true)
+					else
+						GS_FinalizeSnapshotSpec(snapshot, nil, "none", true)
+					end
+				end
+				GS_BuildRecord(snapshot)
+			end
 			ClearInspectPlayer()
 			GS_InspectState.active = nil
 			GS_RefreshTooltip(active.guid)
@@ -139,7 +271,7 @@ function GS_ProcessInspectQueue()
 		GS_InspectState.queued[request.guid] = nil
 		if request.unit and UnitGUID(request.unit) == request.guid and CanInspect(request.unit) and UnitIsPlayer(request.unit) then
 			NotifyInspect(request.unit)
-			GS_InspectState.active = { guid = request.guid, unit = request.unit, startedAt = now, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0 }
+			GS_InspectState.active = { guid = request.guid, unit = request.unit, startedAt = now, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0, specResolvedAt = nil, timedOut = false }
 			GS_InspectState.recent[request.guid], GS_InspectState.lastInspectAt = now, now
 			return
 		end

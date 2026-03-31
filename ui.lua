@@ -3,9 +3,28 @@
 -------------------------------------------------------------------------------
 
 function GearScore_OnEnter(frame, itemSlot, argument)
+	local unit, slot = itemSlot, argument
+	if type(unit) == "string" and type(slot) == "number" then
+		GS_TooltipInventoryContext.unit = unit
+		GS_TooltipInventoryContext.slot = slot
+		GS_TooltipInventoryContext.guid = UnitGUID(unit)
+	else
+		GS_TooltipInventoryContext.unit = nil
+		GS_TooltipInventoryContext.slot = nil
+		GS_TooltipInventoryContext.guid = nil
+	end
 	local original = GearScore_Original_SetInventoryItem(frame, itemSlot, argument)
-	local record = GS_GetRecord("player")
-	if record and record.detailLinks[itemSlot] then GS_AddItemLines(GameTooltip, record.detailLinks[itemSlot]) end
+	if type(unit) == "string" and type(slot) == "number" then
+		local record = GS_GetRecord(unit) or GS_GetScanRecord(GS_TooltipInventoryContext.guid)
+		if record and record.detailLinks and record.detailLinks[slot] then
+			GS_AddItemLines(GameTooltip, record.detailLinks[slot])
+		elseif UnitExists(unit) and UnitIsPlayer(unit) and not UnitIsUnit(unit, "player") then
+			GameTooltip:AddLine(GS_SCAN_TEXT, 0.95, 0.82, 0.18)
+			if CanInspect(unit) then
+				GS_QueueInspect(unit)
+			end
+		end
+	end
 	return original
 end
 
@@ -54,6 +73,7 @@ function GS_OnEvent(_, event, ...)
 	if event == "INSPECT_READY" then
 		local guid = ...
 		if GS_InspectState.active and GS_InspectState.active.guid == guid then
+			GS_InspectState.active.specResolvedAt = GetTime()
 			GS_InspectState.active.readyAt = GetTime() + GS_READY_DELAY
 			GS_InspectState.active.pollAt = GS_InspectState.active.readyAt
 			GS_InspectState.active.readyRetries = 0

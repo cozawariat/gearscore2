@@ -8,7 +8,8 @@ GS_PlayerIsInCombat = false
 GS_SCAN_TEXT = "|cffaaaaaaScanning...|r"
 GS_INSPECT_THROTTLE = 0.35
 GS_RECENT_WINDOW = 1.5
-GS_ACTIVE_TIMEOUT = 2.5
+GS_ACTIVE_TIMEOUT = 3.0
+GS_SCAN_TIMEOUT = 3.0
 GS_CACHE_TTL = 180
 GS_FRESH_TTL = 15
 GS_READY_DELAY = 0.15
@@ -27,8 +28,9 @@ GS_InspectQueue = {}
 GS_InspectCache = {}
 GS_ItemCache = {}
 GS_ParsedLinkCache = {}
-GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {} }
+GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, lastConfirmedSpecByGuid = {} }
 GS_ExplainState = { owner = nil, itemLink = nil, itemSlot = nil }
+GS_TooltipInventoryContext = { unit = nil, slot = nil, guid = nil }
 
 GS_STAT_KEYS = {
 	ITEM_MOD_STRENGTH_SHORT = "STR", ITEM_MOD_AGILITY_SHORT = "AGI", ITEM_MOD_STAMINA_SHORT = "STA",
@@ -54,6 +56,26 @@ function GS_FormatNumber(value)
 		return tostring(value)
 	end
 	return string.format("%.2f", value)
+end
+
+function GS_GetSpecLabel(specKey)
+	if not specKey then
+		return "Unknown"
+	end
+	if specKey == "BEASTMASTERY" then
+		return "Beast Mastery"
+	end
+	if specKey == "MAGE_FROST" then
+		return "Frost"
+	end
+	if specKey == "DRUID_RESTORATION" then
+		return "Restoration"
+	end
+	local words = {}
+	for word in string.gmatch(string.lower(string.gsub(specKey, "_", " ")), "%S+") do
+		words[#words + 1] = string.upper(string.sub(word, 1, 1)) .. string.sub(word, 2)
+	end
+	return #words > 0 and table.concat(words, " ") or specKey
 end
 
 function GS_AppendExplainLine(lines, text)

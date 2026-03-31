@@ -142,6 +142,13 @@ After all item `GearScore2` values are summed, the addon:
 3. applies cap segments to important stats,
 4. adds a cap-aware delta to final character `GearScore2`.
 
+For inspected targets this spec resolution is asynchronous.
+
+- while inspect talents are still loading, character and item tooltips show `Scanning...`
+- if the spec is resolved, the character tooltip shows the detected specialization
+- if inspect exceeds `3` seconds, the addon uses the last confirmed spec for that exact `GUID` and marks it as `[CACHED]`
+- if no cached spec exists, `GearScore2` is withheld instead of guessed
+
 ### 4.3 Segment model
 
 Cap-aware stats are processed in segments, not as one flat value.

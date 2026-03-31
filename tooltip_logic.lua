@@ -3,15 +3,32 @@
 -------------------------------------------------------------------------------
 
 function GS_AddScoreLines(tooltip, record)
-	local r, g, b = GearScore_GetQuality(record.gs2)
-	tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)
+	local specText = record and record.scanStatusText or "Spec unknown"
+	if record and record.specResolved and record.specSource == "cached" then
+		specText = record.specLabel and (record.specLabel .. " [CACHED]") or specText
+	elseif record and record.specResolved then
+		specText = record.specLabel or specText
+	elseif record and not record.scanExpired then
+		specText = "Scanning..."
+	end
+	tooltip:AddDoubleLine("Spec", specText, 0.85, 0.9, 1, 0.85, 0.9, 1)
+	if record.gs2Available and record.gs2 ~= nil then
+		local r, g, b = GearScore_GetQuality(record.gs2)
+		tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)
+	end
+	local r, g, b
 	r, g, b = GearScore_GetQuality(record.legacy)
 	tooltip:AddDoubleLine("Legacy GearScore", tostring(record.legacy), r, g, b, r, g, b)
-	r, g, b = GearScore_GetQuality(record.pvp)
-	tooltip:AddDoubleLine("PvP GearScore", tostring(record.pvp), r, g, b, r, g, b)
+	if record.pvp ~= nil then
+		r, g, b = GearScore_GetQuality(record.pvp)
+		tooltip:AddDoubleLine("PvP GearScore", tostring(record.pvp), r, g, b, r, g, b)
+	end
 	if GS_Settings["Level"] == 1 then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
-	if record.capBreakdown and record.capBreakdown.summary then
+	if record.capBreakdown and record.capBreakdown.summary and record.gs2Available then
 		tooltip:AddLine("GS2 Caps: " .. record.capBreakdown.summary, 0.75, 0.9, 1, true)
+	end
+	if not record.gs2Available and record.scanExpired then
+		tooltip:AddLine("GS2 unavailable: spec scan timed out.", 1, 0.55, 0.55, true)
 	end
 end
 
@@ -22,6 +39,70 @@ function GS_HideExplainTooltip()
 	GS_ExplainState.owner = nil
 	GS_ExplainState.itemLink = nil
 	GS_ExplainState.itemSlot = nil
+end
+
+function GS_GetTooltipRecordForItem(tooltip, itemLink)
+	local unit = nil
+	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and GS_TooltipInventoryContext.slot then
+		unit = GS_TooltipInventoryContext.unit
+		local record = GS_GetRecord(unit) or GS_GetScanRecord(GS_TooltipInventoryContext.guid)
+		if record and record.detailLinks and record.detailLinks[GS_TooltipInventoryContext.slot] == itemLink then
+			return record, unit, GS_TooltipInventoryContext.slot
+		end
+		if record and not record.detailLinks then
+			return record, unit, GS_TooltipInventoryContext.slot
+		end
+	end
+	local _, tooltipUnit = tooltip:GetUnit()
+	if tooltipUnit and UnitIsPlayer(tooltipUnit) then
+		unit = tooltipUnit
+		local record = GS_GetRecord(unit) or GS_GetScanRecord(UnitGUID(unit))
+		if record and record.detailLinks then
+			for slotId, link in pairs(record.detailLinks) do
+				if link == itemLink then
+					return record, unit, slotId
+				end
+			end
+		elseif record then
+			return record, unit, nil
+		end
+	end
+	return nil, unit, nil
+end
+
+function GS_GetTooltipItemContext(tooltip, itemLink)
+	local record, unit, slotId = GS_GetTooltipRecordForItem(tooltip, itemLink)
+	if unit and not UnitIsUnit(unit, "player") and CanInspect(unit) then
+		if not record or not record.gs2Available then
+			GS_QueueInspect(unit)
+		end
+	end
+	if record and unit and UnitIsPlayer(unit) then
+		return {
+			record = record,
+			unit = unit,
+			slotId = slotId,
+			classToken = record.classToken or select(2, UnitClass(unit)),
+			specKey = record.specKey,
+			specLabel = record.specLabel,
+			specSource = record.specSource,
+			gs2Available = record.gs2Available,
+			scanning = not record.specResolved and not record.scanExpired,
+		}
+	end
+	local playerRecord = GS_GetRecord("player")
+	local _, classToken = UnitClass("player")
+	return {
+		record = playerRecord,
+		unit = "player",
+		slotId = slotId,
+		classToken = classToken,
+		specKey = playerRecord and playerRecord.specKey or GS_ClassDefaults[classToken],
+		specLabel = playerRecord and playerRecord.specLabel or GS_GetSpecLabel(GS_ClassDefaults[classToken]),
+		specSource = playerRecord and playerRecord.specSource or "live",
+		gs2Available = true,
+		scanning = false,
+	}
 end
 
 function GS_AddExplainPart(tooltip, title, part, r, g, b)
@@ -65,14 +146,18 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 		end
 		return
 	end
-	local _, classToken = UnitClass("player")
-	local playerRecord = GS_GetRecord("player")
-	local specKey = playerRecord and playerRecord.specKey or GS_ClassDefaults[classToken]
 	local item = GS_GetItemData(itemLink)
 	if not item then
 		return
 	end
-	local gs2, pvp, explain = GS_ScoreItem(item, classToken, specKey, true)
+	local context = GS_GetTooltipItemContext(ownerTooltip, itemLink)
+	if not context or context.scanning or not context.gs2Available or not context.specKey then
+		if GS_ExplainTooltip:IsShown() then
+			GS_ExplainTooltip:Hide()
+		end
+		return
+	end
+	local gs2, pvp, explain = GS_ScoreItem(item, context.classToken, context.specKey, true)
 	if not explain then
 		return
 	end
@@ -80,6 +165,11 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	GS_BeginExplainTooltip()
 	GS_PositionExplainTooltip(ownerTooltip)
 	GS_ExplainTooltip:AddLine(item.name or "GearScoreAI Explain", 1, 0.82, 0.18)
+	if context.specSource == "cached" then
+		GS_ExplainTooltip:AddDoubleLine("Spec context", (context.specLabel or GS_GetSpecLabel(context.specKey)) .. " [CACHED]", 0.85, 0.9, 1, 0.85, 0.9, 1)
+	else
+		GS_ExplainTooltip:AddDoubleLine("Spec context", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
+	end
 	GS_ExplainTooltip:AddDoubleLine("GearScore2", tostring(gs2), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
 	GS_ExplainTooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
 	GS_ExplainTooltip:AddDoubleLine("PvP GearScore", tostring(pvp), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
@@ -142,13 +232,28 @@ end
 
 function GS_AddItemLines(tooltip, itemLink)
 	if not itemLink or not IsEquippableItem(itemLink) then return end
-	local _, classToken = UnitClass("player")
-	local playerRecord = GS_GetRecord("player")
-	local specKey = playerRecord and playerRecord.specKey or GS_ClassDefaults[classToken]
 	local item = GS_GetItemData(itemLink)
 	if not item then return end
-	local gs2, pvp = GS_ScoreItem(item, classToken, specKey)
+	local context = GS_GetTooltipItemContext(tooltip, itemLink)
+	if context and context.scanning then
+		tooltip:AddLine(GS_SCAN_TEXT, 0.95, 0.82, 0.18)
+		GS_HideExplainTooltip()
+		return
+	end
+	if context and (not context.gs2Available or not context.specKey) then
+		tooltip:AddDoubleLine("Spec", "Unknown", 1, 0.65, 0.65, 1, 0.65, 0.65)
+		tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
+		if GS_Settings["Level"] == 1 then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
+		GS_HideExplainTooltip()
+		return
+	end
+	local gs2, pvp = GS_ScoreItem(item, context.classToken, context.specKey)
 	local r, g, b = GearScore_GetQuality(gs2)
+	if context.specSource == "cached" then
+		tooltip:AddDoubleLine("Spec", (context.specLabel or GS_GetSpecLabel(context.specKey)) .. " [CACHED]", 0.85, 0.9, 1, 0.85, 0.9, 1)
+	elseif context and context.unit and not UnitIsUnit(context.unit, "player") then
+		tooltip:AddDoubleLine("Spec", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
+	end
 	tooltip:AddDoubleLine("GearScore2", tostring(gs2), r, g, b, r, g, b)
 	tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
 	tooltip:AddDoubleLine("PvP GearScore", tostring(pvp), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
@@ -163,25 +268,33 @@ function GearScore_SetDetails(tooltip, name)
 	for slotId, itemLink in pairs(record.detailLinks) do
 		local item = GS_GetItemData(itemLink)
 		if item then
-			local gs2, pvp = GS_ScoreItem(item, record.classToken, record.specKey)
 			local itemName, _, itemRarity = GetItemInfo(itemLink)
 			if itemName then
 				local color = GS_Rarity[itemRarity or 1] or GS_Rarity[1]
 				local suffix = GS_Settings["Level"] == 1 and (" (iLevel " .. tostring(item.level or 0) .. ")") or ""
-				tooltip:AddDoubleLine("[" .. itemName .. "]", "GS2 " .. tostring(gs2) .. " / L " .. tostring(item.legacyBase) .. " / P " .. tostring(pvp) .. suffix, color.Red, color.Green, color.Blue, 0.85, 0.85, 0.85)
+				if record.gs2Available and record.specKey then
+					local gs2, pvp = GS_ScoreItem(item, record.classToken, record.specKey)
+					tooltip:AddDoubleLine("[" .. itemName .. "]", "GS2 " .. tostring(gs2) .. " / L " .. tostring(item.legacyBase) .. " / P " .. tostring(pvp) .. suffix, color.Red, color.Green, color.Blue, 0.85, 0.85, 0.85)
+				else
+					tooltip:AddDoubleLine("[" .. itemName .. "]", "L " .. tostring(item.legacyBase) .. suffix, color.Red, color.Green, color.Blue, 0.85, 0.85, 0.85)
+				end
 			end
 		end
 	end
 end
 
 function GearScore_HookSetUnit()
-	if GS_PlayerIsInCombat or (InspectFrame and InspectFrame:IsShown()) or (Examiner and Examiner:IsShown()) then return end
+	if GS_PlayerIsInCombat then return end
+	GS_HideExplainTooltip()
 	local name, unit = GS_GetTooltipUnit()
 	if not name or not unit or not UnitIsPlayer(unit) or (GS_Settings["Player"] ~= 1 and GS_Settings["Player"] ~= 2) then return end
 	local record = GS_GetRecord(unit)
 	if record then
+		if not record.gs2Available and not UnitIsUnit(unit, "player") and CanInspect(unit) then
+			GS_QueueInspect(unit)
+		end
 		GS_AddScoreLines(GameTooltip, record)
-		if GS_Settings["Compare"] == 1 then
+		if GS_Settings["Compare"] == 1 and record.gs2Available then
 			local mine = GS_GetRecord("player")
 			if mine then
 				local diff = mine.gs2 - record.gs2
@@ -198,17 +311,17 @@ function GearScore_HookSetUnit()
 end
 
 function GearScore_HookSetItem()
-	if not GS_PlayerIsInCombat then local _, link = GameTooltip:GetItem() GS_AddItemLines(GameTooltip, link) end
+	if not GS_PlayerIsInCombat then local _, link = GameTooltip:GetItem() GS_AddItemLines(GameTooltip, link) else GS_HideExplainTooltip() end
 end
 
 function GearScore_HookRefItem()
-	if not GS_PlayerIsInCombat then local _, link = ItemRefTooltip:GetItem() GS_AddItemLines(ItemRefTooltip, link) end
+	if not GS_PlayerIsInCombat then local _, link = ItemRefTooltip:GetItem() GS_AddItemLines(ItemRefTooltip, link) else GS_HideExplainTooltip() end
 end
 
 function GearScore_HookCompareItem()
-	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip1:GetItem() GS_AddItemLines(ShoppingTooltip1, link) end
+	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip1:GetItem() GS_AddItemLines(ShoppingTooltip1, link) else GS_HideExplainTooltip() end
 end
 
 function GearScore_HookCompareItem2()
-	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip2:GetItem() GS_AddItemLines(ShoppingTooltip2, link) end
+	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip2:GetItem() GS_AddItemLines(ShoppingTooltip2, link) else GS_HideExplainTooltip() end
 end

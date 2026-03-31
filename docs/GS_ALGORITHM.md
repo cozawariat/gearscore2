@@ -297,12 +297,20 @@ If the result is negative, it is clamped to `0`.
 
 ### 6.2 Inspect-Side Spec Detection
 
-For inspected units, `GS_DetectSpec(classToken, inspect)`:
+For inspected units, `GS_DetectSpec(unit, classToken, inspect)`:
 
 1. reads 3 talent tabs through `GetTalentTabInfo(tab, inspect, false)`
-2. chooses the tab with the highest point count
-3. maps the winning tab to `GS_ClassSpecOrder[classToken][tab]`
-4. falls back to `GS_ClassDefaults[classToken]`
+2. treats inspect talent data as unresolved only while the talent API still returns no point values
+3. chooses the tab with the highest point count once point values are available
+4. maps the winning tab to `GS_ClassSpecOrder[classToken][tab]`
+5. does not fall back to `GS_ClassDefaults[classToken]` for inspect targets while data is still pending
+
+If inspect data is still pending, the target remains in `Scanning...` state instead of receiving a guessed spec.
+
+If inspect resolution takes longer than `3.0` seconds:
+
+- the runtime uses the last confirmed spec for the same `GUID` when available and marks it as cached
+- otherwise the target record is built without spec-aware `GearScore2`
 
 ## 7. Item Compatibility Rules
 
@@ -468,6 +476,8 @@ PvP GearScore(item) = floor(pvpBaseScore * pvpMultiplier)
 - collects:
   - `classToken`
   - `specKey`
+  - `specResolved`
+  - `specSource`
   - normalized item entries
   - average item level
   - fingerprint composed from GUID, class, spec, and item links
@@ -481,6 +491,13 @@ gs2 = sum(itemGS2)
 legacy = sum(itemLegacy)
 pvp = sum(itemPvp)
 ```
+
+When `specResolved` is false:
+
+- `legacy` is still built normally
+- `GearScore2` is withheld
+- cap logic is skipped
+- the record exposes scan-state metadata so tooltips can show `Scanning...`, `Spec: Unknown`, or cached-spec state
 
 At this stage:
 
