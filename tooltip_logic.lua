@@ -6,6 +6,8 @@ function GS_AddScoreLines(tooltip, record)
 	local specText = record and record.scanStatusText or "Spec unknown"
 	if record and record.specResolved and record.specSource == "cached" then
 		specText = record.specLabel and (record.specLabel .. " [CACHED]") or specText
+	elseif record and record.specResolved and record.specSource == "inferred" then
+		specText = record.specLabel and (record.specLabel .. " [INFERRED]") or specText
 	elseif record and record.specResolved then
 		specText = record.specLabel or specText
 	elseif record and not record.scanExpired then
@@ -167,6 +169,8 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	GS_ExplainTooltip:AddLine(item.name or "GearScoreAI Explain", 1, 0.82, 0.18)
 	if context.specSource == "cached" then
 		GS_ExplainTooltip:AddDoubleLine("Spec context", (context.specLabel or GS_GetSpecLabel(context.specKey)) .. " [CACHED]", 0.85, 0.9, 1, 0.85, 0.9, 1)
+	elseif context.specSource == "inferred" then
+		GS_ExplainTooltip:AddDoubleLine("Spec context", (context.specLabel or GS_GetSpecLabel(context.specKey)) .. " [INFERRED]", 0.85, 0.9, 1, 0.85, 0.9, 1)
 	else
 		GS_ExplainTooltip:AddDoubleLine("Spec context", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
 	end
@@ -251,6 +255,8 @@ function GS_AddItemLines(tooltip, itemLink)
 	local r, g, b = GearScore_GetQuality(gs2)
 	if context.specSource == "cached" then
 		tooltip:AddDoubleLine("Spec", (context.specLabel or GS_GetSpecLabel(context.specKey)) .. " [CACHED]", 0.85, 0.9, 1, 0.85, 0.9, 1)
+	elseif context.specSource == "inferred" then
+		tooltip:AddDoubleLine("Spec", (context.specLabel or GS_GetSpecLabel(context.specKey)) .. " [INFERRED]", 0.85, 0.9, 1, 0.85, 0.9, 1)
 	elseif context and context.unit and not UnitIsUnit(context.unit, "player") then
 		tooltip:AddDoubleLine("Spec", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
 	end

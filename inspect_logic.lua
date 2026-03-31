@@ -23,6 +23,12 @@ function GS_ResolveUnitByGUID(guid)
 		"raid21", "raid22", "raid23", "raid24", "raid25", "raid26", "raid27", "raid28", "raid29", "raid30",
 		"raid31", "raid32", "raid33", "raid34", "raid35", "raid36", "raid37", "raid38", "raid39", "raid40",
 	}
+	if InspectFrame and InspectFrame.unit then
+		candidates[#candidates + 1] = InspectFrame.unit
+	end
+	if Examiner and Examiner.unit then
+		candidates[#candidates + 1] = Examiner.unit
+	end
 	for index = 1, #candidates do
 		local unit = candidates[index]
 		if UnitGUID(unit) == guid then return unit end
@@ -31,7 +37,26 @@ function GS_ResolveUnitByGUID(guid)
 	if tooltipUnit and UnitGUID(tooltipUnit) == guid then return tooltipUnit end
 end
 
-function GS_DetectSpec(unit, classToken, inspect)
+function GS_IsStableInspectUnit(unit)
+	if not unit or not UnitExists(unit) or not UnitIsPlayer(unit) then
+		return false
+	end
+	if UnitIsUnit(unit, "target") or UnitIsUnit(unit, "focus") then
+		return true
+	end
+	if string.find(unit, "^party%d$") or string.find(unit, "^raid%d+$") then
+		return true
+	end
+	if InspectFrame and InspectFrame.unit and UnitIsUnit(unit, InspectFrame.unit) then
+		return true
+	end
+	if Examiner and Examiner.unit and UnitIsUnit(unit, Examiner.unit) then
+		return true
+	end
+	return false
+end
+
+function GS_DetectSpec(unit, classToken, inspect, talentsReady)
 	local order = GS_ClassSpecOrder[classToken]
 	if not order then return GS_ClassDefaults[classToken], not inspect end
 	local numTabs = GetNumTalentTabs and GetNumTalentTabs(inspect, false) or 3
@@ -39,8 +64,10 @@ function GS_DetectSpec(unit, classToken, inspect)
 		numTabs = 3
 	end
 	local bestPoints, bestSpec, sawPointValue = -1, nil, false
+	local debugTabs = {}
 	for tab = 1, numTabs do
 		local _, _, _, _, points = GetTalentTabInfo(tab, inspect, false)
+		debugTabs[#debugTabs + 1] = tostring(points)
 		if points ~= nil then
 			sawPointValue = true
 			if points > bestPoints then
@@ -49,6 +76,9 @@ function GS_DetectSpec(unit, classToken, inspect)
 				bestSpec = order[tab] or bestSpec
 			end
 		end
+	end
+	if inspect then
+		GS_DebugInspect("tabs for " .. (UnitName(unit) or "?") .. ": [" .. table.concat(debugTabs, ", ") .. "] best=" .. tostring(bestSpec) .. " bestPoints=" .. tostring(bestPoints) .. " talentReady=" .. tostring(talentsReady))
 	end
 	if inspect then
 		if sawPointValue and bestSpec then
@@ -63,8 +93,11 @@ function GS_CollectSnapshot(unit, inspect)
 	local name, guid = UnitName(unit), UnitGUID(unit)
 	local _, classToken = UnitClass(unit)
 	if not name or not guid or not classToken then return nil end
-	local specKey, specResolved = GS_DetectSpec(unit, classToken, inspect)
-	local specSource = specResolved and "live" or "none"
+	local specKey, specResolved, specSource = nil, false, "none"
+	if not inspect then
+		specKey, specResolved = GS_DetectSpec(unit, classToken, false, false)
+		specSource = specResolved and "live" or "none"
+	end
 	local items, fingerprint, levelTotal, itemCount = {}, { guid, classToken, specKey }, 0, 0
 	for slotId = 1, 18 do
 		if slotId ~= 4 then
@@ -105,6 +138,36 @@ function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
 	snapshot.specSource = specSource or (snapshot.specResolved and "live" or "none")
 	snapshot.scanExpired = scanExpired and true or false
 	return snapshot
+end
+
+function GS_InferSpecFromSnapshot(snapshot)
+	if not snapshot or not snapshot.classToken or not snapshot.items then
+		return nil, nil
+	end
+	local candidates = GS_ClassSpecOrder[snapshot.classToken]
+	if not candidates or #candidates == 0 then
+		return nil, nil
+	end
+	local bestSpec, bestScore = nil, nil
+	for index = 1, #candidates do
+		local candidateSpec = candidates[index]
+		if GS_SpecProfiles[candidateSpec] then
+			local total = 0
+			for itemIndex = 1, #snapshot.items do
+				local entry = snapshot.items[itemIndex]
+				local itemGS2 = GS_ScoreItem(entry.item, snapshot.classToken, candidateSpec)
+				total = total + (itemGS2 or 0)
+			end
+			local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, items = snapshot.items })
+			total = total + (capAdjustedGs2 or 0)
+			GS_DebugInspect("infer candidate " .. tostring(candidateSpec) .. " total=" .. tostring(total) .. " for " .. tostring(snapshot.name))
+			if not bestScore or total > bestScore then
+				bestScore = total
+				bestSpec = candidateSpec
+			end
+		end
+	end
+	return bestSpec, bestScore
 end
 
 function GS_GetScanRecord(guid)
@@ -167,6 +230,8 @@ function GS_BuildRecord(snapshot)
 	local scanStatusText = snapshot.specResolved and specLabel or "Spec unknown"
 	if snapshot.specResolved and snapshot.specSource == "cached" then
 		scanStatusText = specLabel .. " [CACHED]"
+	elseif snapshot.specResolved and snapshot.specSource == "inferred" then
+		scanStatusText = specLabel .. " [INFERRED]"
 	end
 	cached = {
 		guid = snapshot.guid,
@@ -211,6 +276,11 @@ function GS_QueueInspect(unit)
 	if not guid or UnitIsUnit(unit, "player") or GS_InspectState.queued[guid] then return end
 	if GS_InspectState.active and GS_InspectState.active.guid == guid then return end
 	if GS_InspectState.recent[guid] and (now - GS_InspectState.recent[guid]) < GS_RECENT_WINDOW then return end
+	if not GS_IsStableInspectUnit(unit) then
+		GS_DebugInspect("skip unstable inspect unit " .. tostring(unit) .. " name=" .. tostring(UnitName(unit)))
+		return
+	end
+	GS_DebugInspect("queue inspect " .. (UnitName(unit) or "?") .. " guid=" .. tostring(guid))
 	GS_InspectState.queued[guid] = true
 	GS_InspectQueue[#GS_InspectQueue + 1] = { guid = guid, unit = unit, queuedAt = now }
 end
@@ -225,36 +295,55 @@ function GS_RefreshTooltip(guid)
 	if unit and UnitGUID(unit) == guid then GameTooltip:SetUnit(unit) end
 end
 
+function GS_IsExternalInspectOpen()
+	return (InspectFrame and InspectFrame:IsShown()) or (Examiner and Examiner:IsShown())
+end
+
+function GS_ClearInspectIfSafe()
+	if not GS_IsExternalInspectOpen() then
+		ClearInspectPlayer()
+	end
+end
+
 function GS_ProcessInspectQueue()
 	local now, active = GetTime(), GS_InspectState.active
 	if active and ((active.readyAt and now >= active.readyAt) or ((not active.readyAt) and active.pollAt and now >= active.pollAt)) then
 		local inspectUnit = UnitGUID(active.unit) == active.guid and active.unit or GS_ResolveUnitByGUID(active.guid)
 		local snapshot = inspectUnit and GS_CollectSnapshot(inspectUnit, true) or nil
 		local itemCount = snapshot and snapshot.itemCount or 0
-		local timedOut = (now - active.startedAt) >= GS_SCAN_TIMEOUT
-		if snapshot and snapshot.specResolved and itemCount >= GS_MIN_INSPECT_ITEMS then
-			GS_FinalizeSnapshotSpec(snapshot, snapshot.specKey, "live", false)
+		if snapshot then
+			GS_DebugInspect("poll " .. tostring(snapshot.name) .. " items=" .. tostring(itemCount) .. " timedOut=" .. tostring((now - active.startedAt) >= GS_SCAN_TIMEOUT))
+		else
+			GS_DebugInspect("poll failed: no snapshot for guid=" .. tostring(active.guid))
+		end
+		if snapshot and itemCount >= GS_MIN_INSPECT_ITEMS then
+			local inferredSpec = GS_InferSpecFromSnapshot(snapshot)
+			if inferredSpec then
+				GS_FinalizeSnapshotSpec(snapshot, inferredSpec, "inferred", false)
+				GS_DebugInspect("finalize inferred " .. tostring(snapshot.name) .. " spec=" .. tostring(inferredSpec))
+			else
+				GS_FinalizeSnapshotSpec(snapshot, nil, "none", false)
+				GS_DebugInspect("finalize none " .. tostring(snapshot.name))
+			end
 			GS_BuildRecord(snapshot)
-			ClearInspectPlayer()
+			GS_ClearInspectIfSafe()
 			GS_InspectState.active = nil
 			GS_RefreshTooltip(active.guid)
 			return
 		end
-		if timedOut then
+		if (now - active.startedAt) >= GS_SCAN_TIMEOUT then
 			if snapshot then
-				if snapshot.specResolved and snapshot.specKey then
-					GS_FinalizeSnapshotSpec(snapshot, snapshot.specKey, "live", true)
+				local inferredSpec = GS_InferSpecFromSnapshot(snapshot)
+				if inferredSpec then
+					GS_FinalizeSnapshotSpec(snapshot, inferredSpec, "inferred", true)
+					GS_DebugInspect("timeout finalize inferred " .. tostring(snapshot.name) .. " spec=" .. tostring(inferredSpec))
 				else
-					local cachedSpec = GS_InspectState.lastConfirmedSpecByGuid[active.guid]
-					if cachedSpec then
-						GS_FinalizeSnapshotSpec(snapshot, cachedSpec, "cached", true)
-					else
-						GS_FinalizeSnapshotSpec(snapshot, nil, "none", true)
-					end
+					GS_FinalizeSnapshotSpec(snapshot, nil, "none", true)
+					GS_DebugInspect("timeout finalize none " .. tostring(snapshot.name))
 				end
 				GS_BuildRecord(snapshot)
 			end
-			ClearInspectPlayer()
+			GS_ClearInspectIfSafe()
 			GS_InspectState.active = nil
 			GS_RefreshTooltip(active.guid)
 			return
@@ -264,14 +353,16 @@ function GS_ProcessInspectQueue()
 		active.pollAt = now + GS_READY_DELAY
 		return
 	end
-	if active and (now - active.startedAt) > GS_ACTIVE_TIMEOUT then ClearInspectPlayer() GS_InspectState.active = nil end
+	if active and (now - active.startedAt) > GS_ACTIVE_TIMEOUT then GS_ClearInspectIfSafe() GS_InspectState.active = nil end
+	if GS_IsExternalInspectOpen() then return end
 	if GS_InspectState.active or (now - GS_InspectState.lastInspectAt) < GS_INSPECT_THROTTLE then return end
 	while #GS_InspectQueue > 0 do
 		local request = table.remove(GS_InspectQueue, 1)
 		GS_InspectState.queued[request.guid] = nil
 		if request.unit and UnitGUID(request.unit) == request.guid and CanInspect(request.unit) and UnitIsPlayer(request.unit) then
+			GS_DebugInspect("NotifyInspect " .. (UnitName(request.unit) or "?") .. " guid=" .. tostring(request.guid))
 			NotifyInspect(request.unit)
-			GS_InspectState.active = { guid = request.guid, unit = request.unit, startedAt = now, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0, specResolvedAt = nil, timedOut = false }
+			GS_InspectState.active = { guid = request.guid, unit = request.unit, startedAt = now, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0, specResolvedAt = nil, talentReady = false, timedOut = false }
 			GS_InspectState.recent[request.guid], GS_InspectState.lastInspectAt = now, now
 			return
 		end

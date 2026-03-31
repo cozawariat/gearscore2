@@ -297,20 +297,19 @@ If the result is negative, it is clamped to `0`.
 
 ### 6.2 Inspect-Side Spec Detection
 
-For inspected units, `GS_DetectSpec(unit, classToken, inspect)`:
+For the local player, `GS_DetectSpec(unit, classToken, inspect)`:
 
 1. reads 3 talent tabs through `GetTalentTabInfo(tab, inspect, false)`
-2. treats inspect talent data as unresolved only while the talent API still returns no point values
-3. chooses the tab with the highest point count once point values are available
-4. maps the winning tab to `GS_ClassSpecOrder[classToken][tab]`
-5. does not fall back to `GS_ClassDefaults[classToken]` for inspect targets while data is still pending
+2. chooses the tab with the highest point count once point values are available
+3. maps the winning tab to `GS_ClassSpecOrder[classToken][tab]`
 
-If inspect data is still pending, the target remains in `Scanning...` state instead of receiving a guessed spec.
+For inspected non-player units, the runtime does not wait for inspected talent data.
 
-If inspect resolution takes longer than `3.0` seconds:
+- it first gathers an inspect snapshot of equipped items
+- then it evaluates all candidate specs for that class against the observed gear
+- it selects the highest-scoring candidate and marks the result as inferred
 
-- the runtime uses the last confirmed spec for the same `GUID` when available and marks it as cached
-- otherwise the target record is built without spec-aware `GearScore2`
+If the inspect snapshot itself is still incomplete, the target remains in `Scanning...` until the timeout window is reached.
 
 ## 7. Item Compatibility Rules
 
@@ -497,7 +496,7 @@ When `specResolved` is false:
 - `legacy` is still built normally
 - `GearScore2` is withheld
 - cap logic is skipped
-- the record exposes scan-state metadata so tooltips can show `Scanning...`, `Spec: Unknown`, or cached-spec state
+- the record exposes scan-state metadata so tooltips can show `Scanning...` or `Spec: Unknown`
 
 At this stage:
 

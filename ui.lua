@@ -47,6 +47,7 @@ function GS_MANSET(command)
 	if command == "item" then GS_Settings["Item"] = GS_ItemSwitch[GS_Settings["Item"]] print((GS_Settings["Item"] == 1 or GS_Settings["Item"] == 3) and "Item Scores: On" or "Item Scores: Off") return end
 	if command == "level" then GS_Settings["Level"] = GS_Settings["Level"] * -1 print(GS_Settings["Level"] == 1 and "Item Levels: On" or "Item Levels: Off") return end
 	if command == "compare" then GS_Settings["Compare"] = GS_Settings["Compare"] * -1 print(GS_Settings["Compare"] == 1 and "Comparisons: On" or "Comparisons: Off") return end
+	if command == "debuginspect" then GS_DebugInspectEnabled = not GS_DebugInspectEnabled print("GS2 Inspect Debug: " .. (GS_DebugInspectEnabled and "On" or "Off")) return end
 	print("GearScore: Unknown Command. Type '/gs' for a list of options")
 end
 
@@ -73,7 +74,19 @@ function GS_OnEvent(_, event, ...)
 	if event == "INSPECT_READY" then
 		local guid = ...
 		if GS_InspectState.active and GS_InspectState.active.guid == guid then
+			GS_DebugInspect("INSPECT_READY guid=" .. tostring(guid))
 			GS_InspectState.active.specResolvedAt = GetTime()
+			GS_InspectState.active.readyAt = GetTime() + GS_READY_DELAY
+			GS_InspectState.active.pollAt = GS_InspectState.active.readyAt
+			GS_InspectState.active.readyRetries = 0
+		end
+		return
+	end
+	if event == "INSPECT_TALENT_READY" then
+		local guid = ...
+		if GS_InspectState.active and GS_InspectState.active.guid == guid then
+			GS_DebugInspect("INSPECT_TALENT_READY guid=" .. tostring(guid))
+			GS_InspectState.active.talentReady = true
 			GS_InspectState.active.readyAt = GetTime() + GS_READY_DELAY
 			GS_InspectState.active.pollAt = GS_InspectState.active.readyAt
 			GS_InspectState.active.readyRetries = 0
@@ -100,6 +113,7 @@ GS_MainFrame:RegisterEvent("ADDON_LOADED")
 GS_MainFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 GS_MainFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 GS_MainFrame:RegisterEvent("INSPECT_READY")
+GS_MainFrame:RegisterEvent("INSPECT_TALENT_READY")
 GS_MainFrame:RegisterEvent("MODIFIER_STATE_CHANGED")
 GS_MainFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
 GS_MainFrame:RegisterEvent("UNIT_AURA")

@@ -31,6 +31,7 @@ GS_ParsedLinkCache = {}
 GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, lastConfirmedSpecByGuid = {} }
 GS_ExplainState = { owner = nil, itemLink = nil, itemSlot = nil }
 GS_TooltipInventoryContext = { unit = nil, slot = nil, guid = nil }
+GS_DebugInspectEnabled = false
 
 GS_STAT_KEYS = {
 	ITEM_MOD_STRENGTH_SHORT = "STR", ITEM_MOD_AGILITY_SHORT = "AGI", ITEM_MOD_STAMINA_SHORT = "STA",
@@ -76,6 +77,13 @@ function GS_GetSpecLabel(specKey)
 		words[#words + 1] = string.upper(string.sub(word, 1, 1)) .. string.sub(word, 2)
 	end
 	return #words > 0 and table.concat(words, " ") or specKey
+end
+
+function GS_DebugInspect(message)
+	if not GS_DebugInspectEnabled then
+		return
+	end
+	DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99GS2 Debug|r " .. tostring(message))
 end
 
 function GS_AppendExplainLine(lines, text)
