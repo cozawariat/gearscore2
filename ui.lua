@@ -13,19 +13,7 @@ function GearScore_OnEnter(frame, itemSlot, argument)
 		GS_TooltipInventoryContext.slot = nil
 		GS_TooltipInventoryContext.guid = nil
 	end
-	local original = GearScore_Original_SetInventoryItem(frame, itemSlot, argument)
-	if type(unit) == "string" and type(slot) == "number" then
-		local record = GS_GetRecord(unit) or GS_GetScanRecord(GS_TooltipInventoryContext.guid)
-		if record and record.detailLinks and record.detailLinks[slot] then
-			GS_AddItemLines(GameTooltip, record.detailLinks[slot])
-		elseif UnitExists(unit) and UnitIsPlayer(unit) and not UnitIsUnit(unit, "player") then
-			GameTooltip:AddLine(GS_SCAN_TEXT, 0.95, 0.82, 0.18)
-			if CanInspect(unit) then
-				GS_QueueInspect(unit)
-			end
-		end
-	end
-	return original
+	return GearScore_Original_SetInventoryItem(frame, itemSlot, argument)
 end
 
 function GS_UpdatePaperDoll()
@@ -43,6 +31,8 @@ end
 function GS_MANSET(command)
 	command = strlower(command or "")
 	if command == "" or command == "options" or command == "option" or command == "help" then for i, v in ipairs(GS_CommandList) do print(v) end return end
+	if command == "interface" then if GS_OpenInterfaceOptionsCategory then GS_OpenInterfaceOptionsCategory() end return end
+	if command == "settings" then if GS_ToggleOptionsPanel then GS_ToggleOptionsPanel() end return end
 	if command == "show" or command == "player" then GS_Settings["Player"] = GS_ShowSwitch[GS_Settings["Player"]] print((GS_Settings["Player"] == 1 or GS_Settings["Player"] == 2) and "Player Scores: On" or "Player Scores: Off") return end
 	if command == "item" then GS_Settings["Item"] = GS_ItemSwitch[GS_Settings["Item"]] print((GS_Settings["Item"] == 1 or GS_Settings["Item"] == 3) and "Item Scores: On" or "Item Scores: Off") return end
 	if command == "level" then GS_Settings["Level"] = GS_Settings["Level"] * -1 print(GS_Settings["Level"] == 1 and "Item Levels: On" or "Item Levels: Off") return end
@@ -104,6 +94,9 @@ function GS_OnEvent(_, event, ...)
 		if not GS_Data[GetRealmName()] then GS_Data[GetRealmName()] = { ["Players"] = {} } end
 		for key, value in pairs(GS_DefaultSettings) do if GS2_Settings[key] == nil then GS2_Settings[key] = value end end
 		GS2_Settings["IncludeEnchants"] = true
+		if GS_InitializeSettings then
+			GS_InitializeSettings()
+		end
 		GS_UpdatePaperDoll()
 	end
 end

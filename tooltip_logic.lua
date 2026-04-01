@@ -2,7 +2,27 @@
 --                         GearScoreAI Tooltip Logic                         --
 -------------------------------------------------------------------------------
 
+function GS_TooltipHasLine(tooltip, text)
+	if not tooltip or not tooltip.GetName or not text then
+		return false
+	end
+	local tooltipName = tooltip:GetName()
+	if not tooltipName then
+		return false
+	end
+	for index = 1, tooltip:NumLines() or 0 do
+		local leftRegion = _G[tooltipName .. "TextLeft" .. index]
+		if leftRegion and leftRegion:GetText() == text then
+			return true
+		end
+	end
+	return false
+end
+
 function GS_AddScoreLines(tooltip, record)
+	if GS_TooltipHasLine(tooltip, "Spec") or GS_TooltipHasLine(tooltip, "GearScore2") then
+		return
+	end
 	local specText = record and record.scanStatusText or "Spec unknown"
 	if record and record.specResolved and record.specSource == "cached" then
 		specText = record.specLabel and (record.specLabel .. " [CACHED]") or specText
@@ -14,19 +34,28 @@ function GS_AddScoreLines(tooltip, record)
 		specText = "Scanning..."
 	end
 	tooltip:AddDoubleLine("Spec", specText, 0.85, 0.9, 1, 0.85, 0.9, 1)
+	local showCharacterGS2 = not GS_Settings or GS_Settings["showCharacterGS2"]
+	local showCharacterLegacy = not GS_Settings or GS_Settings["showCharacterLegacy"]
+	local showCharacterPvp = not GS_Settings or GS_Settings["showCharacterPvp"]
+	local showCharacterAverage = GS_Settings and GS_Settings["showCharacterAverage"]
+	local showCharacterCapSummary = not GS_Settings or GS_Settings["showCharacterCapSummary"]
 	if record.gs2Available and record.gs2 ~= nil then
-		local r, g, b = GearScore_GetQuality(record.gs2)
-		tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)
+		if showCharacterGS2 then
+			local r, g, b = GearScore_GetQuality(record.gs2)
+			tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)
+		end
 	end
 	local r, g, b
-	r, g, b = GearScore_GetQuality(record.legacy)
-	tooltip:AddDoubleLine("Legacy GearScore", tostring(record.legacy), r, g, b, r, g, b)
-	if record.pvp ~= nil then
+	if showCharacterLegacy then
+		r, g, b = GearScore_GetQuality(record.legacy)
+		tooltip:AddDoubleLine("Legacy GearScore", tostring(record.legacy), r, g, b, r, g, b)
+	end
+	if showCharacterPvp and record.pvp ~= nil then
 		r, g, b = GearScore_GetQuality(record.pvp)
 		tooltip:AddDoubleLine("PvP GearScore", tostring(record.pvp), r, g, b, r, g, b)
 	end
-	if GS_Settings["Level"] == 1 then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
-	if record.capBreakdown and record.capBreakdown.summary and record.gs2Available then
+	if GS_Settings["Level"] == 1 and showCharacterAverage then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
+	if showCharacterCapSummary and record.capBreakdown and record.capBreakdown.summary and record.gs2Available then
 		tooltip:AddLine("GS2 Caps: " .. record.capBreakdown.summary, 0.75, 0.9, 1, true)
 	end
 	if not record.gs2Available and record.scanExpired then
@@ -92,6 +121,19 @@ function GS_GetTooltipItemContext(tooltip, itemLink)
 			scanning = not record.specResolved and not record.scanExpired,
 		}
 	end
+	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and not UnitIsUnit(GS_TooltipInventoryContext.unit, "player") then
+		return {
+			record = nil,
+			unit = GS_TooltipInventoryContext.unit,
+			slotId = GS_TooltipInventoryContext.slot,
+			classToken = select(2, UnitClass(GS_TooltipInventoryContext.unit)),
+			specKey = nil,
+			specLabel = nil,
+			specSource = "none",
+			gs2Available = false,
+			scanning = true,
+		}
+	end
 	local playerRecord = GS_GetRecord("player")
 	local _, classToken = UnitClass("player")
 	return {
@@ -142,7 +184,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 	GS_ExplainState.owner = ownerTooltip
 	GS_ExplainState.itemLink = itemLink
-	if GS_PlayerIsInCombat or not IsControlKeyDown() then
+	if GS_PlayerIsInCombat or not IsControlKeyDown() or (GS_Settings and not GS_Settings["enableExplainTooltip"]) then
 		if GS_ExplainTooltip:IsShown() then
 			GS_ExplainTooltip:Hide()
 		end
@@ -174,38 +216,99 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	else
 		GS_ExplainTooltip:AddDoubleLine("Spec context", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
 	end
-	GS_ExplainTooltip:AddDoubleLine("GearScore2", tostring(gs2), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
-	GS_ExplainTooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
-	GS_ExplainTooltip:AddDoubleLine("PvP GearScore", tostring(pvp), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
-	GS_ExplainTooltip:AddLine(" ")
-	GS_ExplainTooltip:AddLine("Legacy", 0.95, 0.82, 0.18)
-	GS_ExplainTooltip:AddLine("Legacy = iLevel/slot base = " .. tostring(item.legacyBase), 0.88, 0.88, 0.88, true)
-	GS_ExplainTooltip:AddLine(" ")
-	GS_ExplainTooltip:AddLine("GearScore2", 0.25, 0.95, 0.35)
-	GS_ExplainTooltip:AddLine("GearScore2 = floor((legacy + stats + gems + enchant) * multiplierPvE)", 0.88, 0.88, 0.88, true)
-	for index = 1, #explain.pve.parts do
-		GS_AddExplainPart(GS_ExplainTooltip, explain.pve.parts[index].label, explain.pve.parts[index], 0.25, 0.95, 0.35)
+	local showExplainHeader = not GS_Settings or GS_Settings["showExplainHeader"]
+	local showExplainGS2 = not GS_Settings or GS_Settings["showCharacterGS2"]
+	local showExplainLegacyScore = not GS_Settings or GS_Settings["showCharacterLegacy"]
+	local showExplainPvpScore = not GS_Settings or GS_Settings["showCharacterPvp"]
+	local showExplainLegacy = not GS_Settings or GS_Settings["showExplainLegacy"]
+	local showExplainPveFormula = not GS_Settings or GS_Settings["showExplainPveFormula"]
+	local showExplainPveParts = not GS_Settings or GS_Settings["showExplainPveParts"]
+	local showExplainPveTotals = not GS_Settings or GS_Settings["showExplainPveTotals"]
+	local showExplainPvpFormula = not GS_Settings or GS_Settings["showExplainPvpFormula"]
+	local showExplainPvpParts = not GS_Settings or GS_Settings["showExplainPvpParts"]
+	local showExplainPvpTotals = not GS_Settings or GS_Settings["showExplainPvpTotals"]
+	local showExplainFlags = not GS_Settings or GS_Settings["showExplainFlags"]
+	local showExplainTopPveStats = not GS_Settings or GS_Settings["showExplainTopPveStats"]
+	local showExplainTopPvpStats = not GS_Settings or GS_Settings["showExplainTopPvpStats"]
+	local hasPveFlags = showExplainFlags and explain.pve.flags and #explain.pve.flags > 0
+	local hasPvpFlags = showExplainFlags and explain.pvp.flags and #explain.pvp.flags > 0
+	local hasGeneralFlags = showExplainFlags and #explain.flags > 0
+	local showPveSection = showExplainPveFormula or showExplainPveParts or showExplainPveTotals or hasPveFlags
+	local showPvpSection = showExplainPvpFormula or showExplainPvpParts or showExplainPvpTotals or hasPvpFlags
+	if showExplainHeader then
+		if showExplainGS2 then
+			GS_ExplainTooltip:AddDoubleLine("GearScore2", tostring(gs2), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
+		end
+		if showExplainLegacyScore then
+			GS_ExplainTooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
+		end
+		if showExplainPvpScore then
+			GS_ExplainTooltip:AddDoubleLine("PvP GearScore", tostring(pvp), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
+		end
+		if showExplainGS2 or showExplainLegacyScore or showExplainPvpScore then
+			GS_ExplainTooltip:AddLine(" ")
+		end
 	end
-	GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pve.preMultiplier or explain.pve.base or 0), 0.75, 0.95, 0.75, 0.75, 0.95, 0.75)
-	GS_ExplainTooltip:AddDoubleLine("PvE resilience multiplier", "x" .. GS_FormatNumber(explain.pve.multiplier or 1), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
-	GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pve.final), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
-	GS_ExplainTooltip:AddLine(" ")
-	GS_ExplainTooltip:AddLine("PvP GearScore", 0.95, 0.55, 0.25)
-	GS_ExplainTooltip:AddLine("PvP = floor((legacy + stats + gems + enchant) * multiplierPvP)", 0.88, 0.88, 0.88, true)
-	for index = 1, #explain.pvp.parts do
-		GS_AddExplainPart(GS_ExplainTooltip, explain.pvp.parts[index].label, explain.pvp.parts[index], 0.95, 0.55, 0.25)
-	end
-	GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pvp.preMultiplier or explain.pvp.base or 0), 1, 0.8, 0.45, 1, 0.8, 0.45)
-	GS_ExplainTooltip:AddDoubleLine("PvP resilience multiplier", "x" .. GS_FormatNumber(explain.pvp.multiplier or 1), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
-	GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pvp.final), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
-	if #explain.flags > 0 then
+	if showExplainLegacy then
+		GS_ExplainTooltip:AddLine("Legacy", 0.95, 0.82, 0.18)
+		GS_ExplainTooltip:AddLine("Legacy = iLevel/slot base = " .. tostring(item.legacyBase), 0.88, 0.88, 0.88, true)
 		GS_ExplainTooltip:AddLine(" ")
-		GS_ExplainTooltip:AddLine("Flags", 1, 0.35, 0.35)
+	end
+	if showPveSection then
+		GS_ExplainTooltip:AddLine("GearScore2", 0.25, 0.95, 0.35)
+		if showExplainPveFormula then
+			GS_ExplainTooltip:AddLine("GearScore2 = floor((legacy + stats + gems + enchant) * multiplierPvE)", 0.88, 0.88, 0.88, true)
+		end
+		if showExplainPveParts then
+			for index = 1, #explain.pve.parts do
+				GS_AddExplainPart(GS_ExplainTooltip, explain.pve.parts[index].label, explain.pve.parts[index], 0.25, 0.95, 0.35)
+			end
+		end
+		if showExplainPveTotals then
+			GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pve.preMultiplier or explain.pve.base or 0), 0.75, 0.95, 0.75, 0.75, 0.95, 0.75)
+			GS_ExplainTooltip:AddDoubleLine("PvE resilience multiplier", "x" .. GS_FormatNumber(explain.pve.multiplier or 1), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
+			GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pve.final), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
+		end
+		if hasPveFlags then
+			GS_ExplainTooltip:AddLine("PvE flags", 1, 0.35, 0.35)
+			for index = 1, #explain.pve.flags do
+				GS_ExplainTooltip:AddLine(" - " .. explain.pve.flags[index], 1, 0.55, 0.55, true)
+			end
+		end
+	end
+	if showPvpSection then
+		if showPveSection then
+			GS_ExplainTooltip:AddLine(" ")
+		end
+		GS_ExplainTooltip:AddLine("PvP GearScore", 0.95, 0.55, 0.25)
+		if showExplainPvpFormula then
+			GS_ExplainTooltip:AddLine("PvP = floor((legacy + stats + gems + enchant) * multiplierPvP)", 0.88, 0.88, 0.88, true)
+		end
+		if showExplainPvpParts then
+			for index = 1, #explain.pvp.parts do
+				GS_AddExplainPart(GS_ExplainTooltip, explain.pvp.parts[index].label, explain.pvp.parts[index], 0.95, 0.55, 0.25)
+			end
+		end
+		if showExplainPvpTotals then
+			GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pvp.preMultiplier or explain.pvp.base or 0), 1, 0.8, 0.45, 1, 0.8, 0.45)
+			GS_ExplainTooltip:AddDoubleLine("PvP resilience multiplier", "x" .. GS_FormatNumber(explain.pvp.multiplier or 1), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
+			GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pvp.final), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
+		end
+		if hasPvpFlags then
+			GS_ExplainTooltip:AddLine("PvP flags", 1, 0.35, 0.35)
+			for index = 1, #explain.pvp.flags do
+				GS_ExplainTooltip:AddLine(" - " .. explain.pvp.flags[index], 1, 0.55, 0.55, true)
+			end
+		end
+	end
+	if hasGeneralFlags then
+		GS_ExplainTooltip:AddLine(" ")
+		GS_ExplainTooltip:AddLine("General flags", 1, 0.35, 0.35)
 		for index = 1, #explain.flags do
 			GS_ExplainTooltip:AddLine(" - " .. explain.flags[index], 1, 0.55, 0.55, true)
 		end
 	end
-	if explain.pve.statEntries and #explain.pve.statEntries > 0 then
+	if showExplainTopPveStats and explain.pve.statEntries and #explain.pve.statEntries > 0 then
 		GS_ExplainTooltip:AddLine(" ")
 		GS_ExplainTooltip:AddLine("Top PvE stats", 0.45, 0.85, 1)
 		for index = 1, math.min(4, #explain.pve.statEntries) do
@@ -213,7 +316,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 			GS_ExplainTooltip:AddLine("  " .. entry.stat .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 0.78, 0.92, 1, true)
 		end
 	end
-	if explain.pvp.statEntries and #explain.pvp.statEntries > 0 then
+	if showExplainTopPvpStats and explain.pvp.statEntries and #explain.pvp.statEntries > 0 then
 		GS_ExplainTooltip:AddLine(" ")
 		GS_ExplainTooltip:AddLine("Top PvP stats", 1, 0.72, 0.35)
 		for index = 1, math.min(4, #explain.pvp.statEntries) do
@@ -246,13 +349,18 @@ function GS_AddItemLines(tooltip, itemLink)
 	end
 	if context and (not context.gs2Available or not context.specKey) then
 		tooltip:AddDoubleLine("Spec", "Unknown", 1, 0.65, 0.65, 1, 0.65, 0.65)
-		tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
-		if GS_Settings["Level"] == 1 then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
+		if not GS_Settings or GS_Settings["showItemLegacy"] then
+			local lr, lg, lb = GearScore_GetQuality(item.legacyBase)
+			tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), lr, lg, lb, lr, lg, lb)
+		end
+		if GS_Settings["Level"] == 1 and (not GS_Settings or GS_Settings["showItemLevel"]) then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
 		GS_HideExplainTooltip()
 		return
 	end
 	local gs2, pvp = GS_ScoreItem(item, context.classToken, context.specKey)
 	local r, g, b = GearScore_GetQuality(gs2)
+	local lr, lg, lb = GearScore_GetQuality(item.legacyBase)
+	local pr, pg, pb = GearScore_GetQuality(pvp)
 	if context.specSource == "cached" then
 		tooltip:AddDoubleLine("Spec", (context.specLabel or GS_GetSpecLabel(context.specKey)) .. " [CACHED]", 0.85, 0.9, 1, 0.85, 0.9, 1)
 	elseif context.specSource == "inferred" then
@@ -260,10 +368,16 @@ function GS_AddItemLines(tooltip, itemLink)
 	elseif context and context.unit and not UnitIsUnit(context.unit, "player") then
 		tooltip:AddDoubleLine("Spec", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
 	end
-	tooltip:AddDoubleLine("GearScore2", tostring(gs2), r, g, b, r, g, b)
-	tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
-	tooltip:AddDoubleLine("PvP GearScore", tostring(pvp), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
-	if GS_Settings["Level"] == 1 then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
+	if not GS_Settings or GS_Settings["showItemGS2"] then
+		tooltip:AddDoubleLine("GearScore2", tostring(gs2), r, g, b, r, g, b)
+	end
+	if not GS_Settings or GS_Settings["showItemLegacy"] then
+		tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), lr, lg, lb, lr, lg, lb)
+	end
+	if not GS_Settings or GS_Settings["showItemPvp"] then
+		tooltip:AddDoubleLine("PvP GearScore", tostring(pvp), pr, pg, pb, pr, pg, pb)
+	end
+	if GS_Settings["Level"] == 1 and (not GS_Settings or GS_Settings["showItemLevel"]) then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
 	GS_RenderExplainTooltip(tooltip, itemLink)
 end
 
@@ -300,7 +414,7 @@ function GearScore_HookSetUnit()
 			GS_QueueInspect(unit)
 		end
 		GS_AddScoreLines(GameTooltip, record)
-		if GS_Settings["Compare"] == 1 and record.gs2Available then
+		if GS_Settings["Compare"] == 1 and (not GS_Settings or GS_Settings["showCharacterCompare"]) and record.gs2Available then
 			local mine = GS_GetRecord("player")
 			if mine then
 				local diff = mine.gs2 - record.gs2
@@ -309,7 +423,7 @@ function GearScore_HookSetUnit()
 				else GameTooltip:AddDoubleLine("Your GearScore2", tostring(mine.gs2) .. " (+0)", 0, 1, 1, 0, 1, 1) end
 			end
 		end
-		if GS_Settings["Special"] == 1 and GS_Special[name] then GameTooltip:AddLine(GS_Special[GS_Special[name].Type], 1, 0, 0) end
+		if GS_Settings["Special"] == 1 and (not GS_Settings or GS_Settings["showCharacterSpecial"]) and GS_Special[name] then GameTooltip:AddLine(GS_Special[GS_Special[name].Type], 1, 0, 0) end
 	else
 		GameTooltip:AddLine(GS_SCAN_TEXT, 0.95, 0.82, 0.18)
 		if ((not GS_Settings["MustTarget"]) or UnitIsUnit("target", unit)) and CanInspect(unit) then GS_QueueInspect(unit) end
@@ -317,7 +431,12 @@ function GearScore_HookSetUnit()
 end
 
 function GearScore_HookSetItem()
-	if not GS_PlayerIsInCombat then local _, link = GameTooltip:GetItem() GS_AddItemLines(GameTooltip, link) else GS_HideExplainTooltip() end
+	if not GS_PlayerIsInCombat then
+		local _, link = GameTooltip:GetItem()
+		GS_AddItemLines(GameTooltip, link)
+	else
+		GS_HideExplainTooltip()
+	end
 end
 
 function GearScore_HookRefItem()

@@ -13,3 +13,4 @@ score_logic.lua
 inspect_logic.lua
 tooltip_logic.lua
 ui.lua
+settings.lua

@@ -252,8 +252,8 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 			specKey = resolvedSpecKey,
 			compatible = compatible,
 			legacyBase = item.legacyBase,
-			pve = { base = item.legacyBase, preMultiplier = item.legacyBase, multiplier = 1, parts = {}, statEntries = GS_BuildTopStats(item.stats, profile and profile.pve or nil), final = 0 },
-			pvp = { base = item.legacyBase, preMultiplier = item.legacyBase, multiplier = 1, parts = {}, statEntries = GS_BuildTopStats(item.stats, profile and profile.pvp or nil), final = 0 },
+			pve = { base = item.legacyBase, preMultiplier = item.legacyBase, multiplier = 1, parts = {}, statEntries = GS_BuildTopStats(item.stats, profile and profile.pve or nil), flags = {}, final = 0 },
+			pvp = { base = item.legacyBase, preMultiplier = item.legacyBase, multiplier = 1, parts = {}, statEntries = GS_BuildTopStats(item.stats, profile and profile.pvp or nil), flags = {}, final = 0 },
 			flags = {},
 			itemName = item.name,
 		}
@@ -292,8 +292,8 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 				local pvpFormula = gemPvpRaw > 0 and ("(" .. GS_FormatNumber(gemPvpRaw) .. " * " .. GS_FormatNumber(GS_GEM_SCALE) .. ")") or ("(" .. GS_FormatNumber(gemPvpRaw) .. " <= 0 => +0)")
 				explain.pve.parts[#explain.pve.parts + 1] = { label = "Gem " .. index, formula = pveFormula, delta = gemPveBonus }
 				explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Gem " .. index, formula = pvpFormula, delta = gemPvpBonus }
-				if gemPveRaw <= 0 then explain.flags[#explain.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey .. " (PvE)" end
-				if gemPvpRaw <= 0 then explain.flags[#explain.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey .. " (PvP)" end
+				if gemPveRaw <= 0 then explain.pve.flags[#explain.pve.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey end
+				if gemPvpRaw <= 0 then explain.pvp.flags[#explain.pvp.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey end
 			end
 		elseif explain and item.socketCount >= index then
 			explain.pve.parts[#explain.pve.parts + 1] = { label = "Gem " .. index, formula = "(empty socket => +0)", delta = 0 }
@@ -315,8 +315,8 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 				if enchantInfo and enchantInfo.kind == "stats" and enchantStats then
 					pveFormula = pveEnchantRaw > 0 and ("(" .. GS_FormatNumber(pveEnchantRaw) .. " * " .. GS_FormatNumber(GS_ENCHANT_SCALE) .. ")") or ("(" .. GS_FormatNumber(pveEnchantRaw) .. " <= 0 => +0)")
 					pvpFormula = pvpEnchantRaw > 0 and ("(" .. GS_FormatNumber(pvpEnchantRaw) .. " * " .. GS_FormatNumber(GS_ENCHANT_SCALE) .. ")") or ("(" .. GS_FormatNumber(pvpEnchantRaw) .. " <= 0 => +0)")
-					if pveEnchantRaw <= 0 then explain.flags[#explain.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey .. " (PvE)" end
-					if pvpEnchantRaw <= 0 then explain.flags[#explain.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey .. " (PvP)" end
+					if pveEnchantRaw <= 0 then explain.pve.flags[#explain.pve.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey end
+					if pvpEnchantRaw <= 0 then explain.pvp.flags[#explain.pvp.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey end
 				elseif enchantInfo and enchantInfo.kind == "special" then
 					pveFormula = "(special effect => +0)"
 					pvpFormula = "(special effect => +0)"
@@ -345,7 +345,9 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 		explain.pvp.preMultiplier = pvpBaseScore
 		explain.pve.multiplier = pveMultiplier
 		explain.pvp.multiplier = pvpMultiplier
-		explain.flags[#explain.flags + 1] = "Resilience: " .. (item.resilience or 0)
+		if (item.resilience or 0) > 0 then
+			explain.flags[#explain.flags + 1] = "Resilience: " .. (item.resilience or 0)
+		end
 		explain.pve.parts[#explain.pve.parts + 1] = { label = "PvE resilience multiplier", formula = "max(" .. GS_FormatNumber(GS_PVE_RESILIENCE_FLOOR) .. ", 1 - (" .. item.resilience .. " * " .. GS_FormatNumber(GS_PVE_RESILIENCE_RATE) .. "))", delta = pveScore - pveBaseScore }
 		explain.pvp.parts[#explain.pvp.parts + 1] = { label = "PvP resilience multiplier", formula = "min(" .. GS_FormatNumber(GS_PVP_RESILIENCE_CAP) .. ", 1 + (" .. item.resilience .. " * " .. GS_FormatNumber(GS_PVP_RESILIENCE_RATE) .. "))", delta = pvpScore - pvpBaseScore }
 		explain.pve.final = pveScore
