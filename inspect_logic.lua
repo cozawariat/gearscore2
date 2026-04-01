@@ -407,7 +407,6 @@ function GS_ProcessInspectQueue()
 		return
 	end
 	if active and (now - active.startedAt) > GS_ACTIVE_TIMEOUT then GS_ClearInspectIfSafe() GS_InspectState.active = nil end
-	if GS_IsExternalInspectOpen() then return end
 	if GS_InspectState.active or (now - GS_InspectState.lastInspectAt) < GS_INSPECT_THROTTLE then return end
 	while #GS_InspectQueue > 0 do
 		local request = table.remove(GS_InspectQueue, 1)
