@@ -5,7 +5,7 @@
 ## Author: Mizianolas [Warmane-Onyxia(A)]
 ## SavedVariables: GS2_Settings
 
-# Original authors of GearScoreLite: Reborn
+# Original authors
 # Mirrikat45, Gnomezilla [Warmane-Icecrown(A)]
 
 informationLite.lua

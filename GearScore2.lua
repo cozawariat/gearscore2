@@ -1,6 +1,5 @@
 -------------------------------------------------------------------------------
---                            GearScore2: Reborn                             --
---                             Version 3x06                                  --
+--                               GearScore2                                  --
 -------------------------------------------------------------------------------
 
 local floor, pairs, ipairs, select, tonumber, tostring = floor, pairs, ipairs, select, tonumber, tostring
@@ -668,7 +667,7 @@ local function GS_OnEvent(_, event, ...)
 	end
 	if event == "ADDON_LOADED" then
 		local addonName = ...
-		if addonName ~= "GearScoreAI" and addonName ~= "GearScoreLite" then return end
+		if addonName ~= "GearScore2" then return end
 		if not GS2_Settings then
 			GS2_Settings = GS_Settings or GS_DefaultSettings
 		end

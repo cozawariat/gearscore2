@@ -10,7 +10,6 @@ Use it as the first-reference project brief for future sessions. Follow it by de
 
 - This repository contains a World of Warcraft 3.3.5a addon targeting Interface `30300`.
 - The current addon branding is `GearScore2`.
-- The repository/folder name may still remain `GearScoreAI` for technical compatibility.
 - The project is a hobby addon focused on building a smarter alternative to classic `GearScore`, not a strict reimplementation of it.
 - The main product goal is practical usefulness: a score that is more spec-aware, explainable, and PvE-relevant than the original item-level-heavy model.
 - `GearScore2` is an evolving system. Weights, thresholds, cap profiles, and edge-case handling may continue to change as the addon improves.

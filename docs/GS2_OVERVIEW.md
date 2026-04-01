@@ -4,6 +4,8 @@
 
 GearScore2 is a hobby project.
 
+This addon is the successor to `GearScoreLite: Reborn` (https://github.com/Arcitec/GearScoreLite_Reborn).
+
 I am fully aware that the chance of the wider WoW 3.3.5a community abandoning classic `GearScore` and migrating to `GS2` is probably very small, even if that would be the dream outcome.
 
 That is not really the main point.
@@ -37,8 +39,8 @@ This document is a shortened overview of the scoring model, focused on the most 
 
 Use this file when you want the high-level logic without the full implementation detail from:
 
-- [GS_ALGORITHM.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScoreAI/docs/GS_ALGORITHM.md)
-- [GS_RUNTIME_TABLES.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScoreAI/docs/GS_RUNTIME_TABLES.md)
+- [GS_ALGORITHM.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScore2/docs/GS_ALGORITHM.md)
+- [GS_RUNTIME_TABLES.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScore2/docs/GS_RUNTIME_TABLES.md)
 
 ## 2. What GearScore2 Measures
 
@@ -221,5 +223,5 @@ In practice, `GearScore2` should be read like this:
 
 If you need the exact formulas, thresholds, or spec tables, use:
 
-- [GS_ALGORITHM.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScoreAI/docs/GS_ALGORITHM.md)
-- [GS_RUNTIME_TABLES.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScoreAI/docs/GS_RUNTIME_TABLES.md)
+- [GS_ALGORITHM.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScore2/docs/GS_ALGORITHM.md)
+- [GS_RUNTIME_TABLES.md](/d:/World%20of%20Warcraft%203.3.5a/Interface/AddOns/GearScore2/docs/GS_RUNTIME_TABLES.md)
