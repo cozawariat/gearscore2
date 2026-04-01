@@ -1,6 +1,6 @@
 # GearScore2 Overview
 
-[![The San Juan Mountains are beautiful](/docs/GearScore2_character_tooltip.png "San Juan Mountains")](docs/GearScore2_character_tooltip.png)
+[![Character tooltip settings](/docs/GearScore2_character_tooltip.png "Character tooltip settings")](docs/GearScore2_character_tooltip.png)
 
 ## Intro
 
@@ -49,7 +49,7 @@ You should treat `GS2` as an evolving system rather than a finished standard, bu
 | Same item for different specs | Can score differently | Mostly same outcome |
 | Best use | PvE gearing quality | Fast rough comparison |
 
-[![The San Juan Mountains are beautiful](/docs/GearScore2_item_tooltip.png "San Juan Mountains")](docs/GearScore2_item_tooltip.png)
+[![Item tooltip settings](/docs/GearScore2_item_tooltip.png "Item tooltip settings")](docs/GearScore2_item_tooltip.png)
 
 ## Table of Contents
 
