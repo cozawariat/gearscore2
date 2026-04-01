@@ -354,6 +354,26 @@ function GS_TryShowExplainFromOwner(ownerTooltip)
 	end
 end
 
+local function GS2_GetItemTooltipQualityColor(score)
+	local value = tonumber(score) or 0
+	if value >= 500 then
+		return 0.94, 0.47, 0.00
+	end
+	if value >= 400 then
+		return 1.00, 0.50, 0.00
+	end
+	if value >= 300 then
+		return 0.69, 0.28, 0.97
+	end
+	if value >= 200 then
+		return 0.00, 0.50, 1.00
+	end
+	if value >= 100 then
+		return 0.12, 1.00, 0.00
+	end
+	return 0.55, 0.55, 0.55
+end
+
 function GS_AddItemLines(tooltip, itemLink)
 	if not itemLink or not IsEquippableItem(itemLink) then return end
 	local item = GS_GetItemData(itemLink)
@@ -367,7 +387,7 @@ function GS_AddItemLines(tooltip, itemLink)
 	if context and (not context.gs2Available or not context.specKey) then
 		tooltip:AddDoubleLine("Spec", "Unknown", 1, 0.65, 0.65, 1, 0.65, 0.65)
 		if not GS_Settings or GS_Settings["showItemLegacy"] then
-			local lr, lg, lb = GS2_GetQuality(item.legacyBase)
+			local lr, lg, lb = GS2_GetItemTooltipQualityColor(item.legacyBase)
 			tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), lr, lg, lb, lr, lg, lb)
 		end
 		if GS_Settings["Level"] == 1 and (not GS_Settings or GS_Settings["showItemLevel"]) then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
@@ -375,9 +395,9 @@ function GS_AddItemLines(tooltip, itemLink)
 		return
 	end
 	local gs2, pvp = GS_ScoreItem(item, context.classToken, context.specKey)
-	local r, g, b = GS2_GetQuality(gs2)
-	local lr, lg, lb = GS2_GetQuality(item.legacyBase)
-	local pr, pg, pb = GS2_GetQuality(pvp)
+	local r, g, b = GS2_GetItemTooltipQualityColor(gs2)
+	local lr, lg, lb = GS2_GetItemTooltipQualityColor(item.legacyBase)
+	local pr, pg, pb = GS2_GetItemTooltipQualityColor(pvp)
 	if context and context.unit and not UnitIsUnit(context.unit, "player") then
 		tooltip:AddDoubleLine("Spec", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
 	end

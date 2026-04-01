@@ -18,14 +18,7 @@ end
 
 function GS_UpdatePaperDoll()
 	if GS_PlayerIsInCombat then return end
-	local record = GS_GetRecord("player")
-	if not record then return end
-	local r, g, b = GS2_GetQuality(record.gs2)
-	PersonalGearScore:SetText(tostring(record.gs2)) PersonalGearScore:SetTextColor(r, g, b, 1)
-	LegacyGearScoreText:SetText(tostring(record.legacy)) LegacyGearScoreText:SetTextColor(0.8, 0.8, 0.8, 1)
-	PvPGearScoreText:SetText(tostring(record.pvp)) PvPGearScoreText:SetTextColor(0.95, 0.55, 0.25, 1)
-	CapSummaryText:SetText(record.capBreakdown and record.capBreakdown.summary or "")
-	CapSummaryText:SetTextColor(0.72, 0.88, 1, 1)
+	GS_GetRecord("player")
 end
 
 function GS_MANSET(command)
@@ -128,23 +121,6 @@ GameTooltip:HookScript("OnTooltipSetItem", GS2_HookSetItem)
 ShoppingTooltip1:HookScript("OnTooltipSetItem", GS2_HookCompareItem)
 ShoppingTooltip2:HookScript("OnTooltipSetItem", GS2_HookCompareItem2)
 ItemRefTooltip:HookScript("OnTooltipSetItem", GS2_HookRefItem)
-PaperDollFrame:HookScript("OnShow", GS_UpdatePaperDoll)
-
-PaperDollFrame:CreateFontString("PersonalGearScore")
-PaperDollFrame:CreateFontString("GearScore2Label")
-PaperDollFrame:CreateFontString("LegacyGearScoreText")
-PaperDollFrame:CreateFontString("LegacyGearScoreLabel")
-PaperDollFrame:CreateFontString("PvPGearScoreText")
-PaperDollFrame:CreateFontString("PvPGearScoreLabel")
-PaperDollFrame:CreateFontString("CapSummaryText")
-
-PersonalGearScore:SetFont("Fonts\\FRIZQT__.TTF", 12) PersonalGearScore:SetText("0") PersonalGearScore:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 72, -248) PersonalGearScore:Show()
-GearScore2Label:SetFont("Fonts\\FRIZQT__.TTF", 12) GearScore2Label:SetText("GearScore2") GearScore2Label:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 72, -260) GearScore2Label:Show()
-LegacyGearScoreText:SetFont("Fonts\\FRIZQT__.TTF", 12) LegacyGearScoreText:SetText("0") LegacyGearScoreText:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 152, -248) LegacyGearScoreText:Show()
-LegacyGearScoreLabel:SetFont("Fonts\\FRIZQT__.TTF", 12) LegacyGearScoreLabel:SetText("Legacy") LegacyGearScoreLabel:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 152, -260) LegacyGearScoreLabel:Show()
-PvPGearScoreText:SetFont("Fonts\\FRIZQT__.TTF", 12) PvPGearScoreText:SetText("0") PvPGearScoreText:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 232, -248) PvPGearScoreText:Show()
-PvPGearScoreLabel:SetFont("Fonts\\FRIZQT__.TTF", 12) PvPGearScoreLabel:SetText("PvP") PvPGearScoreLabel:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 232, -260) PvPGearScoreLabel:Show()
-CapSummaryText:SetFont("Fonts\\FRIZQT__.TTF", 11) CapSummaryText:SetText("") CapSummaryText:SetPoint("TOPLEFT", PaperDollFrame, "TOPLEFT", 72, -62) CapSummaryText:SetWidth(220) CapSummaryText:SetJustifyH("LEFT") CapSummaryText:Show()
 
 GS_OriginalSetInventoryItem = GameTooltip.SetInventoryItem
 GameTooltip.SetInventoryItem = GS2_OnEnter
