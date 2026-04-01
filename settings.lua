@@ -3,7 +3,6 @@
 -------------------------------------------------------------------------------
 
 GS_OptionsBindings = {}
-GS_StandaloneOptionsFrame = nil
 GS_InterfaceOptionsPanel = nil
 GS_MinimapButton = nil
 
@@ -33,15 +32,30 @@ GS_OptionsSections = {
 		items = {
 			{ key = "enableExplainTooltip", label = "Enable explain tooltip on CTRL" },
 			{ key = "showExplainHeader", label = "Show summary header" },
+			{ key = "showExplainFlags", label = "Show flags" },
+		},
+	},
+	{
+		title = "Explain Tooltip - Legacy",
+		items = {
 			{ key = "showExplainLegacy", label = "Show legacy section" },
+		},
+	},
+	{
+		title = "Explain Tooltip - PvE",
+		items = {
 			{ key = "showExplainPveFormula", label = "Show PvE formula line" },
 			{ key = "showExplainPveParts", label = "Show PvE parts list" },
 			{ key = "showExplainPveTotals", label = "Show PvE totals and multiplier" },
+			{ key = "showExplainTopPveStats", label = "Show top PvE stats" },
+		},
+	},
+	{
+		title = "Explain Tooltip - PvP",
+		items = {
 			{ key = "showExplainPvpFormula", label = "Show PvP formula line" },
 			{ key = "showExplainPvpParts", label = "Show PvP parts list" },
 			{ key = "showExplainPvpTotals", label = "Show PvP totals and multiplier" },
-			{ key = "showExplainFlags", label = "Show flags" },
-			{ key = "showExplainTopPveStats", label = "Show top PvE stats" },
 			{ key = "showExplainTopPvpStats", label = "Show top PvP stats" },
 		},
 	},
@@ -138,11 +152,14 @@ local function GS_OnSettingChanged(key, enabled)
 	GS_RefreshVisibleTooltips()
 end
 
-local function GS_CreateCheckbox(parent, key, label, anchor, offsetY)
+local function GS_CreateCheckbox(parent, key, label, anchor, offsetY, offsetX, textWidth)
 	local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-	checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, offsetY)
+	checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", offsetX or 0, offsetY)
+	checkbox:SetScale(0.85)
 	checkbox.text = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	checkbox.text:SetPoint("LEFT", checkbox, "RIGHT", 4, 1)
+	checkbox.text:SetWidth(textWidth or 160)
+	checkbox.text:SetJustifyH("LEFT")
 	checkbox.text:SetText(label)
 	checkbox:SetScript("OnClick", function(self)
 		GS_OnSettingChanged(key, self:GetChecked() and true or false)
@@ -172,6 +189,10 @@ local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottom
 	scrollFrame:SetScrollChild(content)
 
 	local anchor = content
+	local columnGap = 18
+	local columnWidth = floor((viewportWidth - columnGap) / 2)
+	local columnOffset = columnWidth + columnGap
+	local columnTextWidth = columnWidth - 38
 	local header = content:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	header:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 	header:SetWidth(viewportWidth - 12)
@@ -182,12 +203,19 @@ local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottom
 	for sectionIndex = 1, #GS_OptionsSections do
 		local section = GS_OptionsSections[sectionIndex]
 		local title = GS_CreateSectionHeader(content, section.title, anchor, -18)
-		anchor = title
-		for itemIndex = 1, #section.items do
-			local option = section.items[itemIndex]
-			local checkbox = GS_CreateCheckbox(content, option.key, option.label, anchor, -8)
-			anchor = checkbox
+		local rowAnchor = title
+		local sectionBottom = title
+		for itemIndex = 1, #section.items, 2 do
+			local leftOption = section.items[itemIndex]
+			local rightOption = section.items[itemIndex + 1]
+			local leftCheckbox = GS_CreateCheckbox(content, leftOption.key, leftOption.label, rowAnchor, -8, 0, columnTextWidth)
+			if rightOption then
+				GS_CreateCheckbox(content, rightOption.key, rightOption.label, rowAnchor, -8, columnOffset + columnGap, columnTextWidth)
+			end
+			rowAnchor = leftCheckbox
+			sectionBottom = leftCheckbox
 		end
+		anchor = sectionBottom
 	end
 
 	local footer = content:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
@@ -198,53 +226,6 @@ local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottom
 
 	content:SetHeight(860)
 	return scrollFrame, content
-end
-
-local function GS_CreateStandaloneOptionsFrame()
-	if GS_StandaloneOptionsFrame then
-		return GS_StandaloneOptionsFrame
-	end
-
-	local frame = CreateFrame("Frame", "GS2StandaloneOptionsFrame", UIParent)
-	frame:SetWidth(460)
-	frame:SetHeight(560)
-	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-	frame:SetFrameStrata("DIALOG")
-	frame:SetToplevel(true)
-	frame:EnableMouse(true)
-	frame:SetMovable(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-	frame:SetBackdrop({
-		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = true,
-		tileSize = 16,
-		edgeSize = 16,
-		insets = { left = 4, right = 4, top = 4, bottom = 4 },
-	})
-	frame:SetBackdropColor(0.07, 0.07, 0.09, 0.96)
-	frame:SetBackdropBorderColor(0.65, 0.75, 1.00, 0.90)
-	frame:Hide()
-
-	local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -14)
-	title:SetText("GearScore2 Settings")
-
-	local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-	close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -6)
-
-	local openInterface = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	openInterface:SetWidth(170)
-	openInterface:SetHeight(22)
-	openInterface:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -16, 12)
-	openInterface:SetText("Open Interface Options")
-	openInterface:SetScript("OnClick", GS_OpenInterfaceOptionsCategory)
-
-	GS_BuildOptionsContent(frame, 392, -48, 42)
-	GS_StandaloneOptionsFrame = frame
-	return frame
 end
 
 local function GS_CreateInterfaceOptionsPanel()
@@ -263,7 +244,7 @@ local function GS_CreateInterfaceOptionsPanel()
 	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
 	subtitle:SetText("Native settings for tooltip output, explain sections, and the minimap button.")
 
-	GS_BuildOptionsContent(panel, 560, -56, 16)
+	GS_BuildOptionsContent(panel, 400, -56, 16)
 
 	panel.refresh = GS_RefreshOptionsUI
 	panel:SetScript("OnShow", GS_RefreshOptionsUI)
@@ -325,7 +306,7 @@ local function GS_CreateMinimapButton()
 	button.icon = icon
 
 	button:SetScript("OnClick", function()
-		GS_ToggleOptionsPanel()
+		GS_OpenInterfaceOptionsCategory()
 	end)
 	button:SetScript("OnDragStart", function(self)
 		self:SetScript("OnUpdate", GS_UpdateMinimapButtonDrag)
@@ -337,7 +318,7 @@ local function GS_CreateMinimapButton()
 	button:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 		GameTooltip:AddLine("GearScore2", 0.82, 0.92, 1.0)
-		GameTooltip:AddLine("Left-click to toggle settings.", 0.9, 0.9, 0.9)
+		GameTooltip:AddLine("Left-click to open Interface Options.", 0.9, 0.9, 0.9)
 		GameTooltip:AddLine("Drag to move around the minimap.", 0.9, 0.9, 0.9)
 		GameTooltip:Show()
 	end)
@@ -351,21 +332,11 @@ local function GS_CreateMinimapButton()
 end
 
 function GS_OpenOptionsPanel()
-	local frame = GS_CreateStandaloneOptionsFrame()
-	frame:Show()
-	frame:Raise()
-	GS_RefreshOptionsUI()
+	GS_OpenInterfaceOptionsCategory()
 end
 
 function GS_ToggleOptionsPanel()
-	local frame = GS_CreateStandaloneOptionsFrame()
-	if frame:IsShown() then
-		frame:Hide()
-	else
-		frame:Show()
-		frame:Raise()
-	end
-	GS_RefreshOptionsUI()
+	GS_OpenInterfaceOptionsCategory()
 end
 
 function GS_OpenInterfaceOptionsCategory()
@@ -381,7 +352,6 @@ function GS_InitializeSettings()
 	end
 	GS_CopyDefaults(GS2_Settings, GS_DefaultSettings)
 	GS_Settings = GS2_Settings
-	GS_CreateStandaloneOptionsFrame()
 	GS_CreateInterfaceOptionsPanel()
 	GS_CreateMinimapButton()
 	GS_RefreshOptionsUI()
