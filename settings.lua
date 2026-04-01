@@ -17,7 +17,6 @@ GS_OptionsSections = {
 			{ key = "showCharacterAverage", label = "Show Average iLevel" },
 			{ key = "showCharacterCapSummary", label = "Show cap summary" },
 			{ key = "showCharacterCompare", label = "Show compare line" },
-			{ key = "showCharacterSpecial", label = "Show special tag" },
 		},
 	},
 	{

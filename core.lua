@@ -29,7 +29,7 @@ GS_InspectQueue = {}
 GS_InspectCache = {}
 GS_ItemCache = {}
 GS_ParsedLinkCache = {}
-GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, lastConfirmedSpecByGuid = {}, hoverGuid = nil, hoverStartedAt = 0 }
+GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
 GS_ExplainState = { owner = nil, itemLink = nil, itemSlot = nil }
 GS_TooltipInventoryContext = { unit = nil, slot = nil, guid = nil }
 GS_DebugInspectEnabled = false

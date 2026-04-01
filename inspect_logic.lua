@@ -243,15 +243,10 @@ function GS_BuildRecord(snapshot)
 	if snapshot.specResolved and snapshot.specKey then
 		capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot)
 		gs2 = gs2 + (capAdjustedGs2 or 0)
-		if snapshot.specSource == "live" then
-			GS_InspectState.lastConfirmedSpecByGuid[snapshot.guid] = snapshot.specKey
-		end
 	end
 	local specLabel = snapshot.specKey and GS_GetSpecLabel(snapshot.specKey) or "Unknown"
 	local scanStatusText = snapshot.specResolved and specLabel or "Spec unknown"
-	if snapshot.specResolved and snapshot.specSource == "cached" then
-		scanStatusText = specLabel .. " [CACHED]"
-	elseif snapshot.specResolved and snapshot.specSource == "inferred" then
+	if snapshot.specResolved and snapshot.specSource == "inferred" then
 		scanStatusText = specLabel .. " [INFERRED]"
 	end
 	cached = {
