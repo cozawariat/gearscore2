@@ -246,9 +246,6 @@ function GS_BuildRecord(snapshot)
 	end
 	local specLabel = snapshot.specKey and GS_GetSpecLabel(snapshot.specKey) or "Unknown"
 	local scanStatusText = snapshot.specResolved and specLabel or "Spec unknown"
-	if snapshot.specResolved and snapshot.specSource == "inferred" then
-		scanStatusText = specLabel .. " [INFERRED]"
-	end
 	cached = {
 		guid = snapshot.guid,
 		name = snapshot.name,

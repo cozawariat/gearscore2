@@ -1,5 +1,7 @@
 # GearScore2 Overview
 
+[![The San Juan Mountains are beautiful](/docs/GearScore2_character_tooltip.png "San Juan Mountains")](docs/GearScore2_character_tooltip.png)
+
 ## Intro
 
 GearScore2 is a hobby project.
@@ -28,14 +30,33 @@ If you ever felt that classic `GearScore` was too easy to game, too shallow, or 
 
 You should treat `GS2` as an evolving system rather than a finished standard, but it is already useful, already playable, and already strong enough to compare against the old model in real gear decisions.
 
+## GearScore2 vs Legacy GearScore
+
+| Area | GearScore2 | Legacy GearScore |
+|---|---|---|
+| Main goal | PvE usefulness | Item-level-style gear estimate |
+| Base math | Starts from legacy base, then adjusts | Pure legacy formula |
+| Class/spec aware | Yes | No |
+| Off-spec filtering | Yes | No |
+| Stat weights | Yes, per spec | No |
+| Gems | Matching gems add score | Ignored |
+| Enchants | Matching enchants add score | Ignored |
+| Missing gem/enchant | `+0`, no direct penalty | Ignored |
+| PvP `Resilience` in PvE | Reduces score through multiplier | Ignored |
+| Character stat caps | Yes, for final character `GS2` | No |
+| Overcap waste handling | Yes | No |
+| Same item for different specs | Can score differently | Mostly same outcome |
+| Best use | PvE gearing quality | Fast rough comparison |
+
+[![The San Juan Mountains are beautiful](/docs/GearScore2_item_tooltip.png "San Juan Mountains")](docs/GearScore2_item_tooltip.png)
+
 ## Table of Contents
 
 - [1. Purpose](#1-purpose)
 - [2. What GearScore2 Measures](#2-what-gearscore2-measures)
 - [3. Core GearScore2 Rules](#3-core-gearscore2-rules)
 - [4. Character Cap Logic](#4-character-cap-logic)
-- [5. GearScore2 vs Legacy GearScore](#5-gearscore2-vs-legacy-gearscore)
-- [6. Practical Reading Guide](#6-practical-reading-guide)
+- [5. Practical Reading Guide](#5-practical-reading-guide)
 
 ## 1. Purpose
 
@@ -195,25 +216,7 @@ Current examples:
 
 The addon does not assume invisible raid debuffs by default. If runtime cannot read them, they are not counted.
 
-## 5. GearScore2 vs Legacy GearScore
-
-| Area | GearScore2 | Legacy GearScore |
-|---|---|---|
-| Main goal | PvE usefulness | Item-level-style gear estimate |
-| Base math | Starts from legacy base, then adjusts | Pure legacy formula |
-| Class/spec aware | Yes | No |
-| Off-spec filtering | Yes | No |
-| Stat weights | Yes, per spec | No |
-| Gems | Matching gems add score | Ignored |
-| Enchants | Matching enchants add score | Ignored |
-| Missing gem/enchant | `+0`, no direct penalty | Ignored |
-| PvP `Resilience` in PvE | Reduces score through multiplier | Ignored |
-| Character stat caps | Yes, for final character `GS2` | No |
-| Overcap waste handling | Yes | No |
-| Same item for different specs | Can score differently | Mostly same outcome |
-| Best use | PvE gearing quality | Fast rough comparison |
-
-## 6. Practical Reading Guide
+## 5. Practical Reading Guide
 
 In practice, `GearScore2` should be read like this:
 

@@ -45,13 +45,13 @@ GS_DefaultSettings = {
 	["showCharacterLegacy"] = true,
 	["showCharacterPvp"] = true,
 	["showCharacterAverage"] = false,
+	["showCharacterSpec"] = true,
 	["showCharacterCapSummary"] = true,
 	["showCharacterCompare"] = false,
 	["showCharacterSpecial"] = true,
 	["showItemGS2"] = true,
 	["showItemLegacy"] = true,
 	["showItemPvp"] = true,
-	["showItemLevel"] = false,
 	["enableExplainTooltip"] = true,
 	["showExplainHeader"] = true,
 	["showExplainLegacy"] = true,
@@ -300,16 +300,10 @@ GS_Quality = {
 
 
 GS_CommandList = {
-	[1] = "---GearScore Options List---",
-	[2] = "/gs2 player -> Toggles display of scores on players.",
-	[3] = "/gs2 item -> Toggles display of scores for items.",
-	[4] = "/gs2 level -> Toggles iLevel information.",
-	[5] = "/gs2 interface -> Opens the interface options page.",
-	[6] = "/gs2 settings -> Opens the GearScore2 settings panel.",
+	[1] = "---GearScore2 Commands---",
+	[2] = "/gs2 or /gs2 settings -> Opens the GearScore2 settings panel.",
+	[3] = "/gs2 debuginspect -> Toggles inspect debug messages.",
 }
-
-GS_ShowSwitch = {[0] = 2,[1] = 3,[2] = 0,[3] = 1}
-GS_ItemSwitch = {[0] = 3,[1] = 2,[2] = 1,[3] = 0}
 
 GS_EnchantSlots = {
 	["INVTYPE_HEAD"] = true,

@@ -14,6 +14,7 @@ GS_OptionsSections = {
 			{ key = "showCharacterLegacy", label = "Show Legacy GearScore" },
 			{ key = "showCharacterPvp", label = "Show PvP GearScore" },
 			{ key = "showCharacterAverage", label = "Show Average iLevel" },
+			{ key = "showCharacterSpec", label = "Show specialization" },
 			{ key = "showCharacterCapSummary", label = "Show cap summary" },
 			{ key = "showCharacterCompare", label = "Show compare line" },
 		},
@@ -24,7 +25,6 @@ GS_OptionsSections = {
 			{ key = "showItemGS2", label = "Show GearScore2" },
 			{ key = "showItemLegacy", label = "Show Legacy GearScore" },
 			{ key = "showItemPvp", label = "Show PvP GearScore" },
-			{ key = "showItemLevel", label = "Show item iLevel" },
 		},
 	},
 	{
@@ -222,7 +222,7 @@ local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottom
 	footer:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 4, -18)
 	footer:SetWidth(viewportWidth - 12)
 	footer:SetJustifyH("LEFT")
-	footer:SetText("Tip: drag the minimap button to move it. Use /gs2 interface to jump to the Blizzard Interface Options page.")
+	footer:SetText("Tip: drag the minimap button to move it. Use /gs2 settings to open the GearScore2 settings panel.")
 
 	content:SetHeight(860)
 	return scrollFrame, content

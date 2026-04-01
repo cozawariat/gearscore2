@@ -64,6 +64,13 @@ GS_STAT_KEYS = {
 	ITEM_MOD_BLOCK_RATING_SHORT = "BLOCK", ITEM_MOD_BLOCK_VALUE_SHORT = "BLOCKVALUE", ITEM_MOD_MANA_REGENERATION_SHORT = "MP5",
 }
 
+GS_STAT_DISPLAY_KEYS = {
+	RESILIENCE = "RESIL",
+	EXPERTISE = "EXP",
+	DEFENSE = "DEF",
+	BLOCKVALUE = "BV",
+}
+
 GS_ITEM_SLOTS = {
 	INVTYPE_HEAD = 1, INVTYPE_NECK = 2, INVTYPE_SHOULDER = 3, INVTYPE_BODY = 4, INVTYPE_CHEST = 5, INVTYPE_ROBE = 5,
 	INVTYPE_WAIST = 6, INVTYPE_LEGS = 7, INVTYPE_FEET = 8, INVTYPE_WRIST = 9, INVTYPE_HAND = 10, INVTYPE_FINGER = 11,
@@ -109,6 +116,10 @@ end
 
 function GS_AppendExplainLine(lines, text)
 	lines[#lines + 1] = text
+end
+
+function GS_GetDisplayStatKey(statKey)
+	return GS_STAT_DISPLAY_KEYS[statKey] or statKey
 end
 
 function GS_FindConflictingAddon(loadedAddonName)

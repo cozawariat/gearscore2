@@ -40,7 +40,7 @@ function GS_AddCharacterCapLines(tooltip, capBreakdown)
 			if pool.usedLiveBuffs then
 				label = label .. " " .. (GS_CAP_BUFF_MARKER or "*")
 			end
-			tooltip:AddDoubleLine("  " .. label, "+" .. tostring(pool.bonusGs2 or 0) .. " GS2", 0.75, 0.9, 1, 0.75, 0.9, 1)
+			tooltip:AddDoubleLine("  " .. label, "+" .. tostring(pool.bonusGs2 or 0), 0.75, 0.9, 1, 0.75, 0.9, 1)
 		end
 	end
 end
@@ -49,17 +49,20 @@ function GS_AddScoreLines(tooltip, record)
 	if GS_TooltipHasLine(tooltip, "Spec") or GS_TooltipHasLine(tooltip, "GearScore2") then
 		return
 	end
+	local showCharacterSpec = not GS_Settings or GS_Settings["showCharacterSpec"]
 	local specText = record and record.scanStatusText or "Spec unknown"
 	if record and record.specResolved then
-		specText = record.specLabel or specText
+		specText = record.scanStatusText or record.specLabel or specText
 	elseif record and not record.scanExpired then
 		specText = "Scanning..."
 	end
-	tooltip:AddDoubleLine("Spec", specText, 0.85, 0.9, 1, 0.85, 0.9, 1)
+	if showCharacterSpec then
+		tooltip:AddDoubleLine("Spec", specText, 0.85, 0.9, 1, 0.85, 0.9, 1)
+	end
 	local showCharacterGS2 = not GS_Settings or GS_Settings["showCharacterGS2"]
 	local showCharacterLegacy = not GS_Settings or GS_Settings["showCharacterLegacy"]
 	local showCharacterPvp = not GS_Settings or GS_Settings["showCharacterPvp"]
-	local showCharacterAverage = GS_Settings and GS_Settings["showCharacterAverage"]
+	local showCharacterAverage = not GS_Settings or GS_Settings["showCharacterAverage"]
 	local showCharacterCapSummary = not GS_Settings or GS_Settings["showCharacterCapSummary"]
 	if record.gs2Available and record.gs2 ~= nil then
 		if showCharacterGS2 then
@@ -76,7 +79,7 @@ function GS_AddScoreLines(tooltip, record)
 		r, g, b = GS2_GetQuality(record.pvp)
 		tooltip:AddDoubleLine("PvP GearScore", tostring(record.pvp), r, g, b, r, g, b)
 	end
-	if GS_Settings["Level"] == 1 and showCharacterAverage then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
+	if showCharacterAverage then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
 	if showCharacterCapSummary and record.capBreakdown and record.gs2Available then
 		GS_AddCharacterCapLines(tooltip, record.capBreakdown)
 	end
@@ -330,7 +333,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 		GS_ExplainTooltip:AddLine("Top PvE stats", 0.45, 0.85, 1)
 		for index = 1, math.min(4, #explain.pve.statEntries) do
 			local entry = explain.pve.statEntries[index]
-			GS_ExplainTooltip:AddLine("  " .. entry.stat .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 0.78, 0.92, 1, true)
+			GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 0.78, 0.92, 1, true)
 		end
 	end
 	if showExplainTopPvpStats and explain.pvp.statEntries and #explain.pvp.statEntries > 0 then
@@ -338,7 +341,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 		GS_ExplainTooltip:AddLine("Top PvP stats", 1, 0.72, 0.35)
 		for index = 1, math.min(4, #explain.pvp.statEntries) do
 			local entry = explain.pvp.statEntries[index]
-			GS_ExplainTooltip:AddLine("  " .. entry.stat .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 1, 0.85, 0.6, true)
+			GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 1, 0.85, 0.6, true)
 		end
 	end
 	GS_ExplainTooltip:Show()
@@ -390,7 +393,6 @@ function GS_AddItemLines(tooltip, itemLink)
 			local lr, lg, lb = GS2_GetItemTooltipQualityColor(item.legacyBase)
 			tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), lr, lg, lb, lr, lg, lb)
 		end
-		if GS_Settings["Level"] == 1 and (not GS_Settings or GS_Settings["showItemLevel"]) then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
 		GS_HideExplainTooltip()
 		return
 	end
@@ -410,7 +412,6 @@ function GS_AddItemLines(tooltip, itemLink)
 	if not GS_Settings or GS_Settings["showItemPvp"] then
 		tooltip:AddDoubleLine("PvP GearScore", tostring(pvp), pr, pg, pb, pr, pg, pb)
 	end
-	if GS_Settings["Level"] == 1 and (not GS_Settings or GS_Settings["showItemLevel"]) then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
 	GS_RenderExplainTooltip(tooltip, itemLink)
 end
 
