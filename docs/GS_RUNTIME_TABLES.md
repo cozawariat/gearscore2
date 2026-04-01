@@ -1,4 +1,4 @@
-# GearScoreAI Runtime Tables
+# GearScore2 Runtime Tables
 
 ## Table of Contents
 

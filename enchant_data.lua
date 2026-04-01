@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---                        GearScoreAI Enchant Database                        --
+--                         GearScore2 Enchant Database                        --
 -------------------------------------------------------------------------------
 -- Generated from WotLKDB enchant pages for WoW 3.3.5a.
 -- Entry shape:

@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---                              GearScoreAI UI                               --
+--                               GearScore2 UI                                --
 -------------------------------------------------------------------------------
 
 function GearScore_OnEnter(frame, itemSlot, argument)
@@ -36,9 +36,8 @@ function GS_MANSET(command)
 	if command == "show" or command == "player" then GS_Settings["Player"] = GS_ShowSwitch[GS_Settings["Player"]] print((GS_Settings["Player"] == 1 or GS_Settings["Player"] == 2) and "Player Scores: On" or "Player Scores: Off") return end
 	if command == "item" then GS_Settings["Item"] = GS_ItemSwitch[GS_Settings["Item"]] print((GS_Settings["Item"] == 1 or GS_Settings["Item"] == 3) and "Item Scores: On" or "Item Scores: Off") return end
 	if command == "level" then GS_Settings["Level"] = GS_Settings["Level"] * -1 print(GS_Settings["Level"] == 1 and "Item Levels: On" or "Item Levels: Off") return end
-	if command == "compare" then GS_Settings["Compare"] = GS_Settings["Compare"] * -1 print(GS_Settings["Compare"] == 1 and "Comparisons: On" or "Comparisons: Off") return end
 	if command == "debuginspect" then GS_DebugInspectEnabled = not GS_DebugInspectEnabled print("GS2 Inspect Debug: " .. (GS_DebugInspectEnabled and "On" or "Off")) return end
-	print("GearScore: Unknown Command. Type '/gs' for a list of options")
+	print("GearScore2: Unknown command. Type '/gs' for a list of options")
 end
 
 function GS_OnEvent(_, event, ...)

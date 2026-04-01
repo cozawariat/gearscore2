@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---                         GearScoreAI Tooltip Logic                         --
+--                          GearScore2 Tooltip Logic                          --
 -------------------------------------------------------------------------------
 
 function GS_TooltipHasLine(tooltip, text)
@@ -36,6 +36,9 @@ function GS_AddCharacterCapLines(tooltip, capBreakdown)
 				label = label .. " capped"
 			else
 				label = label .. " " .. tostring(floor((pool.progress or 0) * 100 + 0.5)) .. "%"
+			end
+			if pool.usedLiveBuffs then
+				label = label .. " " .. (GS_CAP_BUFF_MARKER or "*")
 			end
 			tooltip:AddDoubleLine("  " .. label, "+" .. tostring(pool.bonusGs2 or 0) .. " GS2", 0.75, 0.9, 1, 0.75, 0.9, 1)
 		end
@@ -227,7 +230,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 
 	GS_BeginExplainTooltip()
 	GS_PositionExplainTooltip(ownerTooltip)
-	GS_ExplainTooltip:AddLine(item.name or "GearScoreAI Explain", 1, 0.82, 0.18)
+	GS_ExplainTooltip:AddLine(item.name or "GearScore2 Explain", 1, 0.82, 0.18)
 	GS_ExplainTooltip:AddDoubleLine("Spec context", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
 	local showExplainHeader = not GS_Settings or GS_Settings["showExplainHeader"]
 	local showExplainGS2 = not GS_Settings or GS_Settings["showCharacterGS2"]
@@ -424,7 +427,7 @@ function GearScore_HookSetUnit()
 			GS_QueueInspect(unit)
 		end
 		GS_AddScoreLines(GameTooltip, record)
-		if GS_Settings["Compare"] == 1 and (not GS_Settings or GS_Settings["showCharacterCompare"]) and record.gs2Available then
+		if (not GS_Settings or GS_Settings["showCharacterCompare"]) and record.gs2Available then
 			local mine = GS_GetRecord("player")
 			if mine then
 				local diff = mine.gs2 - record.gs2

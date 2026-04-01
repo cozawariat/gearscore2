@@ -1,9 +1,12 @@
 ## Interface: 30300
-## Title: GearScoreAI
-## Notes: Helps you quickly and easily judge a player's level of gear.
+## Title: GearScore2
+## Notes: Smart PvE-oriented gear scoring with Legacy GearScore and PvP GearScore support.
 ## Version: 3x06
-## Author: Mirrikat45, Gnomezilla [Warmane-Icecrown(A)]
+## Author: Mizianolas [Warmane-Onyxia(A)]
 ## SavedVariables: GS2_Settings
+
+# Original authors of GearScoreLite: Reborn
+# Mirrikat45, Gnomezilla [Warmane-Icecrown(A)]
 
 informationLite.lua
 enchant_data.lua

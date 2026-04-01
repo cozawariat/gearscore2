@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---                        GearScoreLite: Reborn                              --
+--                            GearScore2: Reborn                             --
 --                             Version 3x06                                  --
 -------------------------------------------------------------------------------
 
@@ -438,7 +438,7 @@ local function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	GS_ExplainTooltip:ClearAllPoints()
 	GS_ExplainTooltip:SetPoint("TOPLEFT", ownerTooltip, "TOPRIGHT", 12, 0)
 	GS_ExplainTooltip:ClearLines()
-	GS_ExplainTooltip:AddLine(item.name or "GearScoreAI Explain", 1, 0.82, 0)
+	GS_ExplainTooltip:AddLine(item.name or "GearScore2 Explain", 1, 0.82, 0)
 	GS_ExplainTooltip:AddDoubleLine("GearScore2", tostring(gs2), 0.85, 0.95, 0.85, 0.85, 0.95, 0.85)
 	GS_ExplainTooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), 0.80, 0.80, 0.80, 0.80, 0.80, 0.80)
 	GS_ExplainTooltip:AddDoubleLine("PvP GearScore", tostring(pvp), 0.95, 0.75, 0.45, 0.95, 0.75, 0.45)
@@ -649,7 +649,7 @@ function GS_MANSET(command)
 	if command == "item" then GS_Settings["Item"] = GS_ItemSwitch[GS_Settings["Item"]] print((GS_Settings["Item"] == 1 or GS_Settings["Item"] == 3) and "Item Scores: On" or "Item Scores: Off") return end
 	if command == "level" then GS_Settings["Level"] = GS_Settings["Level"] * -1 print(GS_Settings["Level"] == 1 and "Item Levels: On" or "Item Levels: Off") return end
 	if command == "compare" then GS_Settings["Compare"] = GS_Settings["Compare"] * -1 print(GS_Settings["Compare"] == 1 and "Comparisons: On" or "Comparisons: Off") return end
-	print("GearScore: Unknown Command. Type '/gs' for a list of options")
+	print("GearScore2: Unknown command. Type '/gs' for a list of options")
 end
 
 local function GS_OnEvent(_, event, ...)

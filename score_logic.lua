@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---                          GearScoreAI Score Logic                          --
+--                           GearScore2 Score Logic                           --
 -------------------------------------------------------------------------------
 
 function GS_GetProfile(classToken, specKey)
@@ -30,7 +30,19 @@ end
 
 function GS_GetCapContext(unit, specKey)
 	local capProfile = GS_CapProfiles[specKey]
-	local context = { meleeHitBonus = 0, spellHitBonus = 0, targetSpellHitBonus = 0, expertiseBonus = 0, defenseSkillBonus = 0, unit = unit }
+	local context = {
+		meleeHitBonus = 0,
+		spellHitBonus = 0,
+		targetSpellHitBonus = 0,
+		expertiseBonus = 0,
+		defenseSkillBonus = 0,
+		liveMeleeHitBonus = 0,
+		liveSpellHitBonus = 0,
+		liveTargetSpellHitBonus = 0,
+		liveExpertiseBonus = 0,
+		liveDefenseSkillBonus = 0,
+		unit = unit,
+	}
 	if capProfile and capProfile.pools then
 		for _, pool in pairs(capProfile.pools) do
 			context.meleeHitBonus = max(context.meleeHitBonus, pool.meleeHitBonus or 0)
@@ -44,6 +56,10 @@ function GS_GetCapContext(unit, specKey)
 			local aura = GS_LiveCapBuffs.HELPFUL[index]
 			local auraName = GS_GetAuraNameFromId(aura.spellId)
 			if auraName and GS_UnitHasAuraByName(unit, "HELPFUL", auraName) then
+				context.liveMeleeHitBonus = context.liveMeleeHitBonus + (aura.meleeHitBonus or 0)
+				context.liveSpellHitBonus = context.liveSpellHitBonus + (aura.spellHitBonus or 0)
+				context.liveExpertiseBonus = context.liveExpertiseBonus + (aura.expertiseBonus or 0)
+				context.liveDefenseSkillBonus = context.liveDefenseSkillBonus + (aura.defenseSkillBonus or 0)
 				context.meleeHitBonus = context.meleeHitBonus + (aura.meleeHitBonus or 0)
 				context.spellHitBonus = context.spellHitBonus + (aura.spellHitBonus or 0)
 				context.expertiseBonus = context.expertiseBonus + (aura.expertiseBonus or 0)
@@ -56,6 +72,7 @@ function GS_GetCapContext(unit, specKey)
 			local aura = GS_LiveCapBuffs.HARMFUL[index]
 			local auraName = GS_GetAuraNameFromId(aura.spellId)
 			if auraName and GS_UnitHasAuraByName("target", "HARMFUL", auraName) then
+				context.liveTargetSpellHitBonus = context.liveTargetSpellHitBonus + (aura.targetSpellHitBonus or 0)
 				context.targetSpellHitBonus = context.targetSpellHitBonus + (aura.targetSpellHitBonus or 0)
 			end
 		end
@@ -160,6 +177,25 @@ function GS_GetCapPoolDisplay(poolStat, statValue, targetSegment, resolvedThresh
 	return floor((statValue or 0) + 0.5), floor((resolvedThreshold or 0) + 0.5), true
 end
 
+function GS_DidCapPoolUseLiveBuffs(poolStat, targetSegment, context)
+	if not targetSegment or not context then
+		return false
+	end
+	if targetSegment.mode == "MELEE_HIT_PERCENT" then
+		return (context.liveMeleeHitBonus or 0) > 0
+	end
+	if targetSegment.mode == "SPELL_HIT_PERCENT" then
+		return ((context.liveSpellHitBonus or 0) > 0) or ((context.liveTargetSpellHitBonus or 0) > 0)
+	end
+	if targetSegment.mode == "EXPERTISE_POINTS" then
+		return (context.liveExpertiseBonus or 0) > 0
+	end
+	if targetSegment.mode == "DEFENSE_SKILL" then
+		return (context.liveDefenseSkillBonus or 0) > 0
+	end
+	return false
+end
+
 function GS_GetMaxCapBonus(preCapGs2)
 	local gs2Value = tonumber(preCapGs2) or 0
 	if gs2Value <= 0 then
@@ -191,6 +227,7 @@ function GS_ApplyCapPool(poolStat, statValue, baseWeight, pool, context, specKey
 		targetThreshold = resolvedThreshold,
 		ratingSummary = ratingSummary,
 		capped = progress >= 1,
+		usedLiveBuffs = GS_DidCapPoolUseLiveBuffs(poolStat, targetSegment, context),
 		bonusGs2 = 0,
 	}
 end
@@ -237,6 +274,9 @@ function GS_FormatCapSummary(capBreakdown)
 				label = label .. " capped"
 			else
 				label = label .. " " .. tostring(floor((pool.progress or 0) * 100 + 0.5)) .. "%"
+			end
+			if pool.usedLiveBuffs then
+				label = label .. " " .. (GS_CAP_BUFF_MARKER or "*")
 			end
 			parts[#parts + 1] = label .. " (+" .. tostring(pool.bonusGs2 or 0) .. " GS2)"
 		end

@@ -1,4 +1,4 @@
-# GearScoreAI Algorithm Specification
+# GearScore2 Algorithm Specification
 
 ## Table of Contents
 
@@ -696,6 +696,7 @@ Current runtime summary behavior:
 - the total cap bonus is split proportionally by pool progress
 - capped pools are labeled as `capped`
 - uncapped pools are labeled by their rounded progress percent
+- pools whose resolved threshold used live aura help are marked with a small star icon
 
 Examples:
 
@@ -706,6 +707,7 @@ Summary rules:
 
 - if a pool reached its target, it is shown as `<Summary> capped (+N GS2)`
 - otherwise it is shown as `<Summary> <P>% (+N GS2)`
+- if live buff/debuff aura data lowered the required threshold for that pool, the label includes a small star icon
 - displayed pool bonuses are a proportional allocation of the single total cap bonus
 - the displayed pool bonuses always sum back to `record.capAdjustedGs2`
 

@@ -37,7 +37,6 @@ GS_DefaultSettings = {
 	["Item"] = 1,
 	["Show"] = 1,
 	["Special"] = 1,
-	["Compare"] = -1,
 	["Level"] = -1,
 	["Average"] = -1,
 	["IncludeEnchants"] = true,

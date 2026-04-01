@@ -2,7 +2,7 @@
 
 ## Intro
 
-GearScoreAI is a hobby project.
+GearScore2 is a hobby project.
 
 I am fully aware that the chance of the wider WoW 3.3.5a community abandoning classic `GearScore` and migrating to `GS2` is probably very small, even if that would be the dream outcome.
 
@@ -185,6 +185,7 @@ Current examples:
 
 - `Heroic Presence` can reduce required hit
 - `Misery` on the current target can reduce required spell-hit for the player
+- cap lines affected by such live aura help are marked with a small star icon
 
 The addon does not assume invisible raid debuffs by default. If runtime cannot read them, they are not counted.
 

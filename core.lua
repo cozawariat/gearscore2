@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---                             GearScoreAI Core                              --
+--                              GearScore2 Core                              --
 -------------------------------------------------------------------------------
 
 GS_Settings = GS2_Settings or GS_Settings
@@ -30,6 +30,7 @@ GS_CAP_BONUS_ANCHOR_LOW_BONUS = 200
 GS_CAP_BONUS_ANCHOR_HIGH_BONUS = 100
 GS_CAP_BONUS_MIN = 25
 GS_CAP_BONUS_MAX = 300
+GS_CAP_BUFF_MARKER = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:12|t"
 
 GS_InspectQueue = {}
 GS_InspectCache = {}
