@@ -41,6 +41,12 @@ function GS_IsStableInspectUnit(unit)
 	if not unit or not UnitExists(unit) or not UnitIsPlayer(unit) then
 		return false
 	end
+	if UnitIsUnit(unit, "mouseover") then
+		local _, tooltipUnit = GS_GetTooltipUnit()
+		if tooltipUnit and UnitGUID(tooltipUnit) == UnitGUID(unit) then
+			return true
+		end
+	end
 	if UnitIsUnit(unit, "target") or UnitIsUnit(unit, "focus") then
 		return true
 	end
@@ -54,6 +60,21 @@ function GS_IsStableInspectUnit(unit)
 		return true
 	end
 	return false
+end
+
+function GS_CanInspectUnitByPolicy(unit)
+	if not unit or not UnitExists(unit) or not UnitIsPlayer(unit) or UnitIsUnit(unit, "player") then
+		return false
+	end
+	if not CanInspect(unit) then
+		return false
+	end
+	local playerFaction = UnitFactionGroup("player")
+	local unitFaction = UnitFactionGroup(unit)
+	if playerFaction and unitFaction and playerFaction ~= unitFaction then
+		return GetZonePVPInfo() == "sanctuary"
+	end
+	return true
 end
 
 function GS_DetectSpec(unit, classToken, inspect, talentsReady)
@@ -276,9 +297,23 @@ function GS_QueueInspect(unit)
 	if not guid or UnitIsUnit(unit, "player") or GS_InspectState.queued[guid] then return end
 	if GS_InspectState.active and GS_InspectState.active.guid == guid then return end
 	if GS_InspectState.recent[guid] and (now - GS_InspectState.recent[guid]) < GS_RECENT_WINDOW then return end
+	if not GS_CanInspectUnitByPolicy(unit) then return end
 	if not GS_IsStableInspectUnit(unit) then
 		GS_DebugInspect("skip unstable inspect unit " .. tostring(unit) .. " name=" .. tostring(UnitName(unit)))
 		return
+	end
+	if UnitIsUnit(unit, "mouseover") then
+		if GS_InspectState.hoverGuid ~= guid then
+			GS_InspectState.hoverGuid = guid
+			GS_InspectState.hoverStartedAt = now
+			GS_DebugInspect("defer mouseover inspect " .. (UnitName(unit) or "?") .. " guid=" .. tostring(guid) .. " delay=" .. tostring(GS_MOUSEOVER_INSPECT_DELAY))
+			return
+		end
+	else
+		if GS_InspectState.hoverGuid == guid then
+			GS_InspectState.hoverGuid = nil
+			GS_InspectState.hoverStartedAt = 0
+		end
 	end
 	GS_DebugInspect("queue inspect " .. (UnitName(unit) or "?") .. " guid=" .. tostring(guid))
 	GS_InspectState.queued[guid] = true
@@ -293,6 +328,8 @@ function GS_RefreshTooltip(guid)
 	end
 	local _, unit = GameTooltip:GetUnit()
 	if unit and UnitGUID(unit) == guid then GameTooltip:SetUnit(unit) end
+	local _, tooltipUnit = GS_GetTooltipUnit()
+	if tooltipUnit and UnitGUID(tooltipUnit) == guid then GameTooltip:SetUnit(tooltipUnit) end
 end
 
 function GS_IsExternalInspectOpen()
@@ -307,6 +344,22 @@ end
 
 function GS_ProcessInspectQueue()
 	local now, active = GetTime(), GS_InspectState.active
+	if GS_InspectState.hoverGuid then
+		local hoverUnit = GS_ResolveUnitByGUID(GS_InspectState.hoverGuid)
+		if not hoverUnit or not UnitExists(hoverUnit) or UnitGUID(hoverUnit) ~= GS_InspectState.hoverGuid or not UnitIsPlayer(hoverUnit) then
+			GS_InspectState.hoverGuid = nil
+			GS_InspectState.hoverStartedAt = 0
+		elseif not GS_InspectState.queued[GS_InspectState.hoverGuid]
+			and (not GS_InspectState.active or GS_InspectState.active.guid ~= GS_InspectState.hoverGuid)
+			and (not GS_InspectState.recent[GS_InspectState.hoverGuid] or (now - GS_InspectState.recent[GS_InspectState.hoverGuid]) >= GS_RECENT_WINDOW)
+			and (now - (GS_InspectState.hoverStartedAt or now)) >= GS_MOUSEOVER_INSPECT_DELAY then
+			GS_DebugInspect("queue mouseover inspect " .. (UnitName(hoverUnit) or "?") .. " guid=" .. tostring(GS_InspectState.hoverGuid))
+			GS_InspectState.queued[GS_InspectState.hoverGuid] = true
+			GS_InspectQueue[#GS_InspectQueue + 1] = { guid = GS_InspectState.hoverGuid, unit = hoverUnit, queuedAt = now }
+			GS_InspectState.hoverGuid = nil
+			GS_InspectState.hoverStartedAt = 0
+		end
+	end
 	if active and ((active.readyAt and now >= active.readyAt) or ((not active.readyAt) and active.pollAt and now >= active.pollAt)) then
 		local inspectUnit = UnitGUID(active.unit) == active.guid and active.unit or GS_ResolveUnitByGUID(active.guid)
 		local snapshot = inspectUnit and GS_CollectSnapshot(inspectUnit, true) or nil
@@ -359,10 +412,11 @@ function GS_ProcessInspectQueue()
 	while #GS_InspectQueue > 0 do
 		local request = table.remove(GS_InspectQueue, 1)
 		GS_InspectState.queued[request.guid] = nil
-		if request.unit and UnitGUID(request.unit) == request.guid and CanInspect(request.unit) and UnitIsPlayer(request.unit) then
-			GS_DebugInspect("NotifyInspect " .. (UnitName(request.unit) or "?") .. " guid=" .. tostring(request.guid))
-			NotifyInspect(request.unit)
-			GS_InspectState.active = { guid = request.guid, unit = request.unit, startedAt = now, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0, specResolvedAt = nil, talentReady = false, timedOut = false }
+		local dispatchUnit = GS_ResolveUnitByGUID(request.guid) or request.unit
+		if dispatchUnit and UnitGUID(dispatchUnit) == request.guid and GS_CanInspectUnitByPolicy(dispatchUnit) then
+			GS_DebugInspect("NotifyInspect " .. (UnitName(dispatchUnit) or "?") .. " guid=" .. tostring(request.guid))
+			NotifyInspect(dispatchUnit)
+			GS_InspectState.active = { guid = request.guid, unit = dispatchUnit, startedAt = now, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0, specResolvedAt = nil, talentReady = false, timedOut = false }
 			GS_InspectState.recent[request.guid], GS_InspectState.lastInspectAt = now, now
 			return
 		end

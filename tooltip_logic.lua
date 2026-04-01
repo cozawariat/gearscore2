@@ -103,7 +103,7 @@ end
 
 function GS_GetTooltipItemContext(tooltip, itemLink)
 	local record, unit, slotId = GS_GetTooltipRecordForItem(tooltip, itemLink)
-	if unit and not UnitIsUnit(unit, "player") and CanInspect(unit) then
+	if unit and not UnitIsUnit(unit, "player") and GS_CanInspectUnitByPolicy(unit) then
 		if not record or not record.gs2Available then
 			GS_QueueInspect(unit)
 		end
@@ -411,7 +411,7 @@ function GearScore_HookSetUnit()
 	if not name or not unit or not UnitIsPlayer(unit) or (GS_Settings["Player"] ~= 1 and GS_Settings["Player"] ~= 2) then return end
 	local record = GS_GetRecord(unit)
 	if record then
-		if not record.gs2Available and not UnitIsUnit(unit, "player") and CanInspect(unit) then
+		if not record.gs2Available and not UnitIsUnit(unit, "player") and GS_CanInspectUnitByPolicy(unit) then
 			GS_QueueInspect(unit)
 		end
 		GS_AddScoreLines(GameTooltip, record)
@@ -426,8 +426,10 @@ function GearScore_HookSetUnit()
 		end
 		if GS_Settings["Special"] == 1 and (not GS_Settings or GS_Settings["showCharacterSpecial"]) and GS_Special[name] then GameTooltip:AddLine(GS_Special[GS_Special[name].Type], 1, 0, 0) end
 	else
-		GameTooltip:AddLine(GS_SCAN_TEXT, 0.95, 0.82, 0.18)
-		if ((not GS_Settings["MustTarget"]) or UnitIsUnit("target", unit)) and CanInspect(unit) then GS_QueueInspect(unit) end
+		if GS_CanInspectUnitByPolicy(unit) then
+			GameTooltip:AddLine(GS_SCAN_TEXT, 0.95, 0.82, 0.18)
+			if (not GS_Settings["MustTarget"]) or UnitIsUnit("target", unit) then GS_QueueInspect(unit) end
+		end
 	end
 end
 

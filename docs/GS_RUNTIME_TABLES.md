@@ -6,6 +6,7 @@
   - [1.1 Rating Conversions (`GS_RatingConversions`)](#11-rating-conversions-gs_ratingconversions)
   - [1.2 Cap Segment Defaults (`GS_CapSegmentDefaults`)](#12-cap-segment-defaults-gs_capsegmentdefaults)
   - [1.3 Live Aura Cap Modifiers (`GS_LiveCapBuffs`)](#13-live-aura-cap-modifiers-gs_livecapbuffs)
+  - [1.4 Inspect Runtime Thresholds](#14-inspect-runtime-thresholds)
 - [2. Legacy Slot Modifiers (`GS_ItemTypes`)](#2-legacy-slot-modifiers-gs_itemtypes)
 - [3. Legacy Formula Tables (`GS_Formula`)](#3-legacy-formula-tables-gs_formula)
   - [3.1 Formula A (`itemLevel > 120`)](#31-formula-a-itemlevel--120)
@@ -66,6 +67,21 @@
 | Spell ID | Name | Effect |
 |---|---|---|
 | `33198` | `Misery` | `+3% target spell hit bonus` |
+
+## 1.4 Inspect Runtime Thresholds
+
+| Constant | Value | Meaning |
+|---|---:|---|
+| `GS_MOUSEOVER_INSPECT_DELAY` | `0.25` | Mouseover must remain on the same player GUID for this long before inspect is queued |
+| `GS_INSPECT_THROTTLE` | `0.35` | Minimum time between starting inspect requests |
+| `GS_RECENT_WINDOW` | `1.5` | Same GUID is not re-queued inside this recent window |
+| `GS_ACTIVE_TIMEOUT` | `3.0` | Safety timeout for an active inspect session |
+| `GS_SCAN_TIMEOUT` | `3.0` | Maximum time before scan finalizes as timeout/inferred state |
+| `GS_READY_DELAY` | `0.15` | Delay after inspect-ready events before polling snapshot data |
+| `GS_FORCE_POLL_DELAY` | `0.20` | Initial fallback poll delay after `NotifyInspect` |
+| `GS_MIN_INSPECT_ITEMS` | `8` | Minimum item count required before finalizing a snapshot |
+| `GS_CACHE_TTL` | `180` | Cached inspect record lifetime |
+| `GS_FRESH_TTL` | `15` | Freshness window used to avoid immediate re-inspection |
 
 ## 2. Legacy Slot Modifiers (`GS_ItemTypes`)
 

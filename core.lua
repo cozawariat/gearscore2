@@ -6,6 +6,7 @@ GS_Settings = GS2_Settings or GS_Settings
 
 GS_PlayerIsInCombat = false
 GS_SCAN_TEXT = "|cffaaaaaaScanning...|r"
+GS_MOUSEOVER_INSPECT_DELAY = 0.25
 GS_INSPECT_THROTTLE = 0.35
 GS_RECENT_WINDOW = 1.5
 GS_ACTIVE_TIMEOUT = 3.0
@@ -28,7 +29,7 @@ GS_InspectQueue = {}
 GS_InspectCache = {}
 GS_ItemCache = {}
 GS_ParsedLinkCache = {}
-GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, lastConfirmedSpecByGuid = {} }
+GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, lastConfirmedSpecByGuid = {}, hoverGuid = nil, hoverStartedAt = 0 }
 GS_ExplainState = { owner = nil, itemLink = nil, itemSlot = nil }
 GS_TooltipInventoryContext = { unit = nil, slot = nil, guid = nil }
 GS_DebugInspectEnabled = false
