@@ -392,6 +392,8 @@ Important runtime rule:
 
 - a bad or non-matching gem never applies a penalty
 - it only yields `+0`
+- explain mismatch flags ignore `STA` by itself
+- explain mismatch flags still trigger for tank-only defenses outside matching tank profiles
 
 ### 8.4 Enchant Bonus
 
@@ -413,6 +415,7 @@ Runtime cases:
 - `kind = "stats"` with static stats:
   - score normally
   - if weights do not match the profile, result is `+0`
+  - explain mismatch flags ignore `STA` by itself, but not tank-only defenses
 - `kind = "special"`:
   - recognized enchant
   - runtime gives `+0`

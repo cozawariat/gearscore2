@@ -217,6 +217,27 @@ function GS_ScoreStats(stats, weights)
 	return total
 end
 
+GS_ExplainIgnoredStats = {
+	STA = true,
+}
+
+function GS_ShouldFlagStats(stats, weights)
+	if not stats then
+		return false
+	end
+	local hasMatched, hasNonIgnoredMiss = false, false
+	for stat, value in pairs(stats) do
+		if (value or 0) > 0 then
+			if weights and weights[stat] then
+				hasMatched = true
+			elseif not GS_ExplainIgnoredStats[stat] then
+				hasNonIgnoredMiss = true
+			end
+		end
+	end
+	return hasNonIgnoredMiss and not hasMatched
+end
+
 function GS_GetResilienceMultiplier(resilience, mode)
 	resilience = tonumber(resilience) or 0
 	if resilience <= 0 then
@@ -290,10 +311,12 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 			if explain then
 				local pveFormula = gemPveRaw > 0 and ("(" .. GS_FormatNumber(gemPveRaw) .. " * " .. GS_FormatNumber(GS_GEM_SCALE) .. ")") or ("(" .. GS_FormatNumber(gemPveRaw) .. " <= 0 => +0)")
 				local pvpFormula = gemPvpRaw > 0 and ("(" .. GS_FormatNumber(gemPvpRaw) .. " * " .. GS_FormatNumber(GS_GEM_SCALE) .. ")") or ("(" .. GS_FormatNumber(gemPvpRaw) .. " <= 0 => +0)")
+				local pveFlag = GS_ShouldFlagStats(item.gemStats[index], profile.pve)
+				local pvpFlag = GS_ShouldFlagStats(item.gemStats[index], profile.pvp)
 				explain.pve.parts[#explain.pve.parts + 1] = { label = "Gem " .. index, formula = pveFormula, delta = gemPveBonus }
 				explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Gem " .. index, formula = pvpFormula, delta = gemPvpBonus }
-				if gemPveRaw <= 0 then explain.pve.flags[#explain.pve.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey end
-				if gemPvpRaw <= 0 then explain.pvp.flags[#explain.pvp.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey end
+				if pveFlag then explain.pve.flags[#explain.pve.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey end
+				if pvpFlag then explain.pvp.flags[#explain.pvp.flags + 1] = "Gem " .. index .. ": gem stats do not match profile " .. resolvedSpecKey end
 			end
 		elseif explain and item.socketCount >= index then
 			explain.pve.parts[#explain.pve.parts + 1] = { label = "Gem " .. index, formula = "(empty socket => +0)", delta = 0 }
@@ -313,10 +336,12 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 			if explain then
 				local pveFormula, pvpFormula
 				if enchantInfo and enchantInfo.kind == "stats" and enchantStats then
+					local pveFlag = GS_ShouldFlagStats(enchantStats, profile.pve)
+					local pvpFlag = GS_ShouldFlagStats(enchantStats, profile.pvp)
 					pveFormula = pveEnchantRaw > 0 and ("(" .. GS_FormatNumber(pveEnchantRaw) .. " * " .. GS_FormatNumber(GS_ENCHANT_SCALE) .. ")") or ("(" .. GS_FormatNumber(pveEnchantRaw) .. " <= 0 => +0)")
 					pvpFormula = pvpEnchantRaw > 0 and ("(" .. GS_FormatNumber(pvpEnchantRaw) .. " * " .. GS_FormatNumber(GS_ENCHANT_SCALE) .. ")") or ("(" .. GS_FormatNumber(pvpEnchantRaw) .. " <= 0 => +0)")
-					if pveEnchantRaw <= 0 then explain.pve.flags[#explain.pve.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey end
-					if pvpEnchantRaw <= 0 then explain.pvp.flags[#explain.pvp.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey end
+					if pveFlag then explain.pve.flags[#explain.pve.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey end
+					if pvpFlag then explain.pvp.flags[#explain.pvp.flags + 1] = "Enchant: stats do not match profile " .. resolvedSpecKey end
 				elseif enchantInfo and enchantInfo.kind == "special" then
 					pveFormula = "(special effect => +0)"
 					pvpFormula = "(special effect => +0)"

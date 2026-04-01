@@ -85,7 +85,7 @@ Each specialization has its own PvE stat profile.
 Examples:
 
 - Assassination values `AGI`, `HIT`, `EXPERTISE`, `HASTE`
-- tanks value `DEFENSE`, `STA`, avoidance stats
+- tanks value `DEFENSE`, avoidance stats, and other tank-specific defenses
 - casters value `SP`, `HIT`, `HASTE`, and spec-specific secondaries
 
 Because of this, the same item can score differently for different specs.
@@ -100,6 +100,11 @@ Current runtime behavior:
 - a non-matching enchant gives `+0`,
 - a missing gem gives `+0`,
 - a missing enchant gives `+0`.
+
+Explain tooltip behavior:
+
+- `STA` is treated as a universal baseline stat and does not create gem/enchant mismatch flags by itself
+- tank-only defenses such as `DEFENSE`, `DODGE`, `PARRY`, `BLOCK`, and `BLOCKVALUE` still create mismatch flags outside tank profiles
 
 So GearScore2 does not punish empty or bad enhancements directly; it simply refuses to reward them.
 

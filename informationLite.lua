@@ -391,7 +391,7 @@ GS_ClassSpecOrder = {
 GS_SpecProfiles = {
 	ARMS = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, pve = { STR = 2.4, CRIT = 1.5, HIT = 1.8, HASTE = 1.1, ARP = 1.9, AP = 1.2, EXPERTISE = 1.4 }, pvp = { STR = 2.2, CRIT = 1.2, HIT = 0.8, HASTE = 0.9, ARP = 1.3, AP = 1.0, RESILIENCE = 2.2 } },
 	FURY = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, pve = { STR = 2.6, CRIT = 1.5, HIT = 1.9, HASTE = 1.3, ARP = 1.9, AP = 1.1, EXPERTISE = 1.3 }, pvp = { STR = 2.0, CRIT = 1.0, HASTE = 0.8, AP = 0.9, RESILIENCE = 2.2 } },
-	PROTECTION = { role = "TANK", armor = "PLATE", shield = true, ranged = false, pve = { STR = 0.8, STA = 2.6, DEFENSE = 2.8, DODGE = 2.1, PARRY = 2.0, BLOCK = 1.7, BLOCKVALUE = 1.2, HIT = 1.0, EXPERTISE = 1.2 }, pvp = { STA = 2.2, STR = 0.8, DODGE = 1.4, PARRY = 1.3, BLOCK = 1.2, RESILIENCE = 1.7 } },
+	PROTECTION = { role = "TANK", armor = "PLATE", shield = true, ranged = false, pve = { STR = 0.8, DEFENSE = 2.8, DODGE = 2.1, PARRY = 2.0, BLOCK = 1.7, BLOCKVALUE = 1.2, HIT = 1.0, EXPERTISE = 1.2 }, pvp = { STR = 0.8, DODGE = 1.4, PARRY = 1.3, BLOCK = 1.2, RESILIENCE = 1.7 } },
 	HOLY = { role = "HEALER", armor = "PLATE", shield = true, ranged = false, pve = { INT = 2.4, SP = 2.8, HASTE = 1.8, CRIT = 1.3, MP5 = 1.5, SPI = 0.4 }, pvp = { INT = 2.0, SP = 2.4, HASTE = 1.1, CRIT = 0.8, MP5 = 0.8, RESILIENCE = 2.2 } },
 	RETRIBUTION = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, pve = { STR = 2.6, CRIT = 1.5, HIT = 1.6, HASTE = 1.1, EXPERTISE = 1.3, AP = 1.0 }, pvp = { STR = 2.2, CRIT = 1.0, AP = 0.9, RESILIENCE = 2.2 } },
 	BEASTMASTERY = { role = "RANGED", armor = "MAIL", shield = false, ranged = true, pve = { AGI = 2.5, RAP = 1.4, AP = 0.8, HIT = 1.7, CRIT = 1.5, HASTE = 1.0, ARP = 1.1 }, pvp = { AGI = 2.1, RAP = 1.0, CRIT = 1.0, HASTE = 0.7, RESILIENCE = 2.2 } },
@@ -402,7 +402,7 @@ GS_SpecProfiles = {
 	SUBTLETY = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, pve = { AGI = 2.2, AP = 1.0, HIT = 1.5, HASTE = 0.8, CRIT = 1.2, ARP = 1.0, EXPERTISE = 1.1 }, pvp = { AGI = 2.3, AP = 1.0, CRIT = 1.0, RESILIENCE = 2.4 } },
 	DISCIPLINE = { role = "HEALER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 2.4, SP = 2.7, CRIT = 1.5, HASTE = 1.4, MP5 = 1.1, SPI = 0.8 }, pvp = { INT = 2.1, SP = 2.2, CRIT = 0.9, HASTE = 0.8, RESILIENCE = 2.4 } },
 	SHADOW = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.7, SP = 2.8, HIT = 1.9, HASTE = 1.7, CRIT = 1.0, SPI = 1.2 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, CRIT = 0.8, RESILIENCE = 2.3 } },
-	BLOOD = { role = "TANK", armor = "PLATE", shield = false, ranged = false, pve = { STR = 1.0, STA = 2.6, DEFENSE = 2.8, DODGE = 2.0, PARRY = 2.0, HIT = 0.8, EXPERTISE = 1.0 }, pvp = { STA = 2.1, STR = 1.0, RESILIENCE = 2.0 } },
+	BLOOD = { role = "TANK", armor = "PLATE", shield = false, ranged = false, pve = { STR = 1.0, DEFENSE = 2.8, DODGE = 2.0, PARRY = 2.0, HIT = 0.8, EXPERTISE = 1.0 }, pvp = { STR = 1.0, RESILIENCE = 2.0 } },
 	FROST = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, pve = { STR = 2.5, HIT = 1.7, HASTE = 1.2, CRIT = 1.2, EXPERTISE = 1.3, AP = 0.9 }, pvp = { STR = 2.2, CRIT = 0.9, RESILIENCE = 2.2 } },
 	UNHOLY = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, pve = { STR = 2.5, HIT = 1.7, HASTE = 1.3, CRIT = 1.1, EXPERTISE = 1.2, AP = 1.0 }, pvp = { STR = 2.2, HASTE = 0.8, RESILIENCE = 2.2 } },
 	ELEMENTAL = { role = "CASTER", armor = "MAIL", shield = true, ranged = false, pve = { INT = 1.7, SP = 2.8, HIT = 1.8, HASTE = 1.6, CRIT = 1.1, MP5 = 0.4 }, pvp = { INT = 1.5, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
@@ -415,7 +415,7 @@ GS_SpecProfiles = {
 	DEMONOLOGY = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.7, SP = 2.7, HIT = 1.7, HASTE = 1.4, CRIT = 1.1, SPI = 0.4 }, pvp = { INT = 1.6, SP = 2.2, HASTE = 0.9, RESILIENCE = 2.2 } },
 	DESTRUCTION = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.7, SP = 2.8, HIT = 1.7, HASTE = 1.5, CRIT = 1.2, SPI = 0.3 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
 	BALANCE = { role = "CASTER", armor = "LEATHER", shield = false, ranged = false, pve = { INT = 1.8, SP = 2.8, HIT = 1.8, HASTE = 1.6, CRIT = 1.1, SPI = 0.5 }, pvp = { INT = 1.7, SP = 2.2, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
-	FERAL = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, pve = { AGI = 2.5, AP = 1.1, HIT = 1.6, HASTE = 1.0, CRIT = 1.3, ARP = 1.5, EXPERTISE = 1.2, STA = 0.8 }, pvp = { AGI = 2.2, AP = 0.9, STA = 1.0, RESILIENCE = 2.3 } },
+	FERAL = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, pve = { AGI = 2.5, AP = 1.1, HIT = 1.6, HASTE = 1.0, CRIT = 1.3, ARP = 1.5, EXPERTISE = 1.2 }, pvp = { AGI = 2.2, AP = 0.9, RESILIENCE = 2.3 } },
 	DRUID_RESTORATION = { role = "HEALER", armor = "LEATHER", shield = false, ranged = false, pve = { INT = 2.4, SP = 2.7, HASTE = 1.9, CRIT = 1.0, MP5 = 1.1, SPI = 1.2 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, SPI = 0.7, RESILIENCE = 2.4 } },
 }
 

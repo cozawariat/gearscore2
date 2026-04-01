@@ -230,8 +230,9 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	local showExplainFlags = not GS_Settings or GS_Settings["showExplainFlags"]
 	local showExplainTopPveStats = not GS_Settings or GS_Settings["showExplainTopPveStats"]
 	local showExplainTopPvpStats = not GS_Settings or GS_Settings["showExplainTopPvpStats"]
+	local showExplainPvpSectionContent = showExplainPvpFormula or showExplainPvpParts or showExplainPvpTotals
 	local hasPveFlags = showExplainFlags and explain.pve.flags and #explain.pve.flags > 0
-	local hasPvpFlags = showExplainFlags and explain.pvp.flags and #explain.pvp.flags > 0
+	local hasPvpFlags = showExplainPvpSectionContent and showExplainFlags and explain.pvp.flags and #explain.pvp.flags > 0
 	local hasGeneralFlags = showExplainFlags and #explain.flags > 0
 	local showPveSection = showExplainPveFormula or showExplainPveParts or showExplainPveTotals or hasPveFlags
 	local showPvpSection = showExplainPvpFormula or showExplainPvpParts or showExplainPvpTotals or hasPvpFlags
