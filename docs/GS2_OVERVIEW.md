@@ -144,8 +144,8 @@ After all item `GearScore2` values are summed, the addon:
 
 1. aggregates total character stats from gear, gems, and scoreable enchants,
 2. resolves the active PvE spec profile,
-3. applies cap segments to important stats,
-4. adds a cap-aware delta to final character `GearScore2`.
+3. measures progress toward important stat caps,
+4. adds a progress-based bonus to final character `GearScore2`.
 
 For inspected targets this spec resolution is asynchronous, but it no longer waits for inspected talent data.
 
@@ -153,28 +153,27 @@ For inspected targets this spec resolution is asynchronous, but it no longer wai
 - once the inspect snapshot is ready, the addon infers the most likely specialization from the full gear setup
 - inferred inspect results are marked as `[INFERRED]`
 
-### 4.3 Segment model
+### 4.3 Progress model
 
-Cap-aware stats are processed in segments, not as one flat value.
+Cap-aware stats are converted into progress values instead of an overflow penalty curve.
 
-Example idea:
+Runtime idea:
 
-- first segment up to cap: boosted value,
-- second segment if still useful: reduced but positive value,
-- overflow beyond the meaningful cap: strongly reduced value.
+- each active cap contributes `0..100%` progress,
+- overcap is clamped to `100%`,
+- the character gets the average progress across all active caps,
+- that average scales a max cap bonus that shrinks as pre-cap `GS2` rises.
 
-Default segment multipliers in current runtime:
+Current anchors:
 
-- critical segment: `x1.25`
-- second useful segment: `x0.60`
-- generic overflow: `x0.20`
-- defense overflow: `x0.55`
-- armor penetration overflow: `x0.05`
+- around `4000` pre-cap `GS2`: max bonus about `200`
+- around `5000` pre-cap `GS2`: max bonus about `100`
+- final bonus is clamped to the runtime min/max window
 
 ### 4.4 Important runtime semantics
 
-- `Defense` is still worth points after `540`; it is reduced, not zeroed.
-- Rogue and Enhancement `HIT` is handled as one shared pool moving through multiple thresholds.
+- overcap does not reduce cap progress below `100%`
+- rogue `HIT` progress uses poison cap (`17% spell hit`) rather than stopping at the `8%` melee special cap
 - `Legacy GearScore` does not use cap logic.
 - `PvP GearScore` does not use cap logic.
 

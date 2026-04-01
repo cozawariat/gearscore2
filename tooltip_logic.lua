@@ -19,6 +19,29 @@ function GS_TooltipHasLine(tooltip, text)
 	return false
 end
 
+function GS_AddCharacterCapLines(tooltip, capBreakdown)
+	if not tooltip or not capBreakdown or not capBreakdown.pools then
+		return
+	end
+	local hasAny = false
+	for index = 1, #capBreakdown.pools do
+		local pool = capBreakdown.pools[index]
+		if pool and (pool.progress or 0) > 0 then
+			if not hasAny then
+				tooltip:AddLine("GS2 Caps:", 0.75, 0.9, 1)
+				hasAny = true
+			end
+			local label = pool.summary or pool.stat or "Cap"
+			if pool.capped then
+				label = label .. " capped"
+			else
+				label = label .. " " .. tostring(floor((pool.progress or 0) * 100 + 0.5)) .. "%"
+			end
+			tooltip:AddDoubleLine("  " .. label, "+" .. tostring(pool.bonusGs2 or 0) .. " GS2", 0.75, 0.9, 1, 0.75, 0.9, 1)
+		end
+	end
+end
+
 function GS_AddScoreLines(tooltip, record)
 	if GS_TooltipHasLine(tooltip, "Spec") or GS_TooltipHasLine(tooltip, "GearScore2") then
 		return
@@ -51,8 +74,8 @@ function GS_AddScoreLines(tooltip, record)
 		tooltip:AddDoubleLine("PvP GearScore", tostring(record.pvp), r, g, b, r, g, b)
 	end
 	if GS_Settings["Level"] == 1 and showCharacterAverage then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
-	if showCharacterCapSummary and record.capBreakdown and record.capBreakdown.summary and record.gs2Available then
-		tooltip:AddLine("GS2 Caps: " .. record.capBreakdown.summary, 0.75, 0.9, 1, true)
+	if showCharacterCapSummary and record.capBreakdown and record.gs2Available then
+		GS_AddCharacterCapLines(tooltip, record.capBreakdown)
 	end
 	if not record.gs2Available and record.scanExpired then
 		tooltip:AddLine("GS2 unavailable: spec scan timed out.", 1, 0.55, 0.55, true)

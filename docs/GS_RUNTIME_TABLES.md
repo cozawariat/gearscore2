@@ -34,6 +34,12 @@
 | `GS_PVP_RESILIENCE_RATE` | `0.0020` |
 | `GS_PVE_RESILIENCE_FLOOR` | `0.70` |
 | `GS_PVP_RESILIENCE_CAP` | `1.35` |
+| `GS_CAP_BONUS_ANCHOR_LOW_GS2` | `4000` |
+| `GS_CAP_BONUS_ANCHOR_HIGH_GS2` | `5000` |
+| `GS_CAP_BONUS_ANCHOR_LOW_BONUS` | `200` |
+| `GS_CAP_BONUS_ANCHOR_HIGH_BONUS` | `100` |
+| `GS_CAP_BONUS_MIN` | `25` |
+| `GS_CAP_BONUS_MAX` | `300` |
 
 ## 1.1 Rating Conversions (`GS_RatingConversions`)
 
@@ -51,6 +57,7 @@
 | `CRITICAL` | `1.25` |
 | `USEFUL` | `0.60` |
 | `OVERFLOW` | `0.20` |
+| `HIT_OVERFLOW` | `0.50` |
 | `DEFENSE_OVERFLOW` | `0.55` |
 | `ARP_OVERFLOW` | `0.05` |
 
@@ -235,48 +242,49 @@ Entries in `enchant_data.lua` use:
 
 Cap profiles affect only final character `GearScore2`.
 
-Each pool is processed in order. The same stat pool is consumed progressively across its segments.
+Each pool contributes a `0..100%` progress value toward the character cap bonus.
+Resolved thresholds still come from the pool data below, but final scoring uses progress to a single target per pool instead of segment-by-segment overflow math.
 
 ### 9.1 Melee / Physical Specs
 
 | Spec | Pools |
 |---|---|
-| `ARMS` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
-| `FURY` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
-| `RETRIBUTION` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow` |
-| `FROST` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow` |
-| `UNHOLY` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow` |
-| `FERAL` | `HIT: 8% special -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
+| `ARMS` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `FURY` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `RETRIBUTION` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
+| `FROST` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
+| `UNHOLY` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
+| `FERAL` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
 
 ### 9.2 Tanks
 
 | Spec | Pools |
 |---|---|
-| `PROTECTION` | `DEFENSE: 540 -> reduced overflow`, `EXPERTISE: 26 -> 56 -> overflow`, `HIT: 8% special -> overflow` |
-| `BLOOD` | `DEFENSE: 540 -> reduced overflow`, `EXPERTISE: 26 -> 56 -> overflow`, `HIT: 8% special -> overflow` |
+| `PROTECTION` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
+| `BLOOD` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
 
-### 9.3 Rogues / Enhancement Shared Progressive Hit Pool
+### 9.3 Rogues / Enhancement Hit Progress Targets
 
 | Spec | Pools |
 |---|---|
-| `ASSASSINATION` | `HIT: 8% melee special -> 17% poison/spell -> overflow`, `EXPERTISE: 26 -> overflow` |
-| `COMBAT` | `HIT: 8% melee special -> 17% poison/spell -> overflow`, `EXPERTISE: 26 -> overflow`, `ARP: 1400 -> overflow` |
-| `SUBTLETY` | `HIT: 8% melee special -> 17% poison/spell -> overflow`, `EXPERTISE: 26 -> overflow` |
-| `ENHANCEMENT` | `HIT: 8% melee special -> 17% spell hit -> overflow`, `EXPERTISE: 26 -> overflow` |
+| `ASSASSINATION` | `HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
+| `COMBAT` | `HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `SUBTLETY` | `HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
+| `ENHANCEMENT` | `HIT: 8% melee special progress target`, `EXPERTISE: 26 progress target` |
 
 ### 9.4 Casters / Spell-Hit Specs
 
 | Spec | Pools |
 |---|---|
-| `SHADOW` | `HIT: 17% spell hit -> overflow` |
-| `ELEMENTAL` | `HIT: 17% spell hit -> overflow` |
-| `ARCANE` | `HIT: 17% spell hit -> overflow` |
-| `FIRE` | `HIT: 17% spell hit -> overflow` |
-| `MAGE_FROST` | `HIT: 17% spell hit -> overflow` |
-| `AFFLICTION` | `HIT: 17% spell hit -> overflow` |
-| `DEMONOLOGY` | `HIT: 17% spell hit -> overflow` |
-| `DESTRUCTION` | `HIT: 17% spell hit -> overflow` |
-| `BALANCE` | `HIT: 17% spell hit -> overflow` |
+| `SHADOW` | `HIT: 17% spell-hit progress target` |
+| `ELEMENTAL` | `HIT: 17% spell-hit progress target` |
+| `ARCANE` | `HIT: 17% spell-hit progress target` |
+| `FIRE` | `HIT: 17% spell-hit progress target` |
+| `MAGE_FROST` | `HIT: 17% spell-hit progress target` |
+| `AFFLICTION` | `HIT: 17% spell-hit progress target` |
+| `DEMONOLOGY` | `HIT: 17% spell-hit progress target` |
+| `DESTRUCTION` | `HIT: 17% spell-hit progress target` |
+| `BALANCE` | `HIT: 17% spell-hit progress target` |
 
 ### 9.5 Spec-Defined Passive Bonuses Used In Threshold Resolution
 

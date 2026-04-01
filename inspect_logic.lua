@@ -179,7 +179,7 @@ function GS_InferSpecFromSnapshot(snapshot)
 				local itemGS2 = GS_ScoreItem(entry.item, snapshot.classToken, candidateSpec)
 				total = total + (itemGS2 or 0)
 			end
-			local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, items = snapshot.items })
+			local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, items = snapshot.items }, total)
 			total = total + (capAdjustedGs2 or 0)
 			GS_DebugInspect("infer candidate " .. tostring(candidateSpec) .. " total=" .. tostring(total) .. " for " .. tostring(snapshot.name))
 			if not bestScore or total > bestScore then
@@ -241,7 +241,7 @@ function GS_BuildRecord(snapshot)
 	end
 	local capAdjustedGs2, capBreakdown, capStats = 0, nil, nil
 	if snapshot.specResolved and snapshot.specKey then
-		capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot)
+		capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot, gs2)
 		gs2 = gs2 + (capAdjustedGs2 or 0)
 	end
 	local specLabel = snapshot.specKey and GS_GetSpecLabel(snapshot.specKey) or "Unknown"

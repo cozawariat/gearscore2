@@ -430,6 +430,7 @@ GS_CapSegmentDefaults = {
 	CRITICAL = 1.25,
 	USEFUL = 0.60,
 	OVERFLOW = 0.20,
+	HIT_OVERFLOW = 0.50,
 	DEFENSE_OVERFLOW = 0.55,
 	ARP_OVERFLOW = 0.05,
 }
@@ -447,7 +448,7 @@ GS_CapProfiles = {
 	ARMS = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
@@ -455,7 +456,7 @@ GS_CapProfiles = {
 	FURY = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
@@ -465,46 +466,46 @@ GS_CapProfiles = {
 		pools = {
 			DEFENSE = { summary = "Defense", overflow = GS_CapSegmentDefaults.DEFENSE_OVERFLOW, segments = { { mode = "DEFENSE_SKILL", threshold = 540, mult = GS_CapSegmentDefaults.CRITICAL, label = "Crit immunity cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" }, { mode = "EXPERTISE_POINTS", threshold = 56, mult = GS_CapSegmentDefaults.USEFUL, label = "Front-facing expertise cap" } } },
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Taunt / special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Taunt / special hit cap" } } },
 		},
 	},
 	RETRIBUTION = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
 	BEASTMASTERY = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
 		},
 	},
 	MARKSMANSHIP = {
 		order = { "HIT", "ARP" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
 	},
 	SURVIVAL = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
 		},
 	},
 	ASSASSINATION = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Poison hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, progressMode = "SPELL_HIT_PERCENT", overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Poison hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
 	COMBAT = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Poison hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, progressMode = "SPELL_HIT_PERCENT", overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Poison hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
@@ -512,14 +513,14 @@ GS_CapProfiles = {
 	SUBTLETY = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Poison hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, progressMode = "SPELL_HIT_PERCENT", overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Poison hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
 	SHADOW = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	BLOOD = {
@@ -527,82 +528,82 @@ GS_CapProfiles = {
 		pools = {
 			DEFENSE = { summary = "Defense", overflow = GS_CapSegmentDefaults.DEFENSE_OVERFLOW, segments = { { mode = "DEFENSE_SKILL", threshold = 540, mult = GS_CapSegmentDefaults.CRITICAL, label = "Crit immunity cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" }, { mode = "EXPERTISE_POINTS", threshold = 56, mult = GS_CapSegmentDefaults.USEFUL, label = "Front-facing expertise cap" } } },
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 		},
 	},
 	FROST = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
 	UNHOLY = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
 	ELEMENTAL = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	ENHANCEMENT = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 3, spellHitBonus = 3, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Spell hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 3, spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Spell hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
 	ARCANE = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	FIRE = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	MAGE_FROST = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	AFFLICTION = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	DEMONOLOGY = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	DESTRUCTION = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	BALANCE = {
 		order = { "HIT" },
 		pools = {
-			HIT = { summary = "Spell Hit", spellHitBonus = 4, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
+			HIT = { summary = "Spell Hit", spellHitBonus = 4, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
 	FERAL = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {
-			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},

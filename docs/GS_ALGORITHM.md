@@ -561,42 +561,43 @@ Important runtime rule:
 - target debuffs are only counted for the player and only when the current target actually has the debuff
 - there is no hidden assumption that common raid debuffs are always present
 
-### 9.6 Segment Model
+### 9.6 Progress Model
 
-Every cap-aware stat pool is processed in ordered segments.
+Every cap-aware stat pool resolves to one progress target.
 
 For each pool:
 
 1. runtime reads the full pool value from aggregated character stats
-2. runtime resolves each segment threshold into rating-space
-3. runtime consumes the same pool from left to right
-4. each segment uses a different multiplier
-5. overflow past the final segment uses the pool overflow multiplier
+2. runtime picks a single progress target for that pool
+3. runtime resolves that target into rating-space
+4. pool progress is `clamp(statValue / targetThreshold, 0, 1)`
+5. character cap progress is the average of all active pool progresses
+6. final cap bonus is the average progress multiplied by a pre-cap-`GS2` ceiling
 
-Core algorithm per pool:
+Core algorithm:
 
 ```text
-defaultRaw = statValue * baseWeight
+for each active pool:
+    targetThreshold = resolved target threshold in rating space
+    poolProgress = clamp(statValue / targetThreshold, 0, 1)
 
-for each segment in order:
-    threshold = resolved threshold in rating space
-    segmentValue = clamp(statValue - segmentStart, 0, threshold - segmentStart)
-    segmentRaw = segmentValue * baseWeight * segmentMultiplier
-    adjustedRaw += segmentRaw
-    segmentStart = threshold
-
-overflow = max(0, statValue - segmentStart)
-adjustedRaw += overflow * baseWeight * overflowMultiplier
-
-deltaRaw = adjustedRaw - defaultRaw
-deltaGs2 = floor(deltaRaw * GS_GS2_STAT_SCALE)
+overallProgress = average(poolProgress for all active pools)
+maxCapBonus = clamp(
+    round(
+        200 - 100 * (ln(preCapGs2) - ln(4000)) / (ln(5000) - ln(4000))
+    ),
+    25,
+    300
+)
+capAdjustedGs2 = floor(maxCapBonus * overallProgress)
 ```
 
-The delta is additive:
+Important runtime details:
 
-- positive when the early capped portion is boosted more than the overflow is penalized,
-- negative when the character has large overcap waste,
-- zero when no cap profile applies.
+- overcap never reduces pool progress below `100%`
+- the cap layer no longer uses overflow penalties to reduce the final bonus
+- `ASSASSINATION`, `COMBAT`, and `SUBTLETY` use `17% spell hit` as their `HIT` progress target
+- tank `EXPERTISE` still uses `26` as the progress target even though the pool table also contains a secondary `56` threshold
 
 ### 9.7 Threshold Resolution
 
@@ -617,21 +618,20 @@ All resolved thresholds are clamped to at least `0`.
 
 ### 9.8 What the Runtime Currently Models
 
-The current runtime includes spec profiles for:
+The current runtime includes progress targets for:
 
 - melee/ranged hit caps
 - spell-hit caps
-- rogue poison-hit progression through the same `HIT` pool
-- enhancement spell-hit progression through the same `HIT` pool
+- rogue poison-hit caps
 - DPS expertise soft caps
-- tank expertise `26 -> 56`
+- tank expertise soft caps at `26`
 - tank defense `540`
 - physical `ARP` hard cap `1400`
 
 Important runtime semantics:
 
-- `Defense` is **not** zeroed after `540`; its overflow uses a reduced multiplier
-- `Assassination`, `Combat`, `Subtlety`, and `Enhancement` do **not** double-count the same `HIT` rating into separate independent pools
+- overcap is clamped to full progress instead of becoming a negative cap penalty
+- `Assassination`, `Combat`, and `Subtlety` do not stop `HIT` progress at the melee special cap; they progress toward poison cap
 - `Legacy` and `PvP` scores do not use cap profiles
 
 ### 9.9 Final Character Record
@@ -690,16 +690,24 @@ Important runtime detail:
 
 Character tooltip and paper doll may show a short cap summary built from `record.capBreakdown.summary`.
 
+Current runtime summary behavior:
+
+- active cap pools with progress above `0%` may be listed
+- the total cap bonus is split proportionally by pool progress
+- capped pools are labeled as `capped`
+- uncapped pools are labeled by their rounded progress percent
+
 Examples:
 
-- `GS2 Caps: Hit capped, Expertise capped`
-- `GS2 Caps: Defense 537/540`
+- `GS2 Caps: Hit capped (+82 GS2), Expertise 50% (+41 GS2)`
+- `GS2 Caps: Defense capped (+67 GS2), Hit 25% (+17 GS2)`
 
 Summary rules:
 
-- if a pool reached its final threshold, it is shown as `<Summary> capped`
-- otherwise it is shown as `<Summary> current/target`
-- summary lines are informational only; they do not expose the full segment breakdown
+- if a pool reached its target, it is shown as `<Summary> capped (+N GS2)`
+- otherwise it is shown as `<Summary> <P>% (+N GS2)`
+- displayed pool bonuses are a proportional allocation of the single total cap bonus
+- the displayed pool bonuses always sum back to `record.capAdjustedGs2`
 
 ## 12. Enchant Data Semantics
 

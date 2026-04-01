@@ -102,65 +102,126 @@ function GS_ResolveCapThreshold(segment, context)
 	return max(0, segment.threshold or 0)
 end
 
-function GS_GetCapSummaryValue(poolStat, statValue, resolvedThreshold, context)
+function GS_IsRoguePoisonCapSpec(specKey)
+	return specKey == "ASSASSINATION" or specKey == "COMBAT" or specKey == "SUBTLETY"
+end
+
+function GS_FindCapSegment(pool, mode)
+	if not pool or not pool.segments then
+		return nil
+	end
+	for index = 1, #pool.segments do
+		local segment = pool.segments[index]
+		if segment.mode == mode then
+			return segment
+		end
+	end
+	return nil
+end
+
+function GS_GetCapProgressTarget(poolStat, pool, context, specKey)
+	local targetSegment = nil
+	if pool and pool.progressMode then
+		targetSegment = GS_FindCapSegment(pool, pool.progressMode)
+	end
+	if not targetSegment and poolStat == "HIT" then
+		if GS_IsRoguePoisonCapSpec(specKey) then
+			targetSegment = GS_FindCapSegment(pool, "SPELL_HIT_PERCENT")
+		else
+			targetSegment = GS_FindCapSegment(pool, "MELEE_HIT_PERCENT") or GS_FindCapSegment(pool, "SPELL_HIT_PERCENT")
+		end
+	elseif not targetSegment and poolStat == "EXPERTISE" then
+		targetSegment = GS_FindCapSegment(pool, "EXPERTISE_POINTS")
+	elseif not targetSegment and poolStat == "DEFENSE" then
+		targetSegment = GS_FindCapSegment(pool, "DEFENSE_SKILL")
+	elseif not targetSegment and poolStat == "ARP" then
+		targetSegment = GS_FindCapSegment(pool, "RATING")
+	end
+	if not targetSegment and pool and pool.segments and pool.segments[1] then
+		targetSegment = pool.segments[1]
+	end
+	local resolvedThreshold = GS_ResolveCapThreshold(targetSegment, context)
+	return targetSegment, resolvedThreshold
+end
+
+function GS_GetCapPoolDisplay(poolStat, statValue, targetSegment, resolvedThreshold, context)
 	if poolStat == "DEFENSE" then
-		return 400 + floor(((statValue or 0) / GS_RatingConversions.DEFENSE) + (context.defenseSkillBonus or 0) + 0.5), resolvedThreshold > 0 and 540 or 540, false
+		return 400 + floor(((statValue or 0) / GS_RatingConversions.DEFENSE) + (context.defenseSkillBonus or 0) + 0.5), targetSegment and targetSegment.threshold or 540, false
 	end
 	if poolStat == "EXPERTISE" then
-		return floor(((statValue or 0) / GS_RatingConversions.EXPERTISE) + (context.expertiseBonus or 0) + 0.5), floor((resolvedThreshold or 0) / GS_RatingConversions.EXPERTISE), false
+		return floor(((statValue or 0) / GS_RatingConversions.EXPERTISE) + (context.expertiseBonus or 0) + 0.5), targetSegment and targetSegment.threshold or 26, false
+	end
+	if poolStat == "HIT" and targetSegment and targetSegment.mode == "SPELL_HIT_PERCENT" then
+		return ((statValue or 0) / GS_RatingConversions.SPELL_HIT) + (context.spellHitBonus or 0) + (context.targetSpellHitBonus or 0), targetSegment.threshold or 17, false
+	end
+	if poolStat == "HIT" and targetSegment and targetSegment.mode == "MELEE_HIT_PERCENT" then
+		return ((statValue or 0) / GS_RatingConversions.MELEE_HIT) + (context.meleeHitBonus or 0), targetSegment.threshold or 8, false
 	end
 	return floor((statValue or 0) + 0.5), floor((resolvedThreshold or 0) + 0.5), true
 end
 
-function GS_ApplyCapPool(poolStat, statValue, baseWeight, pool, context)
-	local adjustedRaw, defaultRaw = 0, (statValue or 0) * (baseWeight or 0)
-	local segments, start, lastThreshold = {}, 0, 0
-	for index = 1, #(pool.segments or {}) do
-		local segment = pool.segments[index]
-		local threshold = GS_ResolveCapThreshold(segment, context)
-		if threshold < start then
-			threshold = start
-		end
-		local segmentValue = min(max((statValue or 0) - start, 0), threshold - start)
-		local segmentRaw = segmentValue * baseWeight * (segment.mult or 1)
-		adjustedRaw = adjustedRaw + segmentRaw
-		segments[#segments + 1] = {
-			label = segment.label,
-			value = segmentValue,
-			start = start,
-			threshold = threshold,
-			multiplier = segment.mult or 1,
-			score = segmentRaw,
-		}
-		start = threshold
-		lastThreshold = threshold
+function GS_GetMaxCapBonus(preCapGs2)
+	local gs2Value = tonumber(preCapGs2) or 0
+	if gs2Value <= 0 then
+		return 0
 	end
-	local overflow = max(0, (statValue or 0) - start)
-	if overflow > 0 then
-		adjustedRaw = adjustedRaw + (overflow * baseWeight * (pool.overflow or GS_CapSegmentDefaults.OVERFLOW))
-		segments[#segments + 1] = {
-			label = (pool.summary or poolStat) .. " overflow",
-			value = overflow,
-			start = start,
-			threshold = nil,
-			multiplier = pool.overflow or GS_CapSegmentDefaults.OVERFLOW,
-			score = overflow * baseWeight * (pool.overflow or GS_CapSegmentDefaults.OVERFLOW),
-		}
-	end
-	local current, target, ratingSummary = GS_GetCapSummaryValue(poolStat, statValue, lastThreshold, context)
+	local lowGs = max(GS_CAP_BONUS_ANCHOR_LOW_GS2 or 4000, 1)
+	local highGs = max(GS_CAP_BONUS_ANCHOR_HIGH_GS2 or 5000, lowGs + 1)
+	local lowBonus = GS_CAP_BONUS_ANCHOR_LOW_BONUS or 200
+	local highBonus = GS_CAP_BONUS_ANCHOR_HIGH_BONUS or 100
+	local ratio = (math.log(gs2Value) - math.log(lowGs)) / (math.log(highGs) - math.log(lowGs))
+	local rawBonus = lowBonus + ((highBonus - lowBonus) * ratio)
+	local rounded = floor(rawBonus + 0.5)
+	return min(GS_CAP_BONUS_MAX or 300, max(GS_CAP_BONUS_MIN or 25, rounded))
+end
+
+function GS_ApplyCapPool(poolStat, statValue, baseWeight, pool, context, specKey)
+	local targetSegment, resolvedThreshold = GS_GetCapProgressTarget(poolStat, pool, context, specKey)
+	local progress = resolvedThreshold > 0 and min(max((statValue or 0) / resolvedThreshold, 0), 1) or 0
+	local current, target, ratingSummary = GS_GetCapPoolDisplay(poolStat, statValue, targetSegment, resolvedThreshold, context)
 	return {
 		stat = poolStat,
 		summary = pool.summary or poolStat,
 		rawValue = statValue or 0,
-		defaultRaw = defaultRaw,
-		adjustedRaw = adjustedRaw,
-		deltaRaw = adjustedRaw - defaultRaw,
-		segments = segments,
-		capped = (statValue or 0) >= lastThreshold and lastThreshold > 0,
+		baseWeight = baseWeight or 0,
+		progress = progress,
 		current = current,
 		target = target,
+		targetSegment = targetSegment,
+		targetThreshold = resolvedThreshold,
 		ratingSummary = ratingSummary,
+		capped = progress >= 1,
+		bonusGs2 = 0,
 	}
+end
+
+function GS_AssignCapPoolBonuses(capBreakdown, totalBonus)
+	if not capBreakdown or not capBreakdown.pools then
+		return
+	end
+	local progressTotal, lastPositiveIndex = 0, nil
+	for index = 1, #capBreakdown.pools do
+		local progress = capBreakdown.pools[index].progress or 0
+		if progress > 0 then
+			progressTotal = progressTotal + progress
+			lastPositiveIndex = index
+		end
+	end
+	local remaining = totalBonus or 0
+	for index = 1, #capBreakdown.pools do
+		local pool = capBreakdown.pools[index]
+		local progress = pool.progress or 0
+		local bonus = 0
+		if progress > 0 and progressTotal > 0 and (totalBonus or 0) > 0 then
+			if index == lastPositiveIndex then
+				bonus = remaining
+			else
+				bonus = floor((totalBonus or 0) * (progress / progressTotal))
+				remaining = remaining - bonus
+			end
+		end
+		pool.bonusGs2 = bonus
+	end
 end
 
 function GS_FormatCapSummary(capBreakdown)
@@ -170,16 +231,20 @@ function GS_FormatCapSummary(capBreakdown)
 	local parts = {}
 	for index = 1, #capBreakdown.pools do
 		local pool = capBreakdown.pools[index]
-		if pool.capped then
-			parts[#parts + 1] = pool.summary .. " capped"
-		elseif pool.target and pool.target > 0 then
-			parts[#parts + 1] = pool.summary .. " " .. tostring(pool.current) .. "/" .. tostring(pool.target)
+		if (pool.progress or 0) > 0 and (pool.bonusGs2 or 0) >= 0 then
+			local label = pool.summary
+			if pool.capped then
+				label = label .. " capped"
+			else
+				label = label .. " " .. tostring(floor((pool.progress or 0) * 100 + 0.5)) .. "%"
+			end
+			parts[#parts + 1] = label .. " (+" .. tostring(pool.bonusGs2 or 0) .. " GS2)"
 		end
 	end
 	return #parts > 0 and table.concat(parts, ", ") or nil
 end
 
-function GS_ApplyCharacterCaps(snapshot)
+function GS_ApplyCharacterCaps(snapshot, preCapGs2)
 	if not snapshot or not snapshot.specKey then
 		return 0, nil, nil
 	end
@@ -190,8 +255,7 @@ function GS_ApplyCharacterCaps(snapshot)
 		return 0, nil, totalStats
 	end
 	local context = GS_GetCapContext(snapshot.unit, snapshot.specKey)
-	local breakdown = { pools = {}, summary = nil, context = context }
-	local totalDeltaRaw = 0
+	local breakdown = { pools = {}, summary = nil, context = context, preCapGs2 = preCapGs2 or 0 }
 	local order = capProfile.order or {}
 	for index = 1, #order do
 		local stat = order[index]
@@ -199,14 +263,19 @@ function GS_ApplyCharacterCaps(snapshot)
 		local baseWeight = profile.pve[stat]
 		local statValue = totalStats[stat] or 0
 		if pool and baseWeight and statValue > 0 then
-			local poolBreakdown = GS_ApplyCapPool(stat, statValue, baseWeight, pool, context)
-			totalDeltaRaw = totalDeltaRaw + poolBreakdown.deltaRaw
+			local poolBreakdown = GS_ApplyCapPool(stat, statValue, baseWeight, pool, context, snapshot.specKey)
 			breakdown.pools[#breakdown.pools + 1] = poolBreakdown
 		end
 	end
+	local progressTotal = 0
+	for index = 1, #breakdown.pools do
+		progressTotal = progressTotal + (breakdown.pools[index].progress or 0)
+	end
+	breakdown.overallProgress = #breakdown.pools > 0 and (progressTotal / #breakdown.pools) or 0
+	breakdown.maxBonus = GS_GetMaxCapBonus(preCapGs2 or 0)
+	breakdown.deltaGs2 = floor((breakdown.maxBonus or 0) * (breakdown.overallProgress or 0))
+	GS_AssignCapPoolBonuses(breakdown, breakdown.deltaGs2)
 	breakdown.summary = GS_FormatCapSummary(breakdown)
-	breakdown.deltaRaw = totalDeltaRaw
-	breakdown.deltaGs2 = floor(totalDeltaRaw * GS_GS2_STAT_SCALE)
 	return breakdown.deltaGs2, breakdown, totalStats
 end
 
