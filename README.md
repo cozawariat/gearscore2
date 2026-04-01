@@ -6,6 +6,10 @@ GearScore2 is a hobby project.
 
 This addon is the successor to `GearScoreLite: Reborn` (https://github.com/Arcitec/GearScoreLite_Reborn).
 
+> [!IMPORTANT]
+> `GearScore2` may conflict with the original `GearScore` addon and with related forks such as `GearScoreLite` and `GearScoreLite: Reborn`.
+> Run only one addon from that family at a time, because overlapping tooltip hooks, slash commands, globals, or UI elements can cause duplicate lines, inconsistent values, or other unexpected behavior.
+
 I am fully aware that the chance of the wider WoW 3.3.5a community abandoning classic `GearScore` and migrating to `GS2` is probably very small, even if that would be the dream outcome.
 
 That is not really the main point.
