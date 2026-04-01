@@ -222,7 +222,7 @@ local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottom
 	footer:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 4, -18)
 	footer:SetWidth(viewportWidth - 12)
 	footer:SetJustifyH("LEFT")
-	footer:SetText("Tip: drag the minimap button to move it. Use /gs interface to jump to the Blizzard Interface Options page.")
+	footer:SetText("Tip: drag the minimap button to move it. Use /gs2 interface to jump to the Blizzard Interface Options page.")
 
 	content:SetHeight(860)
 	return scrollFrame, content

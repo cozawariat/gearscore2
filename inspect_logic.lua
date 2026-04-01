@@ -318,7 +318,7 @@ end
 function GS_RefreshTooltip(guid)
 	if not GameTooltip:IsShown() then return end
 	if GS_TooltipInventoryContext.guid and GS_TooltipInventoryContext.guid == guid and GS_TooltipInventoryContext.unit and GS_TooltipInventoryContext.slot then
-		GearScore_Original_SetInventoryItem(GameTooltip, GS_TooltipInventoryContext.unit, GS_TooltipInventoryContext.slot)
+		GS_OriginalSetInventoryItem(GameTooltip, GS_TooltipInventoryContext.unit, GS_TooltipInventoryContext.slot)
 		return
 	end
 	local _, unit = GameTooltip:GetUnit()
@@ -417,7 +417,7 @@ function GS_ProcessInspectQueue()
 	end
 end
 
-function GearScore_GetScore(_, target)
+function GS2_GetScore(_, target)
 	local record = GS_GetRecord(target or "player")
 	return record and record.gs2 or 0, record and record.average or 0
 end

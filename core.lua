@@ -40,6 +40,19 @@ GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, h
 GS_ExplainState = { owner = nil, itemLink = nil, itemSlot = nil }
 GS_TooltipInventoryContext = { unit = nil, slot = nil, guid = nil }
 GS_DebugInspectEnabled = false
+GS_RuntimeDisabledByConflict = false
+GS_ConflictWarningShown = false
+GS_ConflictPopupShown = false
+GS_OriginalSetInventoryItem = nil
+GS_ConflictingAddonName = nil
+
+GS_ConflictAddons = {
+	"GearScore",
+	"GearScoreLite",
+	"GearScoreLite_Reborn",
+	"GearScoreLiteReborn",
+	"GearScoreLite-Reborn",
+}
 
 GS_STAT_KEYS = {
 	ITEM_MOD_STRENGTH_SHORT = "STR", ITEM_MOD_AGILITY_SHORT = "AGI", ITEM_MOD_STAMINA_SHORT = "STA",
@@ -98,6 +111,75 @@ function GS_AppendExplainLine(lines, text)
 	lines[#lines + 1] = text
 end
 
+function GS_FindConflictingAddon(loadedAddonName)
+	local loadedMap = {}
+	if loadedAddonName then
+		loadedMap[loadedAddonName] = true
+	end
+	if IsAddOnLoaded then
+		for index = 1, #GS_ConflictAddons do
+			local addonName = GS_ConflictAddons[index]
+			if addonName ~= "GearScore2" and IsAddOnLoaded(addonName) then
+				loadedMap[addonName] = true
+			end
+		end
+	end
+	for index = 1, #GS_ConflictAddons do
+		local addonName = GS_ConflictAddons[index]
+		if loadedMap[addonName] then
+			return addonName
+		end
+	end
+end
+
+function GS_HasConflict()
+	return GS_RuntimeDisabledByConflict
+end
+
+function GS_EnableConflictMode(conflictName)
+	GS_RuntimeDisabledByConflict = true
+	GS_ConflictingAddonName = conflictName
+	if not GS_ConflictWarningShown and DEFAULT_CHAT_FRAME then
+		DEFAULT_CHAT_FRAME:AddMessage("|cffff5555GearScore2|r disabled its GearScore-compatible hooks because it detected a conflicting addon: |cffffff00" .. tostring(conflictName or "GearScore family") .. "|r. Use only one GearScore-family addon at a time.")
+		GS_ConflictWarningShown = true
+	end
+	if not GS_ConflictPopupShown and StaticPopup_Show then
+		StaticPopup_Show("GS2_CONFLICT_ADDON", tostring(conflictName or "Unknown addon"), nil, conflictName)
+		GS_ConflictPopupShown = true
+	end
+end
+
+StaticPopupDialogs["GS2_CONFLICT_ADDON"] = {
+	text = "GearScore2 detected a conflict with addon:\n\n%s\n\nDo you want to disable it and reload the UI?",
+	button1 = "Disable and Reload",
+	button2 = "Keep Both",
+	OnAccept = function(self, conflictName)
+		if conflictName and DisableAddOn then
+			DisableAddOn(conflictName)
+		end
+		if ReloadUI then
+			ReloadUI()
+		end
+	end,
+	OnCancel = function()
+		return
+	end,
+	timeout = 0,
+	whileDead = 1,
+	hideOnEscape = 1,
+	preferredIndex = STATICPOPUP_NUMDIALOGS,
+}
+
+function GS_InstallCompatibilityAliases()
+	if GS_HasConflict() then
+		return
+	end
+	_G.GearScore_GetQuality = GS2_GetQuality
+	_G.GearScore_GetItemScore = GS2_GetItemScore
+	_G.GearScore_GetScore = GS2_GetScore
+	_G.GearScore_SetDetails = GS2_SetDetails
+end
+
 function GS_AddStats(target, source)
 	if not target or not source then
 		return target
@@ -133,7 +215,7 @@ GS_TickerFrame:SetScript("OnUpdate", function()
 	end
 end)
 
-GS_MainFrame = CreateFrame("Frame", "GearScore", UIParent)
+GS_MainFrame = CreateFrame("Frame", "GearScore2Frame", UIParent)
 GS_MainFrame:SetScript("OnEvent", function(_, event, ...)
 	if GS_OnEvent then
 		GS_OnEvent(_, event, ...)

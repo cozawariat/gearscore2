@@ -75,10 +75,10 @@ function GS_CalculateLegacyBase(itemLink)
 	if GS_ItemTypes[itemEquipLoc] then
 		local tableRef = itemLevel > 120 and GS_Formula.A or GS_Formula.B
 		if itemRarity >= 2 and itemRarity <= 4 then
-			local red, green, blue = GearScore_GetQuality((floor(((itemLevel - tableRef[itemRarity].A) / tableRef[itemRarity].B) * scale)) * 11.25)
+			local red, green, blue = GS2_GetQuality((floor(((itemLevel - tableRef[itemRarity].A) / tableRef[itemRarity].B) * scale)) * 11.25)
 			local score = floor(((itemLevel - tableRef[itemRarity].A) / tableRef[itemRarity].B) * GS_ItemTypes[itemEquipLoc].SlotMOD * scale * qualityScale)
 			if itemLevel == 187.05 then itemLevel = 0 end
-			if score < 0 then score, red, green, blue = 0, GearScore_GetQuality(1) end
+			if score < 0 then score, red, green, blue = 0, GS2_GetQuality(1) end
 			return score, itemLevel, GS_ItemTypes[itemEquipLoc].ItemSlot, red, green, blue, 0, itemEquipLoc, 1, itemSubType
 		end
 	end

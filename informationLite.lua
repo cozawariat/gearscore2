@@ -301,11 +301,11 @@ GS_Quality = {
 
 GS_CommandList = {
 	[1] = "---GearScore Options List---",
-	[2] = "/gs player -> Toggles display of scores on players.",
-	[3] = "/gs item -> Toggles display of scores for items.",
-	[4] = "/gs level -> Toggles iLevel information.",
-	[5] = "/gs reset --> Resets GearScore's Options back to Default.",
-	[6] = "/gs compare --> Toggles display of comparative info between you and your target's GearScore.",
+	[2] = "/gs2 player -> Toggles display of scores on players.",
+	[3] = "/gs2 item -> Toggles display of scores for items.",
+	[4] = "/gs2 level -> Toggles iLevel information.",
+	[5] = "/gs2 interface -> Opens the interface options page.",
+	[6] = "/gs2 settings -> Opens the GearScore2 settings panel.",
 }
 
 GS_ShowSwitch = {[0] = 2,[1] = 3,[2] = 0,[3] = 1}

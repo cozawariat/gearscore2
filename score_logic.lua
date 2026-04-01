@@ -496,7 +496,7 @@ function GS_GetHunterLegacy(slotId, item)
 	return item.legacyBase
 end
 
-function GearScore_GetQuality(score)
+function GS2_GetQuality(score)
 	if score > 5999 then score = 5999 end
 	if not score then return 0, 0, 0, "Trash" end
 	for i = 0, 6 do
@@ -510,6 +510,6 @@ function GearScore_GetQuality(score)
 	return 0.1, 0.1, 0.1
 end
 
-function GearScore_GetItemScore(itemLink)
+function GS2_GetItemScore(itemLink)
 	return GS_CalculateLegacyBase(itemLink)
 end

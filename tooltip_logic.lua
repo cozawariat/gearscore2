@@ -63,17 +63,17 @@ function GS_AddScoreLines(tooltip, record)
 	local showCharacterCapSummary = not GS_Settings or GS_Settings["showCharacterCapSummary"]
 	if record.gs2Available and record.gs2 ~= nil then
 		if showCharacterGS2 then
-			local r, g, b = GearScore_GetQuality(record.gs2)
+			local r, g, b = GS2_GetQuality(record.gs2)
 			tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)
 		end
 	end
 	local r, g, b
 	if showCharacterLegacy then
-		r, g, b = GearScore_GetQuality(record.legacy)
+		r, g, b = GS2_GetQuality(record.legacy)
 		tooltip:AddDoubleLine("Legacy GearScore", tostring(record.legacy), r, g, b, r, g, b)
 	end
 	if showCharacterPvp and record.pvp ~= nil then
-		r, g, b = GearScore_GetQuality(record.pvp)
+		r, g, b = GS2_GetQuality(record.pvp)
 		tooltip:AddDoubleLine("PvP GearScore", tostring(record.pvp), r, g, b, r, g, b)
 	end
 	if GS_Settings["Level"] == 1 and showCharacterAverage then tooltip:AddDoubleLine("Average iLevel", tostring(record.average or 0), 0.8, 0.8, 0.8, 0.8, 0.8, 0.8) end
@@ -367,7 +367,7 @@ function GS_AddItemLines(tooltip, itemLink)
 	if context and (not context.gs2Available or not context.specKey) then
 		tooltip:AddDoubleLine("Spec", "Unknown", 1, 0.65, 0.65, 1, 0.65, 0.65)
 		if not GS_Settings or GS_Settings["showItemLegacy"] then
-			local lr, lg, lb = GearScore_GetQuality(item.legacyBase)
+			local lr, lg, lb = GS2_GetQuality(item.legacyBase)
 			tooltip:AddDoubleLine("Legacy GearScore", tostring(item.legacyBase), lr, lg, lb, lr, lg, lb)
 		end
 		if GS_Settings["Level"] == 1 and (not GS_Settings or GS_Settings["showItemLevel"]) then tooltip:AddLine("iLevel " .. tostring(item.level or 0), 0.65, 0.65, 0.65) end
@@ -375,9 +375,9 @@ function GS_AddItemLines(tooltip, itemLink)
 		return
 	end
 	local gs2, pvp = GS_ScoreItem(item, context.classToken, context.specKey)
-	local r, g, b = GearScore_GetQuality(gs2)
-	local lr, lg, lb = GearScore_GetQuality(item.legacyBase)
-	local pr, pg, pb = GearScore_GetQuality(pvp)
+	local r, g, b = GS2_GetQuality(gs2)
+	local lr, lg, lb = GS2_GetQuality(item.legacyBase)
+	local pr, pg, pb = GS2_GetQuality(pvp)
 	if context and context.unit and not UnitIsUnit(context.unit, "player") then
 		tooltip:AddDoubleLine("Spec", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
 	end
@@ -394,7 +394,7 @@ function GS_AddItemLines(tooltip, itemLink)
 	GS_RenderExplainTooltip(tooltip, itemLink)
 end
 
-function GearScore_SetDetails(tooltip, name)
+function GS2_SetDetails(tooltip, name)
 	local _, unit = GameTooltip:GetUnit()
 	local record = unit and GS_GetRecord(unit)
 	if not record or not name or UnitName(unit) ~= name then return end
@@ -416,7 +416,8 @@ function GearScore_SetDetails(tooltip, name)
 	end
 end
 
-function GearScore_HookSetUnit()
+function GS2_HookSetUnit()
+	if GS_HasConflict() then return end
 	if GS_PlayerIsInCombat then return end
 	GS_HideExplainTooltip()
 	local name, unit = GS_GetTooltipUnit()
@@ -444,7 +445,8 @@ function GearScore_HookSetUnit()
 	end
 end
 
-function GearScore_HookSetItem()
+function GS2_HookSetItem()
+	if GS_HasConflict() then return end
 	if not GS_PlayerIsInCombat then
 		local _, link = GameTooltip:GetItem()
 		GS_AddItemLines(GameTooltip, link)
@@ -453,14 +455,17 @@ function GearScore_HookSetItem()
 	end
 end
 
-function GearScore_HookRefItem()
+function GS2_HookRefItem()
+	if GS_HasConflict() then return end
 	if not GS_PlayerIsInCombat then local _, link = ItemRefTooltip:GetItem() GS_AddItemLines(ItemRefTooltip, link) else GS_HideExplainTooltip() end
 end
 
-function GearScore_HookCompareItem()
+function GS2_HookCompareItem()
+	if GS_HasConflict() then return end
 	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip1:GetItem() GS_AddItemLines(ShoppingTooltip1, link) else GS_HideExplainTooltip() end
 end
 
-function GearScore_HookCompareItem2()
+function GS2_HookCompareItem2()
+	if GS_HasConflict() then return end
 	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip2:GetItem() GS_AddItemLines(ShoppingTooltip2, link) else GS_HideExplainTooltip() end
 end

@@ -2,7 +2,7 @@
 --                               GearScore2 UI                                --
 -------------------------------------------------------------------------------
 
-function GearScore_OnEnter(frame, itemSlot, argument)
+function GS2_OnEnter(frame, itemSlot, argument)
 	local unit, slot = itemSlot, argument
 	if type(unit) == "string" and type(slot) == "number" then
 		GS_TooltipInventoryContext.unit = unit
@@ -13,14 +13,14 @@ function GearScore_OnEnter(frame, itemSlot, argument)
 		GS_TooltipInventoryContext.slot = nil
 		GS_TooltipInventoryContext.guid = nil
 	end
-	return GearScore_Original_SetInventoryItem(frame, itemSlot, argument)
+	return GS_OriginalSetInventoryItem(frame, itemSlot, argument)
 end
 
 function GS_UpdatePaperDoll()
 	if GS_PlayerIsInCombat then return end
 	local record = GS_GetRecord("player")
 	if not record then return end
-	local r, g, b = GearScore_GetQuality(record.gs2)
+	local r, g, b = GS2_GetQuality(record.gs2)
 	PersonalGearScore:SetText(tostring(record.gs2)) PersonalGearScore:SetTextColor(r, g, b, 1)
 	LegacyGearScoreText:SetText(tostring(record.legacy)) LegacyGearScoreText:SetTextColor(0.8, 0.8, 0.8, 1)
 	PvPGearScoreText:SetText(tostring(record.pvp)) PvPGearScoreText:SetTextColor(0.95, 0.55, 0.25, 1)
@@ -37,7 +37,7 @@ function GS_MANSET(command)
 	if command == "item" then GS_Settings["Item"] = GS_ItemSwitch[GS_Settings["Item"]] print((GS_Settings["Item"] == 1 or GS_Settings["Item"] == 3) and "Item Scores: On" or "Item Scores: Off") return end
 	if command == "level" then GS_Settings["Level"] = GS_Settings["Level"] * -1 print(GS_Settings["Level"] == 1 and "Item Levels: On" or "Item Levels: Off") return end
 	if command == "debuginspect" then GS_DebugInspectEnabled = not GS_DebugInspectEnabled print("GS2 Inspect Debug: " .. (GS_DebugInspectEnabled and "On" or "Off")) return end
-	print("GearScore2: Unknown command. Type '/gs' for a list of options")
+	print("GearScore2: Unknown command. Type '/gs2' for a list of options")
 end
 
 function GS_OnEvent(_, event, ...)
@@ -84,6 +84,10 @@ function GS_OnEvent(_, event, ...)
 	end
 	if event == "ADDON_LOADED" then
 		local addonName = ...
+		local conflictingAddon = GS_FindConflictingAddon(addonName)
+		if conflictingAddon then
+			GS_EnableConflictMode(conflictingAddon)
+		end
 		if addonName ~= "GearScore2" then return end
 		if not GS2_Settings then
 			GS2_Settings = GS_Settings or GS_DefaultSettings
@@ -96,6 +100,7 @@ function GS_OnEvent(_, event, ...)
 		if GS_InitializeSettings then
 			GS_InitializeSettings()
 		end
+		GS_InstallCompatibilityAliases()
 		GS_UpdatePaperDoll()
 	end
 end
@@ -118,11 +123,11 @@ GS_ExplainTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 GS_ExplainTooltip:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -40, -220)
 GS_ExplainTooltip:SetScale(1)
 
-GameTooltip:HookScript("OnTooltipSetUnit", GearScore_HookSetUnit)
-GameTooltip:HookScript("OnTooltipSetItem", GearScore_HookSetItem)
-ShoppingTooltip1:HookScript("OnTooltipSetItem", GearScore_HookCompareItem)
-ShoppingTooltip2:HookScript("OnTooltipSetItem", GearScore_HookCompareItem2)
-ItemRefTooltip:HookScript("OnTooltipSetItem", GearScore_HookRefItem)
+GameTooltip:HookScript("OnTooltipSetUnit", GS2_HookSetUnit)
+GameTooltip:HookScript("OnTooltipSetItem", GS2_HookSetItem)
+ShoppingTooltip1:HookScript("OnTooltipSetItem", GS2_HookCompareItem)
+ShoppingTooltip2:HookScript("OnTooltipSetItem", GS2_HookCompareItem2)
+ItemRefTooltip:HookScript("OnTooltipSetItem", GS2_HookRefItem)
 PaperDollFrame:HookScript("OnShow", GS_UpdatePaperDoll)
 
 PaperDollFrame:CreateFontString("PersonalGearScore")
@@ -141,10 +146,10 @@ PvPGearScoreText:SetFont("Fonts\\FRIZQT__.TTF", 12) PvPGearScoreText:SetText("0"
 PvPGearScoreLabel:SetFont("Fonts\\FRIZQT__.TTF", 12) PvPGearScoreLabel:SetText("PvP") PvPGearScoreLabel:SetPoint("BOTTOMLEFT", PaperDollFrame, "TOPLEFT", 232, -260) PvPGearScoreLabel:Show()
 CapSummaryText:SetFont("Fonts\\FRIZQT__.TTF", 11) CapSummaryText:SetText("") CapSummaryText:SetPoint("TOPLEFT", PaperDollFrame, "TOPLEFT", 72, -62) CapSummaryText:SetWidth(220) CapSummaryText:SetJustifyH("LEFT") CapSummaryText:Show()
 
-GearScore_Original_SetInventoryItem = GameTooltip.SetInventoryItem
-GameTooltip.SetInventoryItem = GearScore_OnEnter
+GS_OriginalSetInventoryItem = GameTooltip.SetInventoryItem
+GameTooltip.SetInventoryItem = GS2_OnEnter
 
-SlashCmdList["MY2SCRIPT"] = GS_MANSET
-SLASH_MY2SCRIPT1 = "/gset"
-SLASH_MY2SCRIPT2 = "/gs"
-SLASH_MY2SCRIPT3 = "/gearscore"
+SlashCmdList["GS2SCRIPT"] = GS_MANSET
+SLASH_GS2SCRIPT1 = "/gs2"
+SLASH_GS2SCRIPT2 = "/gearscore2"
+SLASH_GS2SCRIPT3 = "/gset"
