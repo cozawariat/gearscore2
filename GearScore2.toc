@@ -2,7 +2,7 @@
 ## Title: GearScore2
 ## Notes: Smart PvE-oriented gear scoring with Legacy GearScore and PvP GearScore support.
 ## Version: 3x06
-## Author: Mizianolas [Warmane-Onyxia(A)]
+## Author: Mizianolas <JezuKurna> [Warmane-Onyxia(A)]
 ## SavedVariables: GS2_Settings
 
 # Original authors
