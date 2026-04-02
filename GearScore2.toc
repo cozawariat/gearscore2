@@ -10,6 +10,7 @@
 
 informationLite.lua
 enchant_data.lua
+gem_data.lua
 core.lua
 item_logic.lua
 score_logic.lua

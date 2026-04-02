@@ -51,6 +51,10 @@ GS_ConflictWarningShown = false
 GS_ConflictPopupShown = false
 GS_OriginalSetInventoryItem = nil
 GS_ConflictingAddonName = nil
+GS_ResolutionIssues = {}
+GS_ResolutionIssueKeys = {}
+GS_ResolutionIssuesVersion = 0
+GS_ResolutionIssuesFrame = nil
 
 GS_ConflictAddons = {
 	"GearScore",
@@ -118,6 +122,51 @@ function GS_DebugInspect(message)
 		return
 	end
 	DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99GS2 Debug|r " .. tostring(message))
+end
+
+function GS_ReportResolutionIssue(issue)
+	if not issue then
+		return
+	end
+	local key = table.concat({
+		tostring(issue.kind or "unknown"),
+		tostring(issue.itemLink or issue.itemName or "?"),
+		tostring(issue.slotId or 0),
+		tostring(issue.gemIndex or 0),
+		tostring(issue.gemId or issue.enchantId or 0),
+		tostring(issue.unitName or "item"),
+	}, "|")
+	if GS_ResolutionIssueKeys[key] then
+		return
+	end
+	GS_ResolutionIssueKeys[key] = true
+	GS_ResolutionIssues[#GS_ResolutionIssues + 1] = issue
+	GS_ResolutionIssuesVersion = GS_ResolutionIssuesVersion + 1
+end
+
+function GS_BuildResolutionIssueReport()
+	local lines = {
+		"GearScore2 unresolved data report",
+		"Entries: " .. tostring(#GS_ResolutionIssues),
+		"",
+	}
+	for index = 1, #GS_ResolutionIssues do
+		local issue = GS_ResolutionIssues[index]
+		lines[#lines + 1] = "[" .. tostring(index) .. "] kind=" .. tostring(issue.kind or "unknown")
+		lines[#lines + 1] = "unit=" .. tostring(issue.unitName or "n/a") .. " class=" .. tostring(issue.classToken or "n/a") .. " spec=" .. tostring(issue.specKey or "n/a")
+		lines[#lines + 1] = "slotId=" .. tostring(issue.slotId or 0) .. " item=" .. tostring(issue.itemName or "?")
+		lines[#lines + 1] = "itemLink=" .. tostring(issue.itemLink or "n/a")
+		if issue.gemIndex then
+			lines[#lines + 1] = "gemIndex=" .. tostring(issue.gemIndex) .. " gemId=" .. tostring(issue.gemId or 0) .. " gemName=" .. tostring(issue.gemName or "n/a")
+			lines[#lines + 1] = "gemLink=" .. tostring(issue.gemLink or "n/a")
+		end
+		if issue.enchantId then
+			lines[#lines + 1] = "enchantId=" .. tostring(issue.enchantId)
+		end
+		lines[#lines + 1] = "details=" .. tostring(issue.details or "n/a")
+		lines[#lines + 1] = ""
+	end
+	return table.concat(lines, "\n")
 end
 
 function GS_AppendExplainLine(lines, text)

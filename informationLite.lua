@@ -303,6 +303,8 @@ GS_CommandList = {
 	[1] = "---GearScore2 Commands---",
 	[2] = "/gs2 or /gs2 settings -> Opens the GearScore2 settings panel.",
 	[3] = "/gs2 debuginspect -> Toggles inspect debug messages.",
+	[4] = "/gs2 debugslot 3 -> Prints per-item scoring details for a slot.",
+	[5] = "/gs2 issues -> Opens a copyable report of unresolved gem/enchant data.",
 }
 
 GS_EnchantSlots = {

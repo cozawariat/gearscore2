@@ -388,6 +388,14 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 			itemName = item.name,
 		}
 	end
+	if item and item.unresolvedData then
+		if explain then
+			explain.flags[#explain.flags + 1] = "Item score withheld: unresolved gem/enchant stat data"
+			explain.pve.final = nil
+			explain.pvp.final = nil
+		end
+		return nil, nil, explain
+	end
 	if not compatible then
 		if explain then
 			explain.flags[#explain.flags + 1] = "Item rejected: offspec / incompatible armor type / incompatible weapon type"

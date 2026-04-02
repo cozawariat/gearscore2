@@ -177,12 +177,18 @@ function GS_InferSpecFromSnapshot(snapshot)
 			for itemIndex = 1, #snapshot.items do
 				local entry = snapshot.items[itemIndex]
 				local itemGS2 = GS_ScoreItem(entry.item, snapshot.classToken, candidateSpec)
-				total = total + (itemGS2 or 0)
+				if itemGS2 == nil then
+					total = nil
+					break
+				end
+				total = total + itemGS2
 			end
-			local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, items = snapshot.items }, total)
-			total = total + (capAdjustedGs2 or 0)
+			if total then
+				local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, items = snapshot.items }, total)
+				total = total + (capAdjustedGs2 or 0)
+			end
 			GS_DebugInspect("infer candidate " .. tostring(candidateSpec) .. " total=" .. tostring(total) .. " for " .. tostring(snapshot.name))
-			if not bestScore or total > bestScore then
+			if total and (not bestScore or total > bestScore) then
 				bestScore = total
 				bestSpec = candidateSpec
 			end
@@ -224,28 +230,36 @@ end
 
 function GS_BuildRecord(snapshot)
 	local cached = GS_InspectCache[snapshot.guid]
-	if cached and cached.fingerprint == snapshot.fingerprint and cached.expiresAt > GetTime() and cached.specKey == snapshot.specKey and cached.specSource == (snapshot.specSource or "none") and cached.gs2Available == (snapshot.specResolved and snapshot.specKey ~= nil) then
+	if cached and cached.fingerprint == snapshot.fingerprint and cached.expiresAt > GetTime() and cached.specKey == snapshot.specKey and cached.specSource == (snapshot.specSource or "none") then
 		return cached
 	end
 	local gs2, legacy, pvp, detailLinks = 0, 0, 0, {}
+	local unresolvedData = false
 	for index = 1, #snapshot.items do
 		local entry = snapshot.items[index]
 		local itemGS2, itemPVP = 0, nil
 		if snapshot.specResolved and snapshot.specKey then
 			itemGS2, itemPVP = GS_ScoreItem(entry.item, snapshot.classToken, snapshot.specKey)
-			gs2 = gs2 + itemGS2
-			pvp = (pvp or 0) + itemPVP
+			if itemGS2 == nil or itemPVP == nil then
+				unresolvedData = true
+			else
+				gs2 = gs2 + itemGS2
+				pvp = (pvp or 0) + itemPVP
+			end
 		end
 		legacy = legacy + entry.legacy
 		detailLinks[entry.slotId] = entry.item.link
 	end
 	local capAdjustedGs2, capBreakdown, capStats = 0, nil, nil
-	if snapshot.specResolved and snapshot.specKey then
+	if snapshot.specResolved and snapshot.specKey and not unresolvedData then
 		capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot, gs2)
 		gs2 = gs2 + (capAdjustedGs2 or 0)
 	end
 	local specLabel = snapshot.specKey and GS_GetSpecLabel(snapshot.specKey) or "Unknown"
 	local scanStatusText = snapshot.specResolved and specLabel or "Spec unknown"
+	if unresolvedData then
+		scanStatusText = "GS2 unavailable"
+	end
 	cached = {
 		guid = snapshot.guid,
 		name = snapshot.name,
@@ -255,17 +269,18 @@ function GS_BuildRecord(snapshot)
 		specResolved = snapshot.specResolved and true or false,
 		specSource = snapshot.specSource or "none",
 		scanExpired = snapshot.scanExpired and true or false,
-		gs2Available = snapshot.specResolved and snapshot.specKey ~= nil,
+		gs2Available = snapshot.specResolved and snapshot.specKey ~= nil and not unresolvedData,
 		scanStatusText = scanStatusText,
 		fingerprint = snapshot.fingerprint,
 		average = snapshot.average,
-		gs2 = snapshot.specResolved and floor(gs2) or nil,
+		gs2 = (snapshot.specResolved and not unresolvedData) and floor(gs2) or nil,
 		legacy = floor(legacy),
-		pvp = snapshot.specResolved and floor(pvp or 0) or nil,
+		pvp = (snapshot.specResolved and not unresolvedData) and floor(pvp or 0) or nil,
 		capAdjustedGs2 = capAdjustedGs2 or 0,
 		capBreakdown = capBreakdown,
 		capStats = capStats,
 		detailLinks = detailLinks,
+		unresolvedData = unresolvedData,
 		expiresAt = GetTime() + GS_CACHE_TTL,
 		freshUntil = GetTime() + GS_FRESH_TTL,
 	}

@@ -22,6 +22,12 @@ function GS_ParseItemLink(itemLink)
 	return GS_StoreCacheEntry(GS_ParsedLinkCache, itemLink, cached, "GS_ParsedLinkCacheCount", GS_PARSED_LINK_CACHE_MAX, GS_PARSED_LINK_CACHE_TRIM_TO)
 end
 
+function GS_GetItemIdFromLink(itemLink)
+	if not itemLink then return nil end
+	local itemId = string.match(itemLink, "item:(%-?%d+)")
+	return tonumber(itemId)
+end
+
 function GS_IsEmptyStats(stats)
 	if not stats then return true end
 	for _, value in pairs(stats) do
@@ -30,23 +36,6 @@ function GS_IsEmptyStats(stats)
 		end
 	end
 	return true
-end
-
-function GS_GetGemFallbackStats(gemName, gemId)
-	if not gemName then return nil end
-	local _, _, quality = GetItemInfo(gemId)
-	local amount = (quality == 4 and 20) or 16
-	if string.find(gemName, "Rigid", 1, true) then return { HIT = amount } end
-	if string.find(gemName, "Delicate", 1, true) then return { AGI = amount } end
-	if string.find(gemName, "Bold", 1, true) then return { STR = amount } end
-	if string.find(gemName, "Bright", 1, true) then return { INT = amount } end
-	if string.find(gemName, "Solid", 1, true) then return { STA = amount } end
-	if string.find(gemName, "Runed", 1, true) then return { SP = amount * 1.15 } end
-	if string.find(gemName, "Quick", 1, true) then return { HASTE = amount } end
-	if string.find(gemName, "Smooth", 1, true) then return { CRIT = amount } end
-	if string.find(gemName, "Fractured", 1, true) then return { ARP = amount } end
-	if string.find(gemName, "Precise", 1, true) then return { EXPERTISE = amount } end
-	return nil
 end
 
 function GS_GetNormalizedStats(itemLink)
@@ -93,36 +82,77 @@ function GS_GetItemData(itemLink)
 	local legacyBase = GS_CalculateLegacyBase(itemLink)
 	local parsed = GS_ParseItemLink(itemLink) or { enchantId = 0 }
 	local stats, socketCount = GS_GetNormalizedStats(itemLink)
-	local gemStats, gemCount = {}, 0
+	local gemStats, gemCount, unresolvedData, unresolvedReasons = {}, 0, false, {}
 	for index = 1, 4 do
 		local gemId = parsed.gemIds and parsed.gemIds[index] or 0
 		if gemId and gemId > 0 then
 			gemCount = gemCount + 1
 			local gemName, gemLink = GetItemGem(itemLink, index)
-			local resolvedGemLink = gemLink or select(2, GetItemInfo(gemId)) or ("item:" .. gemId)
-			local normalized = select(1, GS_GetNormalizedStats(resolvedGemLink))
-			if GS_IsEmptyStats(normalized) then
-				normalized = GS_GetGemFallbackStats(gemName, gemId) or normalized
+			local gemItemId = GS_GetItemIdFromLink(gemLink)
+			local gemItemInfo = gemItemId and GS_GemItems and GS_GemItems[gemItemId] or nil
+			local gemInfo = GS_GemValues and GS_GemValues[gemId] or gemItemInfo
+			local normalized = gemInfo and gemInfo.stats or nil
+			if not gemInfo then
+				unresolvedData = true
+				unresolvedReasons[#unresolvedReasons + 1] = "gem:" .. tostring(index)
+				GS_ReportResolutionIssue({
+					kind = "gem-stats-unresolved",
+					itemName = itemName,
+					itemLink = itemLink,
+					slotId = GS_ITEM_SLOTS[itemEquipLoc] or 0,
+					gemIndex = index,
+					gemId = gemId,
+					gemName = gemName,
+					gemLink = gemLink or ("item:" .. gemId),
+					details = "Gem enchant ID is present on the item link but no runtime gem data was resolved.",
+				})
 			end
 			gemStats[index] = normalized
 		else
 			local gemName, gemLink = GetItemGem(itemLink, index)
 			if gemName then
 				gemCount = gemCount + 1
-				local normalized = gemLink and select(1, GS_GetNormalizedStats(gemLink)) or nil
-				if GS_IsEmptyStats(normalized) then
-					normalized = GS_GetGemFallbackStats(gemName, gemId) or normalized
+				local gemItemId = GS_GetItemIdFromLink(gemLink)
+				local gemItemInfo = gemItemId and GS_GemItems and GS_GemItems[gemItemId] or nil
+				if gemItemInfo and gemItemInfo.stats then
+					gemStats[index] = gemItemInfo.stats
+				else
+					unresolvedData = true
+					unresolvedReasons[#unresolvedReasons + 1] = "gem:" .. tostring(index)
+					GS_ReportResolutionIssue({
+						kind = "gem-id-missing",
+						itemName = itemName,
+						itemLink = itemLink,
+						slotId = GS_ITEM_SLOTS[itemEquipLoc] or 0,
+						gemIndex = index,
+						gemId = gemId,
+						gemName = gemName,
+						gemLink = gemLink,
+						details = "Gem is present in the socket but no gem enchant ID was parsed from the item link and no item-based gem data was resolved.",
+					})
 				end
-				gemStats[index] = normalized
 			end
 		end
 	end
 	local enchantInfo = GS_EnchantValues[parsed.enchantId or 0]
+	if (parsed.enchantId or 0) > 0 and not enchantInfo and GS_EnchantSlots[itemEquipLoc] then
+		unresolvedData = true
+		unresolvedReasons[#unresolvedReasons + 1] = "enchant"
+		GS_ReportResolutionIssue({
+			kind = "enchant-stats-unresolved",
+			itemName = itemName,
+			itemLink = itemLink,
+			slotId = GS_ITEM_SLOTS[itemEquipLoc] or 0,
+			enchantId = parsed.enchantId or 0,
+			details = "Enchant ID is present on an enchantable slot but no runtime enchant data was resolved.",
+		})
+	end
 	cached = {
 		link = itemLink, name = itemName, rarity = itemRarity, level = itemLevel or 0, type = itemType, subType = itemSubType,
 		equipLoc = itemEquipLoc, slot = GS_ITEM_SLOTS[itemEquipLoc] or 0, legacyBase = legacyBase > 0 and legacyBase or 0,
 		stats = stats, socketCount = socketCount, gemCount = gemCount, gemStats = gemStats, enchantId = parsed.enchantId or 0,
 		hasEnchant = (parsed.enchantId or 0) > 0, enchantInfo = enchantInfo, resilience = stats.RESILIENCE or 0, armorRank = GS_ArmorClassOrder[itemSubType],
+		unresolvedData = unresolvedData, unresolvedReasons = unresolvedReasons,
 	}
 	return GS_StoreCacheEntry(GS_ItemCache, itemLink, cached, "GS_ItemCacheCount", GS_ITEM_CACHE_MAX, GS_ITEM_CACHE_TRIM_TO)
 end

@@ -21,12 +21,228 @@ function GS_UpdatePaperDoll()
 	GS_GetRecord("player")
 end
 
+local function GS_CreateResolutionIssuesFrame()
+	if GS_ResolutionIssuesFrame then
+		return GS_ResolutionIssuesFrame
+	end
+	local frame = CreateFrame("Frame", "GS2ResolutionIssuesFrame", UIParent)
+	frame:SetWidth(760)
+	frame:SetHeight(460)
+	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	frame:SetFrameStrata("DIALOG")
+	frame:SetToplevel(true)
+	frame:EnableMouse(true)
+	frame:SetMovable(true)
+	frame:RegisterForDrag("LeftButton")
+	frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+	frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+	frame:SetBackdrop({
+		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+		tile = true, tileSize = 32, edgeSize = 32,
+		insets = { left = 11, right = 12, top = 12, bottom = 11 }
+	})
+
+	local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -16)
+	title:SetText("GearScore2 Unresolved Data Report")
+
+	local subtitle = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+	subtitle:SetWidth(720)
+	subtitle:SetJustifyH("LEFT")
+	subtitle:SetText("Copy these entries when GS2 withholds a result because gem/enchant stat data could not be resolved safely.")
+
+	local scrollFrame = CreateFrame("ScrollFrame", "GS2ResolutionIssuesScrollFrame", frame, "UIPanelScrollFrameTemplate")
+	scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -62)
+	scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -34, 52)
+
+	local editBox = CreateFrame("EditBox", "GS2ResolutionIssuesEditBox", scrollFrame)
+	editBox:SetMultiLine(true)
+	editBox:SetFontObject(ChatFontNormal)
+	editBox:SetAutoFocus(false)
+	editBox:SetWidth(690)
+	editBox:SetScript("OnEscapePressed", function() frame:Hide() end)
+	editBox:SetScript("OnTextChanged", function(self)
+		scrollFrame:UpdateScrollChildRect()
+	end)
+	editBox:SetScript("OnCursorChanged", function(self, x, y, w, h)
+		scrollFrame:SetVerticalScroll(y)
+	end)
+	scrollFrame:SetScrollChild(editBox)
+	frame.editBox = editBox
+
+	local closeButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+	closeButton:SetWidth(100)
+	closeButton:SetHeight(24)
+	closeButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -16, 16)
+	closeButton:SetText("Close")
+	closeButton:SetScript("OnClick", function() frame:Hide() end)
+
+	local refreshButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+	refreshButton:SetWidth(100)
+	refreshButton:SetHeight(24)
+	refreshButton:SetPoint("RIGHT", closeButton, "LEFT", -8, 0)
+	refreshButton:SetText("Refresh")
+	refreshButton:SetScript("OnClick", function()
+		local report = GS_BuildResolutionIssueReport()
+		editBox:SetText(report)
+		editBox:HighlightText(0, 0)
+	end)
+
+	local selectAllButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+	selectAllButton:SetWidth(100)
+	selectAllButton:SetHeight(24)
+	selectAllButton:SetPoint("RIGHT", refreshButton, "LEFT", -8, 0)
+	selectAllButton:SetText("Select All")
+	selectAllButton:SetScript("OnClick", function()
+		editBox:SetFocus()
+		editBox:HighlightText()
+	end)
+
+	frame:Hide()
+	GS_ResolutionIssuesFrame = frame
+	return frame
+end
+
+function GS_ShowResolutionIssuesFrame()
+	local frame = GS_CreateResolutionIssuesFrame()
+	local report = GS_BuildResolutionIssueReport()
+	frame.editBox:SetText(report)
+	frame.editBox:SetFocus()
+	frame.editBox:HighlightText()
+	frame:Show()
+end
+
+local function GS_ParseDebugSlotToken(token)
+	token = strlower(tostring(token or ""))
+	if token == "shoulder" or token == "shoulders" then return 3 end
+	if token == "head" then return 1 end
+	if token == "chest" then return 5 end
+	if token == "hands" or token == "gloves" then return 10 end
+	if token == "legs" then return 7 end
+	if token == "wrist" or token == "bracers" then return 9 end
+	if token == "cloak" or token == "back" then return 15 end
+	if token == "mainhand" or token == "mh" or token == "weapon" then return 16 end
+	if token == "offhand" or token == "oh" then return 17 end
+	if token == "ranged" then return 18 end
+	local numeric = tonumber(token)
+	if numeric and numeric >= 1 and numeric <= 18 then
+		return numeric
+	end
+end
+
+local function GS_GetDebugUnit()
+	if InspectFrame and InspectFrame.unit and UnitExists(InspectFrame.unit) then
+		return InspectFrame.unit
+	end
+	local _, tooltipUnit = GS_GetTooltipUnit()
+	if tooltipUnit and UnitExists(tooltipUnit) then
+		return tooltipUnit
+	end
+	if UnitExists("target") and UnitIsPlayer("target") then
+		return "target"
+	end
+	if UnitExists("mouseover") and UnitIsPlayer("mouseover") then
+		return "mouseover"
+	end
+	return "player"
+end
+
+local function GS_PrintExplainParts(prefix, parts)
+	if not parts then
+		return
+	end
+	for index = 1, #parts do
+		local part = parts[index]
+		print(prefix .. " " .. tostring(part.label) .. " => " .. tostring(part.delta) .. " [" .. tostring(part.formula) .. "]")
+	end
+end
+
+function GS_DebugSlotScore(slotToken)
+	local slotId = GS_ParseDebugSlotToken(slotToken)
+	if not slotId then
+		print("GearScore2: Use '/gs2 debugslot 3' or '/gs2 debugslot shoulder'.")
+		return
+	end
+	local unit = GS_GetDebugUnit()
+	if not unit or not UnitExists(unit) then
+		print("GearScore2: No valid unit to debug.")
+		return
+	end
+	local record = GS_GetRecord(unit) or GS_GetScanRecord(UnitGUID(unit))
+	if not record then
+		if not UnitIsUnit(unit, "player") then
+			GS_QueueInspect(unit)
+		end
+		print("GearScore2: No cached record yet for " .. tostring(UnitName(unit) or unit) .. ". Inspect the character and retry in a moment.")
+		return
+	end
+	if not record.specKey then
+		if not UnitIsUnit(unit, "player") then
+			GS_QueueInspect(unit)
+		end
+		print("GearScore2: Spec/item scan not ready for " .. tostring(UnitName(unit) or unit) .. ". Current state: " .. tostring(record.scanStatusText or "unknown"))
+		return
+	end
+	local itemLink = record.detailLinks and record.detailLinks[slotId] or GetInventoryItemLink(unit, slotId)
+	if not itemLink then
+		print("GearScore2: No item found in slot " .. tostring(slotId) .. " for " .. tostring(UnitName(unit) or unit) .. ".")
+		return
+	end
+	local item = GS_GetItemData(itemLink)
+	if not item then
+		print("GearScore2: Could not build item data for slot " .. tostring(slotId) .. ".")
+		return
+	end
+	local gs2, pvp, explain = GS_ScoreItem(item, record.classToken or select(2, UnitClass(unit)), record.specKey, true)
+	local enchantInfo = GS_GetEnchantInfo(item)
+	print("GS2 Debug Slot " .. tostring(slotId) .. " | Unit: " .. tostring(UnitName(unit) or unit) .. " | Spec: " .. tostring(record.specLabel or GS_GetSpecLabel(record.specKey)))
+	print("GS2 Debug Item: " .. tostring(item.name) .. " | enchantId=" .. tostring(item.enchantId or 0) .. " | hasEnchant=" .. tostring(item.hasEnchant))
+	if enchantInfo then
+		print("GS2 Debug Enchant: kind=" .. tostring(enchantInfo.kind) .. " | label=" .. tostring(enchantInfo.label or "?"))
+		if enchantInfo.stats then
+			for stat, value in pairs(enchantInfo.stats) do
+				print("GS2 Debug Enchant Stat: " .. tostring(stat) .. "=" .. tostring(value))
+			end
+		end
+	else
+		print("GS2 Debug Enchant: none/unknown")
+	end
+	print("GS2 Debug Result: Legacy=" .. tostring(item.legacyBase) .. " | GS2=" .. tostring(gs2) .. " | PvP=" .. tostring(pvp))
+	if explain then
+		print("GS2 Debug PvE base before multiplier: " .. tostring(explain.pve.preMultiplier or explain.pve.base or 0) .. " | multiplier=" .. tostring(explain.pve.multiplier or 1) .. " | final=" .. tostring(explain.pve.final or gs2))
+		GS_PrintExplainParts("GS2 Debug PvE Part:", explain.pve.parts)
+		if explain.pve.flags and #explain.pve.flags > 0 then
+			for index = 1, #explain.pve.flags do
+				print("GS2 Debug PvE Flag: " .. tostring(explain.pve.flags[index]))
+			end
+		end
+		if explain.flags and #explain.flags > 0 then
+			for index = 1, #explain.flags do
+				print("GS2 Debug Flag: " .. tostring(explain.flags[index]))
+			end
+		end
+	end
+end
+
 function GS_MANSET(command)
-	command = strlower(command or "")
-	if command == "" or command == "settings" then if GS_ToggleOptionsPanel then GS_ToggleOptionsPanel() end return end
-	if command == "options" or command == "option" or command == "help" then for i, v in ipairs(GS_CommandList) do print(v) end return end
-	if command == "debuginspect" then GS_DebugInspectEnabled = not GS_DebugInspectEnabled print("GS2 Inspect Debug: " .. (GS_DebugInspectEnabled and "On" or "Off")) return end
-	print("GearScore2: Unknown command. Use '/gs2 settings' or '/gs2 debuginspect'.")
+	local raw = command or ""
+	local normalized = strlower(raw)
+	local commandWord, argument = string.match(normalized, "^(%S+)%s*(.-)$")
+	commandWord = commandWord or ""
+	if commandWord == "" or commandWord == "settings" then if GS_ToggleOptionsPanel then GS_ToggleOptionsPanel() end return end
+	if commandWord == "options" or commandWord == "option" or commandWord == "help" then
+		for i, v in ipairs(GS_CommandList) do print(v) end
+		print("/gs2 debuginspect")
+		print("/gs2 debugslot 3")
+		print("/gs2 issues")
+		return
+	end
+	if commandWord == "debuginspect" then GS_DebugInspectEnabled = not GS_DebugInspectEnabled print("GS2 Inspect Debug: " .. (GS_DebugInspectEnabled and "On" or "Off")) return end
+	if commandWord == "debugslot" then GS_DebugSlotScore(argument) return end
+	if commandWord == "issues" then GS_ShowResolutionIssuesFrame() return end
+	print("GearScore2: Unknown command. Use '/gs2 settings', '/gs2 debuginspect', '/gs2 debugslot 3', or '/gs2 issues'.")
 end
 
 function GS_OnEvent(_, event, ...)

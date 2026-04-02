@@ -83,6 +83,9 @@ function GS_AddScoreLines(tooltip, record)
 	if showCharacterCapSummary and record.capBreakdown and record.gs2Available then
 		GS_AddCharacterCapLines(tooltip, record.capBreakdown)
 	end
+	if record.unresolvedData then
+		tooltip:AddLine("GS2 unavailable: unresolved gem/enchant stats. Use /gs2 issues.", 1, 0.55, 0.55, true)
+	end
 	if not record.gs2Available and record.scanExpired then
 		tooltip:AddLine("GS2 unavailable: spec scan timed out.", 1, 0.55, 0.55, true)
 	end
@@ -169,7 +172,7 @@ function GS_GetTooltipItemContext(tooltip, itemLink)
 		specKey = playerRecord and playerRecord.specKey or GS_ClassDefaults[classToken],
 		specLabel = playerRecord and playerRecord.specLabel or GS_GetSpecLabel(GS_ClassDefaults[classToken]),
 		specSource = playerRecord and playerRecord.specSource or "live",
-		gs2Available = true,
+		gs2Available = playerRecord and playerRecord.gs2Available or false,
 		scanning = false,
 	}
 end
@@ -217,6 +220,12 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 	local item = GS_GetItemData(itemLink)
 	if not item then
+		return
+	end
+	if item.unresolvedData then
+		if GS_ExplainTooltip:IsShown() then
+			GS_ExplainTooltip:Hide()
+		end
 		return
 	end
 	local context = GS_GetTooltipItemContext(ownerTooltip, itemLink)
@@ -381,6 +390,12 @@ function GS_AddItemLines(tooltip, itemLink)
 	if not itemLink or not IsEquippableItem(itemLink) then return end
 	local item = GS_GetItemData(itemLink)
 	if not item then return end
+	if item.unresolvedData then
+		tooltip:AddLine("GS2 unavailable: unresolved gem/enchant stats.", 1, 0.55, 0.55, true)
+		tooltip:AddLine("Use /gs2 issues to open the copyable report.", 1, 0.72, 0.72, true)
+		GS_HideExplainTooltip()
+		return
+	end
 	local context = GS_GetTooltipItemContext(tooltip, itemLink)
 	if context and context.scanning then
 		tooltip:AddLine(GS_SCAN_TEXT, 0.95, 0.82, 0.18)
@@ -426,7 +441,7 @@ function GS2_SetDetails(tooltip, name)
 			if itemName then
 				local color = GS_Rarity[itemRarity or 1] or GS_Rarity[1]
 				local suffix = GS_Settings["Level"] == 1 and (" (iLevel " .. tostring(item.level or 0) .. ")") or ""
-				if record.gs2Available and record.specKey then
+				if record.gs2Available and record.specKey and not item.unresolvedData then
 					local gs2, pvp = GS_ScoreItem(item, record.classToken, record.specKey)
 					tooltip:AddDoubleLine("[" .. itemName .. "]", "GS2 " .. tostring(gs2) .. " / L " .. tostring(item.legacyBase) .. " / P " .. tostring(pvp) .. suffix, color.Red, color.Green, color.Blue, 0.85, 0.85, 0.85)
 				else
