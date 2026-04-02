@@ -358,14 +358,49 @@ function GS_GetResilienceMultiplier(resilience, mode)
 	return max(GS_PVE_RESILIENCE_FLOOR, 1 - (resilience * GS_PVE_RESILIENCE_RATE))
 end
 
+GS_RangedHelperClassBySubtype = {
+	WAND = { MAGE = true, PRIEST = true, WARLOCK = true },
+	BOW = { HUNTER = true, ROGUE = true, WARRIOR = true },
+	GUN = { HUNTER = true, ROGUE = true, WARRIOR = true },
+	CROSSBOW = { HUNTER = true, ROGUE = true, WARRIOR = true },
+	THROWN = { ROGUE = true, WARRIOR = true },
+	LIBRAM = { PALADIN = true },
+	TOTEM = { SHAMAN = true },
+	IDOL = { DRUID = true },
+	SIGIL = { DEATHKNIGHT = true },
+}
+
+function GS_IsRangedHelperCompatible(item, classToken, profile)
+	if not item or not classToken then
+		return false
+	end
+	if profile and profile.ranged and (item.equipLoc == "INVTYPE_RANGED" or item.equipLoc == "INVTYPE_RANGEDRIGHT" or item.equipLoc == "INVTYPE_THROWN") then
+		return true
+	end
+	local subType = string.upper(tostring(item.subType or ""))
+	local allowedClasses = GS_RangedHelperClassBySubtype[subType]
+	if not allowedClasses then
+		return false
+	end
+	if item.equipLoc == "INVTYPE_RELIC" then
+		return allowedClasses[classToken] == true
+	end
+	if item.equipLoc == "INVTYPE_RANGED" or item.equipLoc == "INVTYPE_RANGEDRIGHT" or item.equipLoc == "INVTYPE_THROWN" then
+		return allowedClasses[classToken] == true
+	end
+	return false
+end
+
 function GS_IsItemCompatible(item, classToken, profile)
 	if not item or not profile or item.slot == 0 then return false end
 	if GS_ArmorClassOrder[profile.armor] and item.armorRank and item.slot ~= 15 and item.slot ~= 2 and item.slot ~= 11 and item.slot ~= 13 then
 		if item.armorRank < GS_ArmorClassOrder[profile.armor] then return false end
 	end
 	if item.equipLoc == "INVTYPE_SHIELD" and not profile.shield then return false end
+	if item.equipLoc == "INVTYPE_WEAPONOFFHAND" and not profile.dualwield then return false end
 	if item.equipLoc == "INVTYPE_HOLDABLE" and profile.role ~= "CASTER" and profile.role ~= "HEALER" then return false end
-	if (item.equipLoc == "INVTYPE_RANGED" or item.equipLoc == "INVTYPE_RANGEDRIGHT" or item.equipLoc == "INVTYPE_THROWN") and not profile.ranged then return false end
+	if item.equipLoc == "INVTYPE_RELIC" and not GS_IsRangedHelperCompatible(item, classToken, profile) then return false end
+	if (item.equipLoc == "INVTYPE_RANGED" or item.equipLoc == "INVTYPE_RANGEDRIGHT" or item.equipLoc == "INVTYPE_THROWN") and not GS_IsRangedHelperCompatible(item, classToken, profile) then return false end
 	if classToken == "HUNTER" and (item.equipLoc == "INVTYPE_SHIELD" or item.equipLoc == "INVTYPE_HOLDABLE") then return false end
 	if (profile.role == "CASTER" or profile.role == "HEALER") and (item.stats.STR or 0) > 0 and (item.stats.SP or 0) == 0 and (item.stats.INT or 0) == 0 then return false end
 	if (profile.role == "MELEE" or profile.role == "RANGED") and (item.stats.SP or 0) > 0 and (item.stats.STR or 0) == 0 and (item.stats.AGI or 0) == 0 and (item.stats.AP or 0) == 0 and (item.stats.RAP or 0) == 0 then return false end

@@ -320,11 +320,19 @@ If the inspect snapshot itself is still incomplete, the target remains in `Scann
 - item slot is `0`
 - item armor class is below the target armor class for most armor slots
 - item is a shield and the profile does not use shields
+- item is an off-hand weapon and the profile does not use dual wield
 - item is a holdable and the profile is neither caster nor healer
-- item is ranged/rangedright/thrown and the profile is not ranged
+- item is relic/ranged/rangedright/thrown and the class cannot use that helper slot type
 - hunter is trying to use shield or holdable
 - a caster/healer item is treated as invalid when it has `STR` but no `SP` and no `INT`
 - a melee/ranged item is treated as invalid when it has `SP` but no `STR`, `AGI`, `AP`, or `RAP`
+
+Helper-slot compatibility is class-aware:
+
+- hunters may use ranged weapons in slot `18`
+- rogues and warriors may use thrown/bow/gun/crossbow stat sticks in slot `18`
+- mages, priests, and warlocks may use wands in slot `18`
+- paladins, shamans, druids, and death knights may use their matching relic types
 
 If compatibility fails:
 
@@ -583,11 +591,11 @@ for each active pool:
 
 overallProgress = average(poolProgress for all active pools)
 maxCapBonus = clamp(
-    round(
-        200 - 100 * (ln(preCapGs2) - ln(4000)) / (ln(5000) - ln(4000))
+        round(
+        180 - 90 * (ln(preCapGs2) - ln(4000)) / (ln(5000) - ln(4000))
     ),
-    25,
-    300
+    20,
+    250
 )
 capAdjustedGs2 = floor(maxCapBonus * overallProgress)
 ```
@@ -660,7 +668,7 @@ average = floor(levelTotal / itemCount)
 where:
 
 - only non-empty slots are counted,
-- shirt is excluded.
+- shirt and tabard are excluded.
 
 ## 10. Explain Tooltip Semantics
 

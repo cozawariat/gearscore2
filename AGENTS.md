@@ -34,7 +34,7 @@ Use it as the first-reference project brief for future sessions. Follow it by de
 
 - Read existing code and docs before making assumptions.
 - Treat these documents as the primary written references for scoring behavior:
-  - `docs/GS2_OVERVIEW.md` for the high-level model,
+  - `README.md` for the high-level model / GitHub-facing overview,
   - `docs/GS_ALGORITHM.md` for the implemented scoring logic,
   - `docs/GS_RUNTIME_TABLES.md` for runtime constants, tables, and profiles.
 - `docs/GS_ALGORITHM.md` is intended to match the current runtime behavior exactly. If implementation changes materially alter scoring behavior, update the relevant docs so they stay aligned.
