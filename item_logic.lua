@@ -5,7 +5,7 @@
 function GS_ParseItemLink(itemLink)
 	if not itemLink then return nil end
 	local cached = GS_ParsedLinkCache[itemLink]
-	if cached then return cached end
+	if cached then return GS_TouchCacheEntry(cached) end
 	local linkData = string.match(itemLink, "item[%-?%d:]+")
 	if not linkData then return nil end
 	local values = {}
@@ -19,8 +19,7 @@ function GS_ParseItemLink(itemLink)
 			values[7] or 0,
 		},
 	}
-	GS_ParsedLinkCache[itemLink] = cached
-	return cached
+	return GS_StoreCacheEntry(GS_ParsedLinkCache, itemLink, cached, "GS_ParsedLinkCacheCount", GS_PARSED_LINK_CACHE_MAX, GS_PARSED_LINK_CACHE_TRIM_TO)
 end
 
 function GS_IsEmptyStats(stats)
@@ -88,7 +87,7 @@ end
 function GS_GetItemData(itemLink)
 	if not itemLink then return nil end
 	local cached = GS_ItemCache[itemLink]
-	if cached then return cached end
+	if cached then return GS_TouchCacheEntry(cached) end
 	local itemName, _, itemRarity, itemLevel, _, itemType, itemSubType, _, itemEquipLoc = GetItemInfo(itemLink)
 	if not itemName or not itemEquipLoc then return nil end
 	local legacyBase = GS_CalculateLegacyBase(itemLink)
@@ -125,8 +124,7 @@ function GS_GetItemData(itemLink)
 		stats = stats, socketCount = socketCount, gemCount = gemCount, gemStats = gemStats, enchantId = parsed.enchantId or 0,
 		hasEnchant = (parsed.enchantId or 0) > 0, enchantInfo = enchantInfo, resilience = stats.RESILIENCE or 0, armorRank = GS_ArmorClassOrder[itemSubType],
 	}
-	GS_ItemCache[itemLink] = cached
-	return cached
+	return GS_StoreCacheEntry(GS_ItemCache, itemLink, cached, "GS_ItemCacheCount", GS_ITEM_CACHE_MAX, GS_ITEM_CACHE_TRIM_TO)
 end
 
 function GS_GetEnchantInfo(item)

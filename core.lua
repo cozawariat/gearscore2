@@ -31,11 +31,17 @@ GS_CAP_BONUS_ANCHOR_HIGH_BONUS = 100
 GS_CAP_BONUS_MIN = 25
 GS_CAP_BONUS_MAX = 300
 GS_CAP_BUFF_MARKER = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:12|t"
+GS_ITEM_CACHE_MAX = 800
+GS_ITEM_CACHE_TRIM_TO = 600
+GS_PARSED_LINK_CACHE_MAX = 1200
+GS_PARSED_LINK_CACHE_TRIM_TO = 900
 
 GS_InspectQueue = {}
 GS_InspectCache = {}
 GS_ItemCache = {}
+GS_ItemCacheCount = 0
 GS_ParsedLinkCache = {}
+GS_ParsedLinkCacheCount = 0
 GS_InspectState = { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
 GS_ExplainState = { owner = nil, itemLink = nil, itemSlot = nil }
 GS_TooltipInventoryContext = { unit = nil, slot = nil, guid = nil }
@@ -120,6 +126,53 @@ end
 
 function GS_GetDisplayStatKey(statKey)
 	return GS_STAT_DISPLAY_KEYS[statKey] or statKey
+end
+
+function GS_TouchCacheEntry(entry)
+	if entry then
+		entry.lastAccessAt = GetTime()
+	end
+	return entry
+end
+
+function GS_TrimCache(cache, countKey, trimTo)
+	local count = _G[countKey] or 0
+	if count <= trimTo then
+		return
+	end
+	local entries = {}
+	for key, entry in pairs(cache) do
+		entries[#entries + 1] = {
+			key = key,
+			lastAccessAt = (entry and (entry.lastAccessAt or entry.cachedAt)) or 0,
+		}
+	end
+	table.sort(entries, function(a, b) return a.lastAccessAt < b.lastAccessAt end)
+	local removeCount = count - trimTo
+	for index = 1, removeCount do
+		local cacheKey = entries[index] and entries[index].key
+		if cacheKey and cache[cacheKey] ~= nil then
+			cache[cacheKey] = nil
+			count = count - 1
+		end
+	end
+	_G[countKey] = count
+end
+
+function GS_StoreCacheEntry(cache, key, entry, countKey, maxEntries, trimTo)
+	if not cache or not key or not entry then
+		return entry
+	end
+	if cache[key] == nil then
+		_G[countKey] = (_G[countKey] or 0) + 1
+	end
+	entry.cachedAt = entry.cachedAt or GetTime()
+	entry.lastAccessAt = GetTime()
+	cache[key] = entry
+	if (_G[countKey] or 0) > maxEntries then
+		GS_TrimCache(cache, countKey, trimTo)
+	end
+	return entry
 end
 
 function GS_FindConflictingAddon(loadedAddonName)

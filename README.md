@@ -1,4 +1,4 @@
-# GearScore2 Overview (WotLK 3.3.5a)
+# GearScore2 (WotLK 3.3.5a)
 
 [![Character tooltip settings](/docs/GearScore2_character_tooltip.png "Character tooltip settings")](docs/GearScore2_character_tooltip.png)
 
