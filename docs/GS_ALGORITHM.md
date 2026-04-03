@@ -551,23 +551,33 @@ The cap layer does not read:
 
 ### 9.5 Cap Context
 
-`GS_GetCapContext(unit, specKey)` builds a runtime context containing:
+Runtime now separates cap context into:
+
+- `permanentContext`
+- `temporaryContext`
+
+Both carry the same stat fields:
 
 - `meleeHitBonus`
 - `spellHitBonus`
 - `targetSpellHitBonus`
 - `expertiseBonus`
 - `defenseSkillBonus`
+- `arpBonus`
 
-The context starts from spec-defined passive bonuses in `GS_CapProfiles`.
+`permanentContext` is the scoring context.
 
-Then runtime adds live aura bonuses when it can actually read them from the unit.
+It starts from spec-defined passive bonuses in `GS_CapProfiles` and then adds permanent racials when the currently equipped weapon setup qualifies.
 
-Important runtime rule:
+`temporaryContext` is tooltip-only.
 
-- live helpful buffs are only counted when `UnitExists(unit)` and `UnitIsVisible(unit)` are true
-- target debuffs are only counted for the player and only when the current target actually has the debuff
-- there is no hidden assumption that common raid debuffs are always present
+It may include live helpful buffs, elixirs, food, party auras, or target debuffs when runtime can actually read them, but those temporary bonuses do not affect:
+
+- `cap progress`
+- `capped`
+- `overallProgress`
+- `capAdjustedGs2`
+- final `GearScore2`
 
 ### 9.6 Progress Model
 
@@ -586,8 +596,9 @@ Core algorithm:
 
 ```text
 for each active pool:
-    targetThreshold = resolved target threshold in rating space
-    poolProgress = clamp(statValue / targetThreshold, 0, 1)
+    currentValue = permanent / active pool value after rating conversion and permanent context bonuses
+    targetValue = display target for that cap
+    poolProgress = clamp(currentValue / targetValue, 0, 1)
 
 overallProgress = average(poolProgress for all active pools)
 maxCapBonus = clamp(
@@ -604,12 +615,12 @@ Important runtime details:
 
 - overcap never reduces pool progress below `100%`
 - the cap layer no longer uses overflow penalties to reduce the final bonus
-- `ASSASSINATION`, `COMBAT`, and `SUBTLETY` use `17% spell hit` as their `HIT` progress target
+- `ASSASSINATION`, `COMBAT`, and `SUBTLETY` now track two separate hit pools: `HIT` for the `8%` melee special cap and `SPELL_HIT` for the `17%` poison/spell cap
 - tank `EXPERTISE` still uses `26` as the progress target even though the pool table also contains a secondary `56` threshold
 
 ### 9.7 Threshold Resolution
 
-Thresholds are resolved by `GS_ResolveCapThreshold(segment, context)`:
+Thresholds are resolved by `GS_ResolveCapThreshold(segment, context)` against `permanentContext`:
 
 - `MELEE_HIT_PERCENT`
   - `(thresholdPercent - meleeHitBonus) * GS_RatingConversions.MELEE_HIT`
@@ -624,7 +635,20 @@ Thresholds are resolved by `GS_ResolveCapThreshold(segment, context)`:
 
 All resolved thresholds are clamped to at least `0`.
 
-### 9.8 What the Runtime Currently Models
+### 9.8 Permanent Racial Support
+
+Permanent cap scoring currently supports these racials:
+
+- `HUMAN`
+  - `+3 expertise` with swords or maces
+- `ORC`
+  - `+5 expertise` with axes or fist weapons
+
+These bonuses are part of the permanent cap model and therefore can affect final `GS2`.
+
+Temporary buffs such as Draenei aura, elixirs, food, or target debuffs remain informational only in the tooltip.
+
+### 9.9 What the Runtime Currently Models
 
 The current runtime includes progress targets for:
 

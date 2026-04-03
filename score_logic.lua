@@ -28,42 +28,93 @@ function GS_UnitHasAuraByName(unit, filter, auraName)
 	return false
 end
 
-function GS_GetCapContext(unit, specKey)
-	local capProfile = GS_CapProfiles[specKey]
-	local context = {
+function GS_CreateCapContext(unit)
+	return {
 		meleeHitBonus = 0,
 		spellHitBonus = 0,
 		targetSpellHitBonus = 0,
 		expertiseBonus = 0,
 		defenseSkillBonus = 0,
+		arpBonus = 0,
 		liveMeleeHitBonus = 0,
 		liveSpellHitBonus = 0,
 		liveTargetSpellHitBonus = 0,
 		liveExpertiseBonus = 0,
 		liveDefenseSkillBonus = 0,
+		liveArpBonus = 0,
 		unit = unit,
 	}
+end
+
+function GS_AddToCapContext(context, key, amount)
+	if not context or not key then
+		return
+	end
+	context[key] = (context[key] or 0) + (amount or 0)
+end
+
+function GS_GetBaseCapContext(specKey)
+	local capProfile = GS_CapProfiles[specKey]
+	local context = GS_CreateCapContext(nil)
 	if capProfile and capProfile.pools then
 		for _, pool in pairs(capProfile.pools) do
 			context.meleeHitBonus = max(context.meleeHitBonus, pool.meleeHitBonus or 0)
 			context.spellHitBonus = max(context.spellHitBonus, pool.spellHitBonus or 0)
 			context.expertiseBonus = max(context.expertiseBonus, pool.expertiseBonus or 0)
 			context.defenseSkillBonus = max(context.defenseSkillBonus, pool.defenseSkillBonus or 0)
+			context.arpBonus = max(context.arpBonus, pool.arpBonus or 0)
 		end
 	end
+	return context
+end
+
+function GS_GetCapWeaponSubTypes(snapshot)
+	local subTypes = {}
+	if not snapshot or not snapshot.items then
+		return subTypes
+	end
+	for index = 1, #snapshot.items do
+		local item = snapshot.items[index].item
+		local slotId = snapshot.items[index].slotId
+		if item and (slotId == 16 or slotId == 17) then
+			subTypes[string.upper(tostring(item.subType or ""))] = true
+		end
+	end
+	return subTypes
+end
+
+function GS_GetRacialCapContext(snapshot)
+	local context = GS_CreateCapContext(snapshot and snapshot.unit or nil)
+	local raceToken = snapshot and snapshot.raceToken and string.upper(tostring(snapshot.raceToken)) or nil
+	local racial = raceToken and GS_PermanentCapRacials and GS_PermanentCapRacials[raceToken] or nil
+	if not racial then
+		return context
+	end
+	local weaponSubTypes = GS_GetCapWeaponSubTypes(snapshot)
+	local expertise = racial.EXPERTISE
+	if expertise and expertise.subTypes then
+		for subType in pairs(weaponSubTypes) do
+			if expertise.subTypes[subType] then
+				context.expertiseBonus = expertise.bonus or 0
+				break
+			end
+		end
+	end
+	return context
+end
+
+function GS_GetTemporaryCapContext(unit)
+	local context = GS_CreateCapContext(unit)
 	if unit and UnitExists(unit) and UnitIsVisible(unit) then
 		for index = 1, #(GS_LiveCapBuffs.HELPFUL or {}) do
 			local aura = GS_LiveCapBuffs.HELPFUL[index]
 			local auraName = GS_GetAuraNameFromId(aura.spellId)
 			if auraName and GS_UnitHasAuraByName(unit, "HELPFUL", auraName) then
-				context.liveMeleeHitBonus = context.liveMeleeHitBonus + (aura.meleeHitBonus or 0)
-				context.liveSpellHitBonus = context.liveSpellHitBonus + (aura.spellHitBonus or 0)
-				context.liveExpertiseBonus = context.liveExpertiseBonus + (aura.expertiseBonus or 0)
-				context.liveDefenseSkillBonus = context.liveDefenseSkillBonus + (aura.defenseSkillBonus or 0)
-				context.meleeHitBonus = context.meleeHitBonus + (aura.meleeHitBonus or 0)
-				context.spellHitBonus = context.spellHitBonus + (aura.spellHitBonus or 0)
-				context.expertiseBonus = context.expertiseBonus + (aura.expertiseBonus or 0)
-				context.defenseSkillBonus = context.defenseSkillBonus + (aura.defenseSkillBonus or 0)
+				GS_AddToCapContext(context, "liveMeleeHitBonus", aura.meleeHitBonus or 0)
+				GS_AddToCapContext(context, "liveSpellHitBonus", aura.spellHitBonus or 0)
+				GS_AddToCapContext(context, "liveExpertiseBonus", aura.expertiseBonus or 0)
+				GS_AddToCapContext(context, "liveDefenseSkillBonus", aura.defenseSkillBonus or 0)
+				GS_AddToCapContext(context, "liveArpBonus", aura.arpBonus or 0)
 			end
 		end
 	end
@@ -72,8 +123,7 @@ function GS_GetCapContext(unit, specKey)
 			local aura = GS_LiveCapBuffs.HARMFUL[index]
 			local auraName = GS_GetAuraNameFromId(aura.spellId)
 			if auraName and GS_UnitHasAuraByName("target", "HARMFUL", auraName) then
-				context.liveTargetSpellHitBonus = context.liveTargetSpellHitBonus + (aura.targetSpellHitBonus or 0)
-				context.targetSpellHitBonus = context.targetSpellHitBonus + (aura.targetSpellHitBonus or 0)
+				GS_AddToCapContext(context, "liveTargetSpellHitBonus", aura.targetSpellHitBonus or 0)
 			end
 		end
 	end
@@ -141,7 +191,9 @@ function GS_GetCapProgressTarget(poolStat, pool, context, specKey)
 	if pool and pool.progressMode then
 		targetSegment = GS_FindCapSegment(pool, pool.progressMode)
 	end
-	if not targetSegment and poolStat == "HIT" then
+	if not targetSegment and poolStat == "SPELL_HIT" then
+		targetSegment = GS_FindCapSegment(pool, "SPELL_HIT_PERCENT")
+	elseif not targetSegment and poolStat == "HIT" then
 		if GS_IsRoguePoisonCapSpec(specKey) then
 			targetSegment = GS_FindCapSegment(pool, "SPELL_HIT_PERCENT")
 		else
@@ -168,13 +220,42 @@ function GS_GetCapPoolDisplay(poolStat, statValue, targetSegment, resolvedThresh
 	if poolStat == "EXPERTISE" then
 		return floor(((statValue or 0) / GS_RatingConversions.EXPERTISE) + (context.expertiseBonus or 0) + 0.5), targetSegment and targetSegment.threshold or 26, false
 	end
-	if poolStat == "HIT" and targetSegment and targetSegment.mode == "SPELL_HIT_PERCENT" then
+	if (poolStat == "HIT" or poolStat == "SPELL_HIT") and targetSegment and targetSegment.mode == "SPELL_HIT_PERCENT" then
 		return ((statValue or 0) / GS_RatingConversions.SPELL_HIT) + (context.spellHitBonus or 0) + (context.targetSpellHitBonus or 0), targetSegment.threshold or 17, false
 	end
 	if poolStat == "HIT" and targetSegment and targetSegment.mode == "MELEE_HIT_PERCENT" then
 		return ((statValue or 0) / GS_RatingConversions.MELEE_HIT) + (context.meleeHitBonus or 0), targetSegment.threshold or 8, false
 	end
+	if poolStat == "ARP" then
+		return floor((statValue or 0) + (context.arpBonus or 0) + 0.5), floor((resolvedThreshold or 0) + 0.5), true
+	end
 	return floor((statValue or 0) + 0.5), floor((resolvedThreshold or 0) + 0.5), true
+end
+
+function GS_GetCapPoolContextBonus(poolStat, targetSegment, context)
+	if not context then
+		return 0
+	end
+	if poolStat == "SPELL_HIT" or (poolStat == "HIT" and targetSegment and targetSegment.mode == "SPELL_HIT_PERCENT") then
+		return (context.spellHitBonus or 0) + (context.targetSpellHitBonus or 0)
+	end
+	if poolStat == "HIT" and targetSegment and targetSegment.mode == "MELEE_HIT_PERCENT" then
+		return context.meleeHitBonus or 0
+	end
+	if poolStat == "EXPERTISE" then
+		return context.expertiseBonus or 0
+	end
+	if poolStat == "DEFENSE" then
+		return context.defenseSkillBonus or 0
+	end
+	if poolStat == "ARP" then
+		return context.arpBonus or 0
+	end
+	return 0
+end
+
+function GS_GetCapPoolTemporaryBonus(poolStat, targetSegment, context)
+	return GS_GetCapPoolContextBonus(poolStat, targetSegment, context)
 end
 
 function GS_DidCapPoolUseLiveBuffs(poolStat, targetSegment, context)
@@ -193,7 +274,20 @@ function GS_DidCapPoolUseLiveBuffs(poolStat, targetSegment, context)
 	if targetSegment.mode == "DEFENSE_SKILL" then
 		return (context.liveDefenseSkillBonus or 0) > 0
 	end
+	if poolStat == "ARP" then
+		return (context.liveArpBonus or 0) > 0
+	end
 	return false
+end
+
+function GS_GetCapPoolStatValue(poolStat, totalStats)
+	if not totalStats then
+		return 0
+	end
+	if poolStat == "SPELL_HIT" then
+		return totalStats.HIT or 0
+	end
+	return totalStats[poolStat] or 0
 end
 
 function GS_GetMaxCapBonus(preCapGs2)
@@ -213,8 +307,9 @@ end
 
 function GS_ApplyCapPool(poolStat, statValue, baseWeight, pool, context, specKey)
 	local targetSegment, resolvedThreshold = GS_GetCapProgressTarget(poolStat, pool, context, specKey)
-	local progress = resolvedThreshold > 0 and min(max((statValue or 0) / resolvedThreshold, 0), 1) or 0
 	local current, target, ratingSummary = GS_GetCapPoolDisplay(poolStat, statValue, targetSegment, resolvedThreshold, context)
+	local progress = (target or 0) > 0 and min(max((current or 0) / target, 0), 1) or 0
+	local contextBonus = GS_GetCapPoolContextBonus(poolStat, targetSegment, context)
 	return {
 		stat = poolStat,
 		summary = pool.summary or poolStat,
@@ -226,10 +321,26 @@ function GS_ApplyCapPool(poolStat, statValue, baseWeight, pool, context, specKey
 		targetSegment = targetSegment,
 		targetThreshold = resolvedThreshold,
 		ratingSummary = ratingSummary,
+		contextBonus = contextBonus,
 		capped = progress >= 1,
 		usedLiveBuffs = GS_DidCapPoolUseLiveBuffs(poolStat, targetSegment, context),
 		bonusGs2 = 0,
 	}
+end
+
+function GS_ApplyTemporaryCapInfo(poolBreakdown, statValue, temporaryContext)
+	if not poolBreakdown then
+		return
+	end
+	local poolStat = poolBreakdown.stat
+	local targetSegment = poolBreakdown.targetSegment
+	local targetThreshold = poolBreakdown.targetThreshold
+	local infoContext = temporaryContext or GS_CreateCapContext(nil)
+	local displayCurrent, displayTarget = GS_GetCapPoolDisplay(poolStat, statValue, targetSegment, targetThreshold, infoContext)
+	poolBreakdown.temporaryContextBonus = GS_GetCapPoolTemporaryBonus(poolStat, targetSegment, temporaryContext)
+	poolBreakdown.displayCurrent = displayCurrent
+	poolBreakdown.displayTarget = displayTarget
+	poolBreakdown.usedLiveBuffs = GS_DidCapPoolUseLiveBuffs(poolStat, targetSegment, temporaryContext)
 end
 
 function GS_AssignCapPoolBonuses(capBreakdown, totalBonus)
@@ -294,16 +405,25 @@ function GS_ApplyCharacterCaps(snapshot, preCapGs2)
 	if not capProfile or not profile or not profile.pve then
 		return 0, nil, totalStats
 	end
-	local context = GS_GetCapContext(snapshot.unit, snapshot.specKey)
-	local breakdown = { pools = {}, summary = nil, context = context, preCapGs2 = preCapGs2 or 0 }
+	local permanentContext = GS_GetBaseCapContext(snapshot.specKey)
+	local racialContext = GS_GetRacialCapContext(snapshot)
+	for key, value in pairs(racialContext) do
+		if type(value) == "number" and value ~= 0 then
+			GS_AddToCapContext(permanentContext, key, value)
+		end
+	end
+	local temporaryContext = GS_GetTemporaryCapContext(snapshot.unit)
+	local breakdown = { pools = {}, summary = nil, context = permanentContext, permanentContext = permanentContext, temporaryContext = temporaryContext, preCapGs2 = preCapGs2 or 0 }
 	local order = capProfile.order or {}
 	for index = 1, #order do
 		local stat = order[index]
 		local pool = capProfile.pools and capProfile.pools[stat]
-		local baseWeight = profile.pve[stat]
-		local statValue = totalStats[stat] or 0
+		local baseWeight = profile.pve[stat] or (stat == "SPELL_HIT" and profile.pve.HIT) or nil
+		local statValue = GS_GetCapPoolStatValue(stat, totalStats)
 		if pool and baseWeight and statValue > 0 then
-			local poolBreakdown = GS_ApplyCapPool(stat, statValue, baseWeight, pool, context, snapshot.specKey)
+			local poolBreakdown = GS_ApplyCapPool(stat, statValue, baseWeight, pool, permanentContext, snapshot.specKey)
+			poolBreakdown.permanentContextBonus = poolBreakdown.contextBonus or 0
+			GS_ApplyTemporaryCapInfo(poolBreakdown, statValue, temporaryContext)
 			breakdown.pools[#breakdown.pools + 1] = poolBreakdown
 		end
 	end

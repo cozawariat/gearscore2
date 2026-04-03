@@ -113,6 +113,7 @@ end
 function GS_CollectSnapshot(unit, inspect)
 	local name, guid = UnitName(unit), UnitGUID(unit)
 	local _, classToken = UnitClass(unit)
+	local _, raceToken = UnitRace(unit)
 	if not name or not guid or not classToken then return nil end
 	local specKey, specResolved, specSource = nil, false, "none"
 	if not inspect then
@@ -139,6 +140,7 @@ function GS_CollectSnapshot(unit, inspect)
 		guid = guid,
 		unit = unit,
 		classToken = classToken,
+		raceToken = raceToken and string.upper(string.gsub(raceToken, "[%s_]", "")) or nil,
 		specKey = specKey,
 		specResolved = specResolved and specKey ~= nil,
 		specSource = specSource,
@@ -184,7 +186,7 @@ function GS_InferSpecFromSnapshot(snapshot)
 				total = total + itemGS2
 			end
 			if total then
-				local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, items = snapshot.items }, total)
+				local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, raceToken = snapshot.raceToken, items = snapshot.items }, total)
 				total = total + (capAdjustedGs2 or 0)
 			end
 			GS_DebugInspect("infer candidate " .. tostring(candidateSpec) .. " total=" .. tostring(total) .. " for " .. tostring(snapshot.name))

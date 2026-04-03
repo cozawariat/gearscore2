@@ -19,6 +19,75 @@ function GS_TooltipHasLine(tooltip, text)
 	return false
 end
 
+function GS_AddInspectPausedLine(tooltip)
+	if not tooltip or GS_TooltipHasLine(tooltip, "GearScore is paused in Inspect mode") then
+		return
+	end
+	tooltip:AddLine("GearScore is paused in Inspect mode", 0.95, 0.82, 0.18, true)
+end
+
+function GS_GetCapStatAbbrev(pool)
+	local stat = pool and pool.stat or nil
+	if stat == "HIT" and pool and pool.targetSegment and pool.targetSegment.mode == "SPELL_HIT_PERCENT" then return "SPHIT" end
+	if stat == "HIT" then return "HIT" end
+	if stat == "SPELL_HIT" then return "SPHIT" end
+	if stat == "DEFENSE" then return "DEF" end
+	if stat == "EXPERTISE" then return "EXP" end
+	if stat == "ARP" then return "ARP" end
+	return stat or "CAP"
+end
+
+function GS_FormatCapStatDetail(pool)
+	if not pool then
+		return ""
+	end
+	local rawValue = tostring(floor((pool.rawValue or 0) + 0.5))
+	local permanentBonus = max(0, pool.permanentContextBonus or pool.contextBonus or 0)
+	local temporaryBonus = max(0, pool.temporaryContextBonus or 0)
+	local bonusSuffix = ""
+	if permanentBonus > 0 then
+		bonusSuffix = "+" .. GS_FormatNumber(permanentBonus)
+	end
+	if temporaryBonus > 0 then
+		bonusSuffix = bonusSuffix .. "|cff9acd32+" .. GS_FormatNumber(temporaryBonus) .. "|r"
+	end
+	if pool.stat == "HIT" and pool.targetSegment and pool.targetSegment.mode == "SPELL_HIT_PERCENT" then
+		local hitPercent = (pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.SPELL_HIT or 26.231992)
+		return rawValue .. " (" .. GS_FormatNumber(hitPercent) .. "%" .. bonusSuffix .. ")"
+	end
+	if pool.stat == "HIT" then
+		local hitPercent = (pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.MELEE_HIT or 32.78998947)
+		return rawValue .. " (" .. GS_FormatNumber(hitPercent) .. "%" .. bonusSuffix .. ")"
+	end
+	if pool.stat == "SPELL_HIT" then
+		local hitPercent = (pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.SPELL_HIT or 26.231992)
+		return rawValue .. " (" .. GS_FormatNumber(hitPercent) .. "%" .. bonusSuffix .. ")"
+	end
+	if pool.stat == "DEFENSE" or pool.stat == "EXPERTISE" then
+		local detail = rawValue .. " (" .. tostring(floor((pool.current or 0) + 0.5)) .. ")"
+		if bonusSuffix ~= "" then
+			detail = detail .. " " .. bonusSuffix
+		end
+		return detail
+	end
+	if bonusSuffix ~= "" then
+		return rawValue .. " (" .. bonusSuffix .. ")"
+	end
+	return rawValue
+end
+
+function GS_GetCapLineLabel(pool)
+	if not pool then
+		return "CAP"
+	end
+	local icon = pool.capped and "|TInterface\\Buttons\\UI-CheckBox-Check:14:14:0:0:64:64:4:60:4:60|t " or ""
+	local label = icon .. GS_GetCapStatAbbrev(pool) .. ": " .. GS_FormatCapStatDetail(pool)
+	if pool.usedLiveBuffs then
+		label = label .. " " .. (GS_CAP_BUFF_MARKER or "*")
+	end
+	return label
+end
+
 function GS_AddCharacterCapLines(tooltip, capBreakdown)
 	if not tooltip or not capBreakdown or not capBreakdown.pools then
 		return
@@ -31,15 +100,7 @@ function GS_AddCharacterCapLines(tooltip, capBreakdown)
 				tooltip:AddLine("GS2 Caps:", 0.75, 0.9, 1)
 				hasAny = true
 			end
-			local label = pool.summary or pool.stat or "Cap"
-			if pool.capped then
-				label = label .. " capped"
-			else
-				label = label .. " " .. tostring(floor((pool.progress or 0) * 100 + 0.5)) .. "%"
-			end
-			if pool.usedLiveBuffs then
-				label = label .. " " .. (GS_CAP_BUFF_MARKER or "*")
-			end
+			local label = GS_GetCapLineLabel(pool)
 			tooltip:AddDoubleLine("  " .. label, "+" .. tostring(pool.bonusGs2 or 0), 0.75, 0.9, 1, 0.75, 0.9, 1)
 		end
 	end
@@ -131,7 +192,7 @@ end
 
 function GS_GetTooltipItemContext(tooltip, itemLink)
 	local record, unit, slotId = GS_GetTooltipRecordForItem(tooltip, itemLink)
-	if unit and not UnitIsUnit(unit, "player") and GS_CanInspectUnitByPolicy(unit) then
+	if unit and not UnitIsUnit(unit, "player") and not GS_IsExternalInspectOpen() and GS_CanInspectUnitByPolicy(unit) then
 		if not record or not record.gs2Available then
 			GS_QueueInspect(unit)
 		end
@@ -458,6 +519,10 @@ function GS2_HookSetUnit()
 	GS_HideExplainTooltip()
 	local name, unit = GS_GetTooltipUnit()
 	if not name or not unit or not UnitIsPlayer(unit) or (GS_Settings["Player"] ~= 1 and GS_Settings["Player"] ~= 2) then return end
+	if GS_IsExternalInspectOpen() and not UnitIsUnit(unit, "player") then
+		GS_AddInspectPausedLine(GameTooltip)
+		return
+	end
 	local record = GS_GetRecord(unit)
 	if record then
 		if not record.gs2Available and not UnitIsUnit(unit, "player") and GS_CanInspectUnitByPolicy(unit) then

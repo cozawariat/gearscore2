@@ -68,6 +68,10 @@
 | Spell ID | Name | Effect |
 |---|---|---|
 | `6562` | `Heroic Presence` | `+1% melee hit`, `+1% spell hit` |
+| `60340` | `Elixir of Accuracy` | `+45 hit rating` |
+| `60343` | `Elixir of Mighty Defense` | `+45 defense rating` |
+| `60344` | `Elixir of Expertise` | `+45 expertise rating` |
+| `60345` | `Elixir of Armor Piercing` | `+45 armor penetration rating` |
 
 ### Harmful auras on target
 
@@ -267,9 +271,9 @@ Resolved thresholds still come from the pool data below, but final scoring uses 
 
 | Spec | Pools |
 |---|---|
-| `ASSASSINATION` | `HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
-| `COMBAT` | `HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
-| `SUBTLETY` | `HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
+| `ASSASSINATION` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
+| `COMBAT` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `SUBTLETY` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
 | `ENHANCEMENT` | `HIT: 8% melee special progress target`, `EXPERTISE: 26 progress target` |
 
 ### 9.4 Casters / Spell-Hit Specs
@@ -301,3 +305,49 @@ Resolved thresholds still come from the pool data below, but final scoring uses 
 | `MAGE_FROST` | `spellHitBonus 3` |
 | `AFFLICTION` | `spellHitBonus 3` |
 | `BALANCE` | `spellHitBonus 4` |
+
+## 10. Permanent And Temporary Cap Context
+
+`GS_CapProfiles` and `GS_PermanentCapRacials` feed the permanent cap context used by scoring.
+
+`GS_LiveCapBuffs` remains in runtime for live tooltip presentation only.
+
+Temporary buffs from that table do not affect:
+
+- `cap progress`
+- `capped`
+- `capAdjustedGs2`
+- final `GearScore2`
+
+## 11. Permanent Racial Cap Bonuses (`GS_PermanentCapRacials`)
+
+```lua
+GS_PermanentCapRacials = {
+  HUMAN = {
+    EXPERTISE = {
+      bonus = 3,
+      subTypes = {
+        ["SWORDS"] = true,
+        ["ONE-HANDED SWORDS"] = true,
+        ["TWO-HANDED SWORDS"] = true,
+        ["MACES"] = true,
+        ["ONE-HANDED MACES"] = true,
+        ["TWO-HANDED MACES"] = true,
+      },
+    },
+  },
+  ORC = {
+    EXPERTISE = {
+      bonus = 5,
+      subTypes = {
+        ["AXES"] = true,
+        ["ONE-HANDED AXES"] = true,
+        ["TWO-HANDED AXES"] = true,
+        ["FIST WEAPONS"] = true,
+      },
+    },
+  },
+}
+```
+
+These racials are applied only when the currently equipped weapon subtype matches the racial rule.
