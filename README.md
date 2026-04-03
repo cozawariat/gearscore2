@@ -6,14 +6,13 @@
 
 It is a smarter PvE-oriented successor to `GearScoreLite: Reborn` and (https://github.com/Arcitec/GearScoreLite_Reborn) a practical alternative to classic `GearScore`.
 
-Ins
 I am fully aware that the chance of the wider WoW 3.3.5a community abandoning classic `GearScore` and migrating to `GS2` is probably very small, even if that would be the dream outcome.
 
 That is not really the main point.
 
 This addon is first and foremost a functional proof of concept: an attempt to show that a GearScore can be made much more intelligent, more spec-aware, and more useful than the original item-level-heavy model.
 
-tead of treating item level as the whole story, `GearScore2` tries to answer a more useful question:
+Instead of treating item level as the whole story, `GearScore2` tries to answer a more useful question:
 
 > how good is this gear for the actual class and specialization using it?
 
