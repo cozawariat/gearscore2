@@ -504,8 +504,15 @@ PvP GearScore(item) = floor(pvpBaseScore * pvpMultiplier)
   - `specResolved`
   - `specSource`
   - normalized item entries
-  - average item level
-  - fingerprint composed from GUID, class, spec, and item links
+- average item level
+- fingerprint composed from GUID, class, spec, and item links
+
+Inspect records are cached with both:
+
+- `TTL` via `expiresAt`
+- a hard record-count ceiling with LRU-style trimming
+
+Expired inspect records are dropped on access, and if the inspect cache grows past its configured maximum, the least-recently-used records are trimmed back to the target size.
 
 ### 9.2 Base Character Totals Before Caps
 

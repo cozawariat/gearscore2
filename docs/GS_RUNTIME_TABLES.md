@@ -103,6 +103,8 @@ For readability, section titles below still mention the legacy table names in pa
 | `GS_OFFSPEC_MIN_RATIO` | `0.05` | Minimum relative `GS2` lead required before an alternate inferred spec is marked as off-spec |
 | `GS_CACHE_TTL` | `180` | Cached inspect record lifetime |
 | `GS_FRESH_TTL` | `15` | Freshness window used to avoid immediate re-inspection |
+| `GS_INSPECT_CACHE_MAX` | `300` | Hard cap on stored inspect records before LRU-style trimming runs |
+| `GS_INSPECT_CACHE_TRIM_TO` | `220` | Target size after inspect-cache trimming |
 
 ## 2. Legacy Slot Modifiers (`GS.Data.Tables.ItemTypes`)
 
@@ -214,7 +216,7 @@ Each row lists:
 | `FURY` | `MELEE` | `PLATE` | No | No | Yes | `STR 3.35, CRIT 1.95, HIT 2.35, HASTE 1.75, ARP 2.35, AP 1.55, EXPERTISE 1.75` | `STR 2.0, CRIT 1.0, HASTE 0.8, AP 0.9, RESILIENCE 2.2` |
 | `PROTECTION` | `TANK` | `PLATE` | Yes | No | No | `STA 1.8, STR 0.9, DEFENSE 2.8, DODGE 2.4, PARRY 2.3, BLOCK 2.0, BLOCKVALUE 1.5, HIT 1.1, EXPERTISE 1.3` | `STR 0.8, DODGE 1.4, PARRY 1.3, BLOCK 1.2, RESILIENCE 1.7` |
 | `HOLY` | `HEALER` | `PLATE` | Yes | No | No | `INT 2.5, SP 2.9, HASTE 1.9, CRIT 1.4, MP5 1.7, SPI 0.5` | `INT 2.0, SP 2.4, HASTE 1.1, CRIT 0.8, MP5 0.8, RESILIENCE 2.2` |
-| `RETRIBUTION` | `MELEE` | `PLATE` | No | No | No | `STR 4.45, CRIT 2.45, HIT 2.8, HASTE 2.5, EXPERTISE 2.6, ARP 3.15, AP 2.2` | `STR 2.2, CRIT 1.0, AP 0.9, RESILIENCE 2.2` |
+| `RETRIBUTION` | `MELEE` | `PLATE` | No | No | No | `STR 5.5, CRIT 3.1, HIT 3.45, HASTE 3.2, EXPERTISE 3.25, ARP 3.95, AP 2.8` | `STR 2.2, CRIT 1.0, AP 0.9, RESILIENCE 2.2` |
 | `BEASTMASTERY` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.05, RAP 1.15, AP 0.7, HIT 1.35, CRIT 1.15, HASTE 0.8, ARP 0.85` | `AGI 2.1, RAP 1.0, CRIT 1.0, HASTE 0.7, RESILIENCE 2.2` |
 | `MARKSMANSHIP` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.9, RAP 1.6, AP 0.9, HIT 1.8, CRIT 1.7, HASTE 1.2, ARP 2.0` | `AGI 2.2, RAP 1.0, CRIT 1.0, ARP 1.0, RESILIENCE 2.2` |
 | `SURVIVAL` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.45, RAP 1.2, AP 0.7, HIT 1.45, CRIT 1.2, HASTE 1.0` | `AGI 2.2, CRIT 1.0, HASTE 0.8, RESILIENCE 2.2` |
@@ -227,7 +229,7 @@ Each row lists:
 | `FROST` | `MELEE` | `PLATE` | No | No | Yes | `STR 2.5, HIT 1.7, HASTE 1.2, CRIT 1.2, EXPERTISE 1.3, AP 0.9` | `STR 2.2, CRIT 0.9, RESILIENCE 2.2` |
 | `UNHOLY` | `MELEE` | `PLATE` | No | No | No | `STR 2.6, HIT 1.8, HASTE 1.5, CRIT 1.2, EXPERTISE 1.3, AP 1.1` | `STR 2.2, HASTE 0.8, RESILIENCE 2.2` |
 | `ELEMENTAL` | `CASTER` | `CLOTH` | Yes | No | No | `INT 1.1, SP 1.8, HIT 1.05, HASTE 0.9, CRIT 0.7, MP5 0.55` | `INT 1.5, SP 2.3, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
-| `ENHANCEMENT` | `MELEE` | `MAIL` | No | No | Yes | `AGI 2.0, AP 1.2, HIT 1.8, HASTE 1.4, CRIT 1.2, EXPERTISE 1.4` | `AGI 1.8, AP 1.0, HASTE 0.9, RESILIENCE 2.2` |
+| `ENHANCEMENT` | `MELEE` | `MAIL` | No | No | Yes | `AGI 2.65, AP 1.65, HIT 2.4, HASTE 2.0, CRIT 1.65, EXPERTISE 1.95` | `AGI 1.8, AP 1.0, HASTE 0.9, RESILIENCE 2.2` |
 | `RESTORATION` | `HEALER` | `MAIL` | Yes | No | No | `INT 2.3, SP 2.7, HASTE 1.8, CRIT 1.2, MP5 1.4, SPI 0.2` | `INT 2.0, SP 2.3, HASTE 0.9, MP5 0.7, RESILIENCE 2.3` |
 | `ARCANE` | `CASTER` | `CLOTH` | No | No | No | `INT 1.85, SP 2.7, HIT 1.75, HASTE 1.45, CRIT 1.15, SPI 0.4` | `INT 1.8, SP 2.2, HASTE 0.9, CRIT 0.8, RESILIENCE 2.2` |
 | `FIRE` | `CASTER` | `CLOTH` | No | No | No | `INT 1.45, SP 2.4, HIT 1.4, HASTE 1.3, CRIT 1.0, SPI 0.2` | `INT 1.6, SP 2.3, HASTE 1.0, CRIT 0.8, RESILIENCE 2.2` |

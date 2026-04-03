@@ -141,6 +141,17 @@ function GS_StoreCacheEntry(cache, key, entry, countKey, maxEntries, trimTo)
 	return entry
 end
 
+function GS_RemoveCacheEntry(cache, key, countKey)
+	if not cache or key == nil or cache[key] == nil then
+		return false
+	end
+	cache[key] = nil
+	if countKey then
+		State[countKey] = max(0, (State[countKey] or 0) - 1)
+	end
+	return true
+end
+
 function GS_AddStats(target, source)
 	if not target or not source then
 		return target

@@ -266,9 +266,9 @@ end
 function GS_OnEvent(_, event, ...)
 	if event == "PLAYER_REGEN_ENABLED" then State.PlayerIsInCombat = false return end
 	if event == "PLAYER_REGEN_DISABLED" then State.PlayerIsInCombat = true return end
-	if event == "PLAYER_EQUIPMENT_CHANGED" then GS_InspectCache[UnitGUID("player")] = nil GS_UpdatePaperDoll() return end
-	if event == "UNIT_INVENTORY_CHANGED" then local unit = ... if unit and UnitGUID(unit) then GS_InspectCache[UnitGUID(unit)] = nil end return end
-	if event == "UNIT_AURA" then local unit = ... if unit and UnitGUID(unit) then GS_InspectCache[UnitGUID(unit)] = nil if UnitIsUnit(unit, "player") then GS_UpdatePaperDoll() end end return end
+	if event == "PLAYER_EQUIPMENT_CHANGED" then GS_RemoveCacheEntry(GS_InspectCache, UnitGUID("player"), "InspectCacheCount") GS_UpdatePaperDoll() return end
+	if event == "UNIT_INVENTORY_CHANGED" then local unit = ... if unit and UnitGUID(unit) then GS_RemoveCacheEntry(GS_InspectCache, UnitGUID(unit), "InspectCacheCount") end return end
+	if event == "UNIT_AURA" then local unit = ... if unit and UnitGUID(unit) then GS_RemoveCacheEntry(GS_InspectCache, UnitGUID(unit), "InspectCacheCount") if UnitIsUnit(unit, "player") then GS_UpdatePaperDoll() end end return end
 	if event == "MODIFIER_STATE_CHANGED" then
 		local key, pressed = ...
 		if key == "LCTRL" or key == "RCTRL" then

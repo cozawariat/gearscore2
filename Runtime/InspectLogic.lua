@@ -18,6 +18,8 @@ local GS_ACTIVE_TIMEOUT = C.ACTIVE_TIMEOUT or 3.0
 local GS_SCAN_TIMEOUT = C.SCAN_TIMEOUT or 3.0
 local GS_CACHE_TTL = C.CACHE_TTL or 180
 local GS_FRESH_TTL = C.FRESH_TTL or 15
+local GS_INSPECT_CACHE_MAX = C.INSPECT_CACHE_MAX or 300
+local GS_INSPECT_CACHE_TRIM_TO = C.INSPECT_CACHE_TRIM_TO or 220
 local GS_READY_DELAY = C.READY_DELAY or 0.15
 local GS_MIN_INSPECT_ITEMS = C.MIN_INSPECT_ITEMS or 8
 local GS_FORCE_POLL_DELAY = C.FORCE_POLL_DELAY or 0.20
@@ -27,6 +29,21 @@ local GS_InspectQueue = State.InspectQueue or {}
 local GS_InspectCache = State.InspectCache or {}
 local GS_InspectState = State.InspectState or { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
 local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
+
+local function GS_GetLiveInspectCacheRecord(guid)
+	if not guid then
+		return nil
+	end
+	local cached = GS_InspectCache[guid]
+	if not cached then
+		return nil
+	end
+	if cached.expiresAt and cached.expiresAt > GetTime() then
+		return GS_TouchCacheEntry(cached)
+	end
+	GS_RemoveCacheEntry(GS_InspectCache, guid, "InspectCacheCount")
+	return nil
+end
 
 function GS_GetTooltipUnit()
 	local _, unit = GameTooltip:GetUnit()
@@ -352,8 +369,8 @@ function GS_GetScanRecord(guid)
 	if not guid then
 		return nil
 	end
-	local cached = GS_InspectCache[guid]
-	if cached and cached.expiresAt > GetTime() then
+	local cached = GS_GetLiveInspectCacheRecord(guid)
+	if cached then
 		return cached
 	end
 	local active = GS_InspectState.active
@@ -380,8 +397,8 @@ function GS_GetScanRecord(guid)
 end
 
 function GS_BuildRecord(snapshot)
-	local cached = GS_InspectCache[snapshot.guid]
-	if cached and cached.fingerprint == snapshot.fingerprint and cached.expiresAt > GetTime() and cached.specKey == snapshot.specKey and cached.specSource == (snapshot.specSource or "none") then
+	local cached = GS_GetLiveInspectCacheRecord(snapshot.guid)
+	if cached and cached.fingerprint == snapshot.fingerprint and cached.specKey == snapshot.specKey and cached.specSource == (snapshot.specSource or "none") then
 		return cached
 	end
 	local gs2, legacy, pvp, detailLinks = 0, 0, 0, {}
@@ -469,15 +486,14 @@ function GS_BuildRecord(snapshot)
 		expiresAt = GetTime() + GS_CACHE_TTL,
 		freshUntil = GetTime() + GS_FRESH_TTL,
 	}
-	GS_InspectCache[snapshot.guid] = cached
-	return cached
+	return GS_StoreCacheEntry(GS_InspectCache, snapshot.guid, cached, "InspectCacheCount", GS_INSPECT_CACHE_MAX, GS_INSPECT_CACHE_TRIM_TO)
 end
 
 function GS_GetRecord(unit)
 	local guid = UnitGUID(unit)
 	if not guid then return nil end
-	local cached = GS_InspectCache[guid]
-	if cached and cached.expiresAt > GetTime() then return cached end
+	local cached = GS_GetLiveInspectCacheRecord(guid)
+	if cached then return cached end
 	if UnitIsUnit(unit, "player") then
 		local snapshot = GS_CollectSnapshot("player", false)
 		if snapshot then return GS_BuildRecord(snapshot) end
