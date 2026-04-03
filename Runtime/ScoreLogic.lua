@@ -4,6 +4,17 @@
 
 local GS = _G.GS2
 local C = GS and GS.Constants or {}
+local Data = GS and GS.Data or {}
+local Tables = Data.Tables or {}
+local GS_SPEC_PROFILES = Tables.SpecProfiles or {}
+local GS_CLASS_DEFAULTS = Tables.ClassDefaults or {}
+local GS_CAP_PROFILES = Tables.CapProfiles or {}
+local GS_PERMANENT_CAP_RACIALS = Tables.PermanentCapRacials or {}
+local GS_LIVE_CAP_BUFFS = Tables.LiveCapBuffs or {}
+local GS_RATING_CONVERSIONS = Tables.RatingConversions or {}
+local GS_ARMOR_CLASS_ORDER = Tables.ArmorClassOrder or {}
+local GS_ENCHANT_SLOTS = Tables.EnchantSlots or {}
+local GS_QUALITY = Tables.Quality or {}
 local GS_GEM_SCALE = C.GEM_SCALE or 0.35
 local GS_ENCHANT_SCALE = C.ENCHANT_SCALE or 0.35
 local GS_PVE_RESILIENCE_RATE = C.PVE_RESILIENCE_RATE or 0.0015
@@ -19,8 +30,8 @@ local GS_CAP_BONUS_MIN = C.CAP_BONUS_MIN or 20
 local GS_CAP_BONUS_MAX = C.CAP_BONUS_MAX or 250
 
 function GS_GetProfile(classToken, specKey)
-	specKey = (specKey and GS_SpecProfiles[specKey]) and specKey or GS_ClassDefaults[classToken]
-	return GS_SpecProfiles[specKey], specKey
+	specKey = (specKey and GS_SPEC_PROFILES[specKey]) and specKey or GS_CLASS_DEFAULTS[classToken]
+	return GS_SPEC_PROFILES[specKey], specKey
 end
 
 function GS_GetAuraNameFromId(spellId)
@@ -70,7 +81,7 @@ function GS_AddToCapContext(context, key, amount)
 end
 
 function GS_GetBaseCapContext(specKey)
-	local capProfile = GS_CapProfiles[specKey]
+	local capProfile = GS_CAP_PROFILES[specKey]
 	local context = GS_CreateCapContext(nil)
 	if capProfile and capProfile.pools then
 		for _, pool in pairs(capProfile.pools) do
@@ -102,7 +113,7 @@ end
 function GS_GetRacialCapContext(snapshot)
 	local context = GS_CreateCapContext(snapshot and snapshot.unit or nil)
 	local raceToken = snapshot and snapshot.raceToken and string.upper(tostring(snapshot.raceToken)) or nil
-	local racial = raceToken and GS_PermanentCapRacials and GS_PermanentCapRacials[raceToken] or nil
+	local racial = raceToken and GS_PERMANENT_CAP_RACIALS and GS_PERMANENT_CAP_RACIALS[raceToken] or nil
 	if not racial then
 		return context
 	end
@@ -122,8 +133,8 @@ end
 function GS_GetTemporaryCapContext(unit)
 	local context = GS_CreateCapContext(unit)
 	if unit and UnitExists(unit) and UnitIsVisible(unit) then
-		for index = 1, #(GS_LiveCapBuffs.HELPFUL or {}) do
-			local aura = GS_LiveCapBuffs.HELPFUL[index]
+		for index = 1, #(GS_LIVE_CAP_BUFFS.HELPFUL or {}) do
+			local aura = GS_LIVE_CAP_BUFFS.HELPFUL[index]
 			local auraName = GS_GetAuraNameFromId(aura.spellId)
 			if auraName and GS_UnitHasAuraByName(unit, "HELPFUL", auraName) then
 				GS_AddToCapContext(context, "liveMeleeHitBonus", aura.meleeHitBonus or 0)
@@ -135,8 +146,8 @@ function GS_GetTemporaryCapContext(unit)
 		end
 	end
 	if unit and UnitIsUnit(unit, "player") and UnitExists("target") then
-		for index = 1, #(GS_LiveCapBuffs.HARMFUL or {}) do
-			local aura = GS_LiveCapBuffs.HARMFUL[index]
+		for index = 1, #(GS_LIVE_CAP_BUFFS.HARMFUL or {}) do
+			local aura = GS_LIVE_CAP_BUFFS.HARMFUL[index]
 			local auraName = GS_GetAuraNameFromId(aura.spellId)
 			if auraName and GS_UnitHasAuraByName("target", "HARMFUL", auraName) then
 				GS_AddToCapContext(context, "liveTargetSpellHitBonus", aura.targetSpellHitBonus or 0)
@@ -171,16 +182,16 @@ function GS_ResolveCapThreshold(segment, context)
 		return 0
 	end
 	if segment.mode == "MELEE_HIT_PERCENT" then
-		return max(0, (segment.threshold - (context.meleeHitBonus or 0)) * GS_RatingConversions.MELEE_HIT)
+		return max(0, (segment.threshold - (context.meleeHitBonus or 0)) * GS_RATING_CONVERSIONS.MELEE_HIT)
 	end
 	if segment.mode == "SPELL_HIT_PERCENT" then
-		return max(0, (segment.threshold - (context.spellHitBonus or 0) - (context.targetSpellHitBonus or 0)) * GS_RatingConversions.SPELL_HIT)
+		return max(0, (segment.threshold - (context.spellHitBonus or 0) - (context.targetSpellHitBonus or 0)) * GS_RATING_CONVERSIONS.SPELL_HIT)
 	end
 	if segment.mode == "EXPERTISE_POINTS" then
-		return max(0, (segment.threshold - (context.expertiseBonus or 0)) * GS_RatingConversions.EXPERTISE)
+		return max(0, (segment.threshold - (context.expertiseBonus or 0)) * GS_RATING_CONVERSIONS.EXPERTISE)
 	end
 	if segment.mode == "DEFENSE_SKILL" then
-		return max(0, (segment.threshold - 400 - (context.defenseSkillBonus or 0)) * GS_RatingConversions.DEFENSE)
+		return max(0, (segment.threshold - 400 - (context.defenseSkillBonus or 0)) * GS_RATING_CONVERSIONS.DEFENSE)
 	end
 	return max(0, segment.threshold or 0)
 end
@@ -231,16 +242,16 @@ end
 
 function GS_GetCapPoolDisplay(poolStat, statValue, targetSegment, resolvedThreshold, context)
 	if poolStat == "DEFENSE" then
-		return 400 + floor(((statValue or 0) / GS_RatingConversions.DEFENSE) + (context.defenseSkillBonus or 0) + 0.5), targetSegment and targetSegment.threshold or 540, false
+		return 400 + floor(((statValue or 0) / GS_RATING_CONVERSIONS.DEFENSE) + (context.defenseSkillBonus or 0) + 0.5), targetSegment and targetSegment.threshold or 540, false
 	end
 	if poolStat == "EXPERTISE" then
-		return floor(((statValue or 0) / GS_RatingConversions.EXPERTISE) + (context.expertiseBonus or 0) + 0.5), targetSegment and targetSegment.threshold or 26, false
+		return floor(((statValue or 0) / GS_RATING_CONVERSIONS.EXPERTISE) + (context.expertiseBonus or 0) + 0.5), targetSegment and targetSegment.threshold or 26, false
 	end
 	if (poolStat == "HIT" or poolStat == "SPELL_HIT") and targetSegment and targetSegment.mode == "SPELL_HIT_PERCENT" then
-		return ((statValue or 0) / GS_RatingConversions.SPELL_HIT) + (context.spellHitBonus or 0) + (context.targetSpellHitBonus or 0), targetSegment.threshold or 17, false
+		return ((statValue or 0) / GS_RATING_CONVERSIONS.SPELL_HIT) + (context.spellHitBonus or 0) + (context.targetSpellHitBonus or 0), targetSegment.threshold or 17, false
 	end
 	if poolStat == "HIT" and targetSegment and targetSegment.mode == "MELEE_HIT_PERCENT" then
-		return ((statValue or 0) / GS_RatingConversions.MELEE_HIT) + (context.meleeHitBonus or 0), targetSegment.threshold or 8, false
+		return ((statValue or 0) / GS_RATING_CONVERSIONS.MELEE_HIT) + (context.meleeHitBonus or 0), targetSegment.threshold or 8, false
 	end
 	if poolStat == "ARP" then
 		return floor((statValue or 0) + (context.arpBonus or 0) + 0.5), floor((resolvedThreshold or 0) + 0.5), true
@@ -412,8 +423,8 @@ function GS_ApplyCharacterCaps(snapshot, preCapGs2)
 	if not snapshot or not snapshot.specKey then
 		return 0, nil, nil
 	end
-	local capProfile = GS_CapProfiles[snapshot.specKey]
-	local profile = GS_SpecProfiles[snapshot.specKey]
+	local capProfile = GS_CAP_PROFILES[snapshot.specKey]
+	local profile = GS_SPEC_PROFILES[snapshot.specKey]
 	local totalStats = GS_CollectSnapshotStats(snapshot)
 	if not capProfile or not profile or not profile.pve then
 		return 0, nil, totalStats
@@ -524,10 +535,41 @@ function GS_IsRangedHelperCompatible(item, classToken, profile)
 	return false
 end
 
+function GS_GetRoleSignatureKind(item)
+	if not item then
+		return nil
+	end
+	local stats = item.stats or {}
+	local hasTank = (stats.DEFENSE or 0) > 0 or (stats.DODGE or 0) > 0 or (stats.PARRY or 0) > 0 or (stats.BLOCK or 0) > 0 or (stats.BLOCKVALUE or 0) > 0 or item.equipLoc == "INVTYPE_SHIELD"
+	local hasHealer = (stats.MP5 or 0) > 0 or (stats.SPI or 0) > 0
+	local hasCaster = (stats.SP or 0) > 0 or (stats.INT or 0) > 0
+	local hasPhysical = (stats.STR or 0) > 0 or (stats.AGI or 0) > 0 or (stats.AP or 0) > 0 or (stats.RAP or 0) > 0 or (stats.ARP or 0) > 0 or (stats.EXPERTISE or 0) > 0
+	local hasRanged = (stats.RAP or 0) > 0 or item.equipLoc == "INVTYPE_RANGED" or item.equipLoc == "INVTYPE_RANGEDRIGHT" or item.equipLoc == "INVTYPE_THROWN"
+
+	if hasTank then
+		return "TANK"
+	end
+	if hasHealer and hasCaster and not hasPhysical then
+		return "HEALER"
+	end
+	if hasCaster and not hasPhysical then
+		return "CASTER"
+	end
+	if hasRanged then
+		return "RANGED"
+	end
+	if hasPhysical then
+		return "MELEE"
+	end
+	return nil
+end
+
 function GS_IsItemCompatible(item, classToken, profile)
 	if not item or not profile or item.slot == 0 then return false end
-	if GS_ArmorClassOrder[profile.armor] and item.armorRank and item.slot ~= 15 and item.slot ~= 2 and item.slot ~= 11 and item.slot ~= 13 then
-		if item.armorRank < GS_ArmorClassOrder[profile.armor] then return false end
+	local stats = item.stats or {}
+	local roleSignature = GS_GetRoleSignatureKind(item)
+	if GS_ARMOR_CLASS_ORDER[profile.armor] and item.armorRank and item.slot ~= 15 and item.slot ~= 2 and item.slot ~= 11 and item.slot ~= 13 then
+		if item.armorRank < GS_ARMOR_CLASS_ORDER[profile.armor] then return false end
 	end
 	if item.equipLoc == "INVTYPE_SHIELD" and not profile.shield then return false end
 	if item.equipLoc == "INVTYPE_WEAPONOFFHAND" and not profile.dualwield then return false end
@@ -535,8 +577,12 @@ function GS_IsItemCompatible(item, classToken, profile)
 	if item.equipLoc == "INVTYPE_RELIC" and not GS_IsRangedHelperCompatible(item, classToken, profile) then return false end
 	if (item.equipLoc == "INVTYPE_RANGED" or item.equipLoc == "INVTYPE_RANGEDRIGHT" or item.equipLoc == "INVTYPE_THROWN") and not GS_IsRangedHelperCompatible(item, classToken, profile) then return false end
 	if classToken == "HUNTER" and (item.equipLoc == "INVTYPE_SHIELD" or item.equipLoc == "INVTYPE_HOLDABLE") then return false end
-	if (profile.role == "CASTER" or profile.role == "HEALER") and (item.stats.STR or 0) > 0 and (item.stats.SP or 0) == 0 and (item.stats.INT or 0) == 0 then return false end
-	if (profile.role == "MELEE" or profile.role == "RANGED") and (item.stats.SP or 0) > 0 and (item.stats.STR or 0) == 0 and (item.stats.AGI or 0) == 0 and (item.stats.AP or 0) == 0 and (item.stats.RAP or 0) == 0 then return false end
+	if (profile.role == "CASTER" or profile.role == "HEALER") and (stats.STR or 0) > 0 and (stats.SP or 0) == 0 and (stats.INT or 0) == 0 then return false end
+	if (profile.role == "MELEE" or profile.role == "RANGED") and (stats.SP or 0) > 0 and (stats.STR or 0) == 0 and (stats.AGI or 0) == 0 and (stats.AP or 0) == 0 and (stats.RAP or 0) == 0 then return false end
+	if profile.role == "TANK" and roleSignature == "CASTER" then return false end
+	if profile.role == "TANK" and roleSignature == "HEALER" then return false end
+	if (profile.role == "CASTER" or profile.role == "HEALER") and (roleSignature == "MELEE" or roleSignature == "RANGED") and (stats.SP or 0) == 0 and (stats.INT or 0) == 0 then return false end
+	if (profile.role == "MELEE" or profile.role == "RANGED") and (roleSignature == "CASTER" or roleSignature == "HEALER") and (stats.STR or 0) == 0 and (stats.AGI or 0) == 0 and (stats.AP or 0) == 0 and (stats.RAP or 0) == 0 then return false end
 	return true
 end
 
@@ -608,7 +654,7 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 			explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Gem " .. index, formula = "(empty socket => +0)", delta = 0 }
 		end
 	end
-	if GS_EnchantSlots[item.equipLoc] then
+	if GS_ENCHANT_SLOTS[item.equipLoc] then
 		if item.hasEnchant then
 			local enchantInfo = GS_GetEnchantInfo(item)
 			local enchantStats = enchantInfo and enchantInfo.stats or nil
@@ -677,10 +723,10 @@ function GS2_GetQuality(score)
 	if not score then return 0, 0, 0, "Trash" end
 	for i = 0, 6 do
 		if score > i * 1000 and score <= ((i + 1) * 1000) then
-			local red = GS_Quality[(i + 1) * 1000].Red.A + (((score - GS_Quality[(i + 1) * 1000].Red.B) * GS_Quality[(i + 1) * 1000].Red.C) * GS_Quality[(i + 1) * 1000].Red.D)
-			local blue = GS_Quality[(i + 1) * 1000].Green.A + (((score - GS_Quality[(i + 1) * 1000].Green.B) * GS_Quality[(i + 1) * 1000].Green.C) * GS_Quality[(i + 1) * 1000].Green.D)
-			local green = GS_Quality[(i + 1) * 1000].Blue.A + (((score - GS_Quality[(i + 1) * 1000].Blue.B) * GS_Quality[(i + 1) * 1000].Blue.C) * GS_Quality[(i + 1) * 1000].Blue.D)
-			return red, green, blue, GS_Quality[(i + 1) * 1000].Description
+			local red = GS_QUALITY[(i + 1) * 1000].Red.A + (((score - GS_QUALITY[(i + 1) * 1000].Red.B) * GS_QUALITY[(i + 1) * 1000].Red.C) * GS_QUALITY[(i + 1) * 1000].Red.D)
+			local blue = GS_QUALITY[(i + 1) * 1000].Green.A + (((score - GS_QUALITY[(i + 1) * 1000].Green.B) * GS_QUALITY[(i + 1) * 1000].Green.C) * GS_QUALITY[(i + 1) * 1000].Green.D)
+			local green = GS_QUALITY[(i + 1) * 1000].Blue.A + (((score - GS_QUALITY[(i + 1) * 1000].Blue.B) * GS_QUALITY[(i + 1) * 1000].Blue.C) * GS_QUALITY[(i + 1) * 1000].Blue.D)
+			return red, green, blue, GS_QUALITY[(i + 1) * 1000].Description
 		end
 	end
 	return 0.1, 0.1, 0.1

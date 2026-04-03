@@ -1,6 +1,11 @@
 
+local GS = _G.GS2 or {}
+_G.GS2 = GS
+GS.Data = GS.Data or {}
+GS.Data.Tables = GS.Data.Tables or {}
+local Tables = GS.Data.Tables
 
-GS_ItemTypes = {
+Tables.ItemTypes = {
 	["INVTYPE_RELIC"] = { ["SlotMOD"] = 0.3164, ["ItemSlot"] = 18, ["Enchantable"] = false},
 	["INVTYPE_TRINKET"] = { ["SlotMOD"] = 0.5625, ["ItemSlot"] = 33, ["Enchantable"] = false },
 	["INVTYPE_2HWEAPON"] = { ["SlotMOD"] = 2.000, ["ItemSlot"] = 16, ["Enchantable"] = true },
@@ -32,7 +37,7 @@ GS_ItemTypes = {
 
 
 
-GS_DefaultSettings = {
+Tables.DefaultSettings = {
 	["Player"] = 1,
 	["Item"] = 1,
 	["Show"] = 1,
@@ -69,7 +74,7 @@ GS_DefaultSettings = {
 }
 
 
-GS_Special = {
+Tables.Special = {
 	["A"] = "Author of GearScore",
 	["B"] = "Official Sponsor of GearScore",
 	["C"] = "Official GearScore Guild",
@@ -233,7 +238,7 @@ GS_Special = {
 }
 
 
-GS_Rarity = {
+Tables.Rarity = {
 	[0] = { Red = 0.55,	Green = 0.55, Blue = 0.55 },
 	[1] = {	Red = 1.00,	Green = 1.00, Blue = 1.00 },
 	[2] = {	Red = 0.12,	Green = 1.00, Blue = 0.00 },
@@ -244,7 +249,7 @@ GS_Rarity = {
 	[7] = {	Red = 0.90,	Green = 0.80, Blue = 0.50 },
 }
 
-GS_Formula = {
+Tables.Formula = {
 	["A"] = {
 		[4] = { ["A"] = 91.4500, ["B"] = 0.6500 },
 		[3] = { ["A"] = 81.3750, ["B"] = 0.8125 },
@@ -258,7 +263,7 @@ GS_Formula = {
 	}
 }
 
-GS_Quality = {
+Tables.Quality = {
 	[6000] = {
 		["Red"] = { ["A"] = 0.94, ["B"] = 5000, ["C"] = 0.00006, ["D"] = 1 },
 		["Green"] = { ["A"] = 0.47, ["B"] = 5000, ["C"] = 0.00047, ["D"] = -1 },
@@ -299,7 +304,7 @@ GS_Quality = {
 
 
 
-GS_CommandList = {
+Tables.CommandList = {
 	[1] = "---GearScore2 Commands---",
 	[2] = "/gs2 or /gs2 settings -> Opens the GearScore2 settings panel.",
 	[3] = "/gs2 debuginspect -> Toggles inspect debug messages.",
@@ -307,7 +312,7 @@ GS_CommandList = {
 	[5] = "/gs2 issues -> Opens a copyable report of unresolved gem/enchant data.",
 }
 
-GS_EnchantSlots = {
+Tables.EnchantSlots = {
 	["INVTYPE_HEAD"] = true,
 	["INVTYPE_SHOULDER"] = true,
 	["INVTYPE_CHEST"] = true,
@@ -325,21 +330,21 @@ GS_EnchantSlots = {
 	["INVTYPE_RANGED"] = true,
 }
 
-GS_ArmorClassOrder = {
+Tables.ArmorClassOrder = {
 	["CLOTH"] = 1,
 	["LEATHER"] = 2,
 	["MAIL"] = 3,
 	["PLATE"] = 4,
 }
 
-GS_SocketStatKeys = {
+Tables.SocketStatKeys = {
 	EMPTY_SOCKET_RED = true,
 	EMPTY_SOCKET_YELLOW = true,
 	EMPTY_SOCKET_BLUE = true,
 	EMPTY_SOCKET_META = true,
 }
 
-GS_StatAliases = {
+Tables.StatAliases = {
 	ITEM_MOD_STRENGTH_SHORT = "STR",
 	ITEM_MOD_AGILITY_SHORT = "AGI",
 	ITEM_MOD_STAMINA_SHORT = "STA",
@@ -362,15 +367,16 @@ GS_StatAliases = {
 	ITEM_MOD_MANA_REGENERATION_SHORT = "MP5",
 }
 
-GS_EnchantValues = GS_EnchantValues or {}
+GS.Data.Enchants = GS.Data.Enchants or {}
+GS.Data.Enchants.Values = GS.Data.Enchants.Values or {}
 
-GS_ClassDefaults = {
+Tables.ClassDefaults = {
 	WARRIOR = "FURY", PALADIN = "RETRIBUTION", HUNTER = "MARKSMANSHIP", ROGUE = "COMBAT",
 	PRIEST = "SHADOW", DEATHKNIGHT = "UNHOLY", SHAMAN = "ELEMENTAL", MAGE = "ARCANE",
 	WARLOCK = "AFFLICTION", DRUID = "BALANCE",
 }
 
-GS_ClassSpecOrder = {
+Tables.ClassSpecOrder = {
 	WARRIOR = { "ARMS", "FURY", "PROTECTION" },
 	PALADIN = { "HOLY", "PROTECTION", "RETRIBUTION" },
 	HUNTER = { "BEASTMASTERY", "MARKSMANSHIP", "SURVIVAL" },
@@ -383,7 +389,7 @@ GS_ClassSpecOrder = {
 	DRUID = { "BALANCE", "FERAL", "DRUID_RESTORATION" },
 }
 
-GS_SpecProfiles = {
+Tables.SpecProfiles = {
 	ARMS = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, pve = { STR = 3.95, CRIT = 2.35, HIT = 2.6, HASTE = 1.9, ARP = 3.05, AP = 2.0, EXPERTISE = 2.2 }, pvp = { STR = 2.2, CRIT = 1.2, HIT = 0.8, HASTE = 0.9, ARP = 1.3, AP = 1.0, RESILIENCE = 2.2 } },
 	FURY = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, pve = { STR = 3.35, CRIT = 1.95, HIT = 2.35, HASTE = 1.75, ARP = 2.35, AP = 1.55, EXPERTISE = 1.75 }, pvp = { STR = 2.0, CRIT = 1.0, HASTE = 0.8, AP = 0.9, RESILIENCE = 2.2 } },
 	PROTECTION = { role = "TANK", armor = "PLATE", shield = true, ranged = false, pve = { STA = 1.8, STR = 0.9, DEFENSE = 2.8, DODGE = 2.4, PARRY = 2.3, BLOCK = 2.0, BLOCKVALUE = 1.5, HIT = 1.1, EXPERTISE = 1.3 }, pvp = { STR = 0.8, DODGE = 1.4, PARRY = 1.3, BLOCK = 1.2, RESILIENCE = 1.7 } },
@@ -414,14 +420,14 @@ GS_SpecProfiles = {
 	DRUID_RESTORATION = { role = "HEALER", armor = "LEATHER", shield = false, ranged = false, pve = { INT = 4.1, SP = 4.2, HASTE = 3.15, CRIT = 1.65, MP5 = 2.0, SPI = 2.25 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, SPI = 0.7, RESILIENCE = 2.4 } },
 }
 
-GS_RatingConversions = {
+Tables.RatingConversions = {
 	MELEE_HIT = 32.78998947,
 	SPELL_HIT = 26.231992,
 	EXPERTISE = 8.196,
 	DEFENSE = 4.9185,
 }
 
-GS_CapSegmentDefaults = {
+Tables.CapSegmentDefaults = {
 	CRITICAL = 1.25,
 	USEFUL = 0.60,
 	OVERFLOW = 0.20,
@@ -430,12 +436,15 @@ GS_CapSegmentDefaults = {
 	ARP_OVERFLOW = 0.05,
 }
 
-GS_LiveCapBuffs = {
+local GS_RatingConversions = Tables.RatingConversions
+local GS_CapSegmentDefaults = Tables.CapSegmentDefaults
+
+Tables.LiveCapBuffs = {
 	HELPFUL = {
 		{ spellId = 6562, meleeHitBonus = 1, spellHitBonus = 1 },
-		{ spellId = 60340, meleeHitBonus = (45 / GS_RatingConversions.MELEE_HIT), spellHitBonus = (45 / GS_RatingConversions.SPELL_HIT) },
-		{ spellId = 60343, defenseSkillBonus = (45 / GS_RatingConversions.DEFENSE) },
-		{ spellId = 60344, expertiseBonus = (45 / GS_RatingConversions.EXPERTISE) },
+		{ spellId = 60340, meleeHitBonus = (45 / Tables.RatingConversions.MELEE_HIT), spellHitBonus = (45 / Tables.RatingConversions.SPELL_HIT) },
+		{ spellId = 60343, defenseSkillBonus = (45 / Tables.RatingConversions.DEFENSE) },
+		{ spellId = 60344, expertiseBonus = (45 / Tables.RatingConversions.EXPERTISE) },
 		{ spellId = 60345, arpBonus = 45 },
 	},
 	HARMFUL = {
@@ -443,7 +452,7 @@ GS_LiveCapBuffs = {
 	},
 }
 
-GS_PermanentCapRacials = {
+Tables.PermanentCapRacials = {
 	HUMAN = {
 		EXPERTISE = {
 			bonus = 3,
@@ -470,7 +479,7 @@ GS_PermanentCapRacials = {
 	},
 }
 
-GS_CapProfiles = {
+Tables.CapProfiles = {
 	ARMS = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {

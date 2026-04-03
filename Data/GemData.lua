@@ -2,11 +2,16 @@
 --                           GearScore2 Gem Database                           --
 -------------------------------------------------------------------------------
 -- Generated from WotLKDB gem items and their linked enchant pages for WoW 3.3.5a.
--- GS_GemValues is keyed by gem enchant ID, matching the IDs present in item links.
--- GS_GemItems is keyed by gem item ID and can be used as a runtime fallback when
+-- GS.Data.Gems.Values is keyed by gem enchant ID, matching the IDs present in item links.
+-- GS.Data.Gems.Items is keyed by gem item ID and can be used as a runtime fallback when
 -- the item link exposes the gem item but not the gem enchant ID.
 
-GS_GemValues = {
+local GS = _G.GS2 or {}
+_G.GS2 = GS
+GS.Data = GS.Data or {}
+GS.Data.Gems = GS.Data.Gems or {}
+
+GS.Data.Gems.Values = {
 	[2690] = { kind = "stats", label = "Teardrop Blood Garnet", itemId = 23094, quality = 2, enchantLabel = "+7 Spell Power", colors = { "RED" }, stats = { SP = 7 } },
 	[2691] = { kind = "stats", label = "Bold Blood Garnet", itemId = 23095, quality = 2, enchantLabel = "+6 Strength", colors = { "RED" }, stats = { STR = 6 } },
 	[2692] = { kind = "stats", label = "Runed Blood Garnet", itemId = 23096, quality = 2, enchantLabel = "+7 Spell Power", colors = { "RED" }, stats = { SP = 7 } },
@@ -604,7 +609,7 @@ GS_GemValues = {
 	[3879] = { kind = "stats", label = "Nightmare Tear", itemId = 49110, quality = 4, enchantLabel = "+10 All Stats", colors = { "RED", "BLUE", "YELLOW" }, stats = { AGI = 10, INT = 10, SPI = 10, STA = 10, STR = 10 } },
 }
 
-GS_GemItems = {
+GS.Data.Gems.Items = {
 	[774] = { label = "Malachite", quality = 2 },
 	[818] = { label = "Tigerseye", quality = 2 },
 	[1206] = { label = "Moss Agate", quality = 2 },

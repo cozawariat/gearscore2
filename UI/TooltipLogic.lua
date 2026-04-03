@@ -5,6 +5,11 @@
 local GS = _G.GS2
 local State = GS and GS.State or {}
 local C = GS and GS.Constants or {}
+local Data = GS and GS.Data or {}
+local Tables = Data.Tables or {}
+local GS_RATING_CONVERSIONS = Tables.RatingConversions or {}
+local GS_CLASS_DEFAULTS = Tables.ClassDefaults or {}
+local GS_RARITY = Tables.Rarity or {}
 local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
 local GS_ExplainState = State.ExplainState or { owner = nil, itemLink = nil, itemSlot = nil }
 local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
@@ -59,19 +64,19 @@ function GS_FormatCapStatDetail(pool)
 		bonusSuffix = bonusSuffix .. "|cff9acd32+" .. GS_FormatNumber(temporaryBonus) .. "|r"
 	end
 	if pool.stat == "HIT" and pool.targetSegment and pool.targetSegment.mode == "SPELL_HIT_PERCENT" then
-		local hitPercent = (pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.SPELL_HIT or 26.231992)
+		local hitPercent = (pool.rawValue or 0) / (GS_RATING_CONVERSIONS.SPELL_HIT or 26.231992)
 		return rawValue .. " (" .. GS_FormatNumber(hitPercent) .. "%" .. bonusSuffix .. ")"
 	end
 	if pool.stat == "HIT" then
-		local hitPercent = (pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.MELEE_HIT or 32.78998947)
+		local hitPercent = (pool.rawValue or 0) / (GS_RATING_CONVERSIONS.MELEE_HIT or 32.78998947)
 		return rawValue .. " (" .. GS_FormatNumber(hitPercent) .. "%" .. bonusSuffix .. ")"
 	end
 	if pool.stat == "SPELL_HIT" then
-		local hitPercent = (pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.SPELL_HIT or 26.231992)
+		local hitPercent = (pool.rawValue or 0) / (GS_RATING_CONVERSIONS.SPELL_HIT or 26.231992)
 		return rawValue .. " (" .. GS_FormatNumber(hitPercent) .. "%" .. bonusSuffix .. ")"
 	end
 	if pool.stat == "DEFENSE" then
-		local defenseSkill = 400 + floor(((pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.DEFENSE or 4.9185)) + permanentBonus)
+		local defenseSkill = 400 + floor(((pool.rawValue or 0) / (GS_RATING_CONVERSIONS.DEFENSE or 4.9185)) + permanentBonus)
 		local detail = rawValue .. " (" .. tostring(defenseSkill) .. ")"
 		if bonusSuffix ~= "" then
 			detail = detail .. " " .. bonusSuffix
@@ -79,7 +84,7 @@ function GS_FormatCapStatDetail(pool)
 		return detail
 	end
 	if pool.stat == "EXPERTISE" then
-		local expertisePoints = floor(((pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.EXPERTISE or 8.196)) + permanentBonus)
+		local expertisePoints = floor(((pool.rawValue or 0) / (GS_RATING_CONVERSIONS.EXPERTISE or 8.196)) + permanentBonus)
 		local detail = rawValue .. " (" .. tostring(expertisePoints) .. ")"
 		if bonusSuffix ~= "" then
 			detail = detail .. " " .. bonusSuffix
@@ -242,8 +247,8 @@ function GS_GetTooltipItemContext(tooltip, itemLink)
 		unit = "player",
 		slotId = slotId,
 		classToken = classToken,
-		specKey = playerRecord and playerRecord.specKey or GS_ClassDefaults[classToken],
-		specLabel = playerRecord and playerRecord.specLabel or GS_GetSpecLabel(GS_ClassDefaults[classToken]),
+		specKey = playerRecord and playerRecord.specKey or GS_CLASS_DEFAULTS[classToken],
+		specLabel = playerRecord and playerRecord.specLabel or GS_GetSpecLabel(GS_CLASS_DEFAULTS[classToken]),
 		specSource = playerRecord and playerRecord.specSource or "live",
 		gs2Available = playerRecord and playerRecord.gs2Available or false,
 		scanning = false,
@@ -512,7 +517,7 @@ function GS2_SetDetails(tooltip, name)
 		if item then
 			local itemName, _, itemRarity = GetItemInfo(itemLink)
 			if itemName then
-				local color = GS_Rarity[itemRarity or 1] or GS_Rarity[1]
+				local color = GS_RARITY[itemRarity or 1] or GS_RARITY[1]
 				local suffix = GS_Settings["Level"] == 1 and (" (iLevel " .. tostring(item.level or 0) .. ")") or ""
 				if record.gs2Available and record.specKey and not item.unresolvedData then
 					local gs2, pvp = GS_ScoreItem(item, record.classToken, record.specKey)

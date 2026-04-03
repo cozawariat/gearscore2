@@ -81,15 +81,21 @@ This document is normative for the current runtime. If the code changes, this do
 
 The current runtime behavior is defined by the following files:
 
-- `core.lua`
-- `item_logic.lua`
-- `score_logic.lua`
-- `inspect_logic.lua`
-- `tooltip_logic.lua`
-- `informationLite.lua`
-- `enchant_data.lua`
+- `Runtime/Bootstrap.lua`
+- `Runtime/ItemLogic.lua`
+- `Runtime/ScoreLogic.lua`
+- `Runtime/InspectLogic.lua`
+- `UI/TooltipLogic.lua`
+- `Data/RuntimeTables.lua`
+- `Data/EnchantData.lua`
 
-`enchant_data.lua` is generated from WotLKDB and loaded before scoring modules.
+`Data/EnchantData.lua` is generated from WotLKDB and loaded before scoring modules.
+
+Runtime scoring data is namespaced under `GS.Data`:
+
+- `GS.Data.Tables` for shared runtime tables
+- `GS.Data.Enchants.Values` for enchant entries
+- `GS.Data.Gems.Values` / `GS.Data.Gems.Items` for gem entries
 
 ## 3. Outputs
 
@@ -227,7 +233,7 @@ The gem fallback uses:
 
 ### 4.5 Enchant Data
 
-Enchant data is resolved through `GS_EnchantValues[enchantId]` from `enchant_data.lua`.
+Enchant data is resolved through `GS.Data.Enchants.Values[enchantId]` from `Data/EnchantData.lua`.
 
 Entry shape:
 
@@ -253,6 +259,11 @@ Runtime helpers:
 - `GS_Formula`,
 - `GS_ItemTypes`.
 
+Canonical runtime access paths:
+
+- `GS.Data.Tables.Formula`
+- `GS.Data.Tables.ItemTypes`
+
 ### 5.2 Quality Normalization
 
 Before legacy score math:
@@ -263,14 +274,14 @@ Before legacy score math:
 
 ### 5.3 Formula Selection
 
-If `itemLevel > 120`, use `GS_Formula.A`, else use `GS_Formula.B`.
+If `itemLevel > 120`, use `GS.Data.Tables.Formula.A`, else use `GS.Data.Tables.Formula.B`.
 
 For an eligible item:
 
 ```text
 score = floor(
     ((itemLevel - tableRef[itemRarity].A) / tableRef[itemRarity].B)
-    * GS_ItemTypes[itemEquipLoc].SlotMOD
+    * GS.Data.Tables.ItemTypes[itemEquipLoc].SlotMOD
     * 1.8618
     * qualityScale
 )
@@ -292,8 +303,8 @@ If the result is negative, it is clamped to `0`.
 
 `GS_GetProfile(classToken, specKey)` resolves the active profile as:
 
-1. use `specKey` if it exists in `GS_SpecProfiles`
-2. otherwise use `GS_ClassDefaults[classToken]`
+1. use `specKey` if it exists in `GS.Data.Tables.SpecProfiles`
+2. otherwise use `GS.Data.Tables.ClassDefaults[classToken]`
 
 ### 6.2 Inspect-Side Spec Detection
 
@@ -301,7 +312,7 @@ For the local player, `GS_DetectSpec(unit, classToken, inspect)`:
 
 1. reads 3 talent tabs through `GetTalentTabInfo(tab, inspect, false)`
 2. chooses the tab with the highest point count once point values are available
-3. maps the winning tab to `GS_ClassSpecOrder[classToken][tab]`
+3. maps the winning tab to `GS.Data.Tables.ClassSpecOrder[classToken][tab]`
 
 For inspected non-player units, the runtime prefers inspect talent data first.
 
@@ -309,7 +320,9 @@ For inspected non-player units, the runtime prefers inspect talent data first.
 - it attempts to resolve the active spec from the talent tab with the highest point count
 - if inspect talent data is still unusable after a short wait window, it evaluates all candidate specs for that class against the observed gear
 - it selects the highest-scoring fallback candidate and marks the result as inferred
-- if talent-resolved active spec remains lower-scoring than the best alternate inferred spec, the record is marked as off-spec while scoring still stays on the active spec
+- if talent-resolved active spec remains lower-scoring than the best plausible alternate inferred spec, the record is marked as off-spec while scoring still stays on the active spec
+- "plausible" means the alternate spec must pass whole-snapshot compatibility/signature checks before it can participate in off-spec comparison
+- the marker currently requires the alternate inferred spec to lead by more than `5%`
 
 If the inspect snapshot itself is still incomplete, the target remains in `Scanning...` until the timeout window is reached.
 
@@ -569,7 +582,7 @@ Both carry the same stat fields:
 
 `permanentContext` is the scoring context.
 
-It starts from spec-defined passive bonuses in `GS_CapProfiles` and then adds permanent racials when the currently equipped weapon setup qualifies.
+It starts from spec-defined passive bonuses in `GS.Data.Tables.CapProfiles` and then adds permanent racials when the currently equipped weapon setup qualifies.
 
 `temporaryContext` is tooltip-only.
 
@@ -625,13 +638,13 @@ Important runtime details:
 Thresholds are resolved by `GS_ResolveCapThreshold(segment, context)` against `permanentContext`:
 
 - `MELEE_HIT_PERCENT`
-  - `(thresholdPercent - meleeHitBonus) * GS_RatingConversions.MELEE_HIT`
+  - `(thresholdPercent - meleeHitBonus) * GS.Data.Tables.RatingConversions.MELEE_HIT`
 - `SPELL_HIT_PERCENT`
-  - `(thresholdPercent - spellHitBonus - targetSpellHitBonus) * GS_RatingConversions.SPELL_HIT`
+  - `(thresholdPercent - spellHitBonus - targetSpellHitBonus) * GS.Data.Tables.RatingConversions.SPELL_HIT`
 - `EXPERTISE_POINTS`
-  - `(thresholdPoints - expertiseBonus) * GS_RatingConversions.EXPERTISE`
+  - `(thresholdPoints - expertiseBonus) * GS.Data.Tables.RatingConversions.EXPERTISE`
 - `DEFENSE_SKILL`
-  - `(thresholdDefenseSkill - 400 - defenseSkillBonus) * GS_RatingConversions.DEFENSE`
+  - `(thresholdDefenseSkill - 400 - defenseSkillBonus) * GS.Data.Tables.RatingConversions.DEFENSE`
 - `RATING`
   - raw threshold is already in rating
 
@@ -747,7 +760,7 @@ Summary rules:
 
 ## 12. Enchant Data Semantics
 
-`enchant_data.lua` is generated from WotLKDB enchant pages.
+`Data/EnchantData.lua` is generated from WotLKDB enchant pages.
 
 ### 12.1 `kind = "stats"`
 
@@ -780,7 +793,7 @@ In that case the static stats are scored, even if `special = true`.
 An enchant is treated as `unknown` only when:
 
 - an `enchantId` exists on the item,
-- but no matching entry exists in `GS_EnchantValues`.
+- but no matching entry exists in `GS.Data.Enchants.Values`.
 
 ## 13. Worked Examples
 

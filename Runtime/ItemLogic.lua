@@ -5,10 +5,23 @@
 local GS = _G.GS2
 local State = GS and GS.State or {}
 local C = GS and GS.Constants or {}
+local Data = GS and GS.Data or {}
+local Tables = Data.Tables or {}
+local EnchantData = Data.Enchants or {}
+local GemData = Data.Gems or {}
 local GS_ParsedLinkCache = State.ParsedLinkCache or {}
 local GS_ItemCache = State.ItemCache or {}
 local GS_STAT_KEYS = GS and GS.StatKeys or GS_STAT_KEYS
 local GS_ITEM_SLOTS = GS and GS.ItemSlots or GS_ITEM_SLOTS
+local GS_SOCKET_STAT_KEYS = Tables.SocketStatKeys or {}
+local GS_STAT_ALIASES = Tables.StatAliases or {}
+local GS_ITEM_TYPES = Tables.ItemTypes or {}
+local GS_FORMULA = Tables.Formula or {}
+local GS_ENCHANT_VALUES = EnchantData.Values or {}
+local GS_GEM_VALUES = GemData.Values or {}
+local GS_GEM_ITEMS = GemData.Items or {}
+local GS_ENCHANT_SLOTS = Tables.EnchantSlots or {}
+local GS_ARMOR_CLASS_ORDER = Tables.ArmorClassOrder or {}
 local GS_PARSED_LINK_CACHE_MAX = C.PARSED_LINK_CACHE_MAX or 1200
 local GS_PARSED_LINK_CACHE_TRIM_TO = C.PARSED_LINK_CACHE_TRIM_TO or 900
 local GS_ITEM_CACHE_MAX = C.ITEM_CACHE_MAX or 800
@@ -55,10 +68,10 @@ function GS_GetNormalizedStats(itemLink)
 	local raw = GetItemStats(itemLink)
 	if not raw then return stats, sockets end
 	for key, value in pairs(raw) do
-		if GS_SocketStatKeys[key] then
+		if GS_SOCKET_STAT_KEYS[key] then
 			sockets = sockets + (tonumber(value) or 0)
 		else
-			local short = GS_STAT_KEYS[key] or GS_StatAliases[key]
+			local short = GS_STAT_KEYS[key] or GS_STAT_ALIASES[key]
 			if short then stats[short] = (stats[short] or 0) + (tonumber(value) or 0) end
 		end
 	end
@@ -72,14 +85,14 @@ function GS_CalculateLegacyBase(itemLink)
 	if not itemName or not itemRarity or not itemLevel or not itemEquipLoc then return 0, 0, nil, nil, nil, nil, 0, nil, 1, itemSubType end
 	if itemRarity == 5 then qualityScale, itemRarity = 1.3, 4 elseif itemRarity == 1 or itemRarity == 0 then qualityScale, itemRarity = 0.005, 2 end
 	if itemRarity == 7 then itemRarity, itemLevel = 3, 187.05 end
-	if GS_ItemTypes[itemEquipLoc] then
-		local tableRef = itemLevel > 120 and GS_Formula.A or GS_Formula.B
+	if GS_ITEM_TYPES[itemEquipLoc] then
+		local tableRef = itemLevel > 120 and GS_FORMULA.A or GS_FORMULA.B
 		if itemRarity >= 2 and itemRarity <= 4 then
 			local red, green, blue = GS2_GetQuality((floor(((itemLevel - tableRef[itemRarity].A) / tableRef[itemRarity].B) * scale)) * 11.25)
-			local score = floor(((itemLevel - tableRef[itemRarity].A) / tableRef[itemRarity].B) * GS_ItemTypes[itemEquipLoc].SlotMOD * scale * qualityScale)
+			local score = floor(((itemLevel - tableRef[itemRarity].A) / tableRef[itemRarity].B) * GS_ITEM_TYPES[itemEquipLoc].SlotMOD * scale * qualityScale)
 			if itemLevel == 187.05 then itemLevel = 0 end
 			if score < 0 then score, red, green, blue = 0, GS2_GetQuality(1) end
-			return score, itemLevel, GS_ItemTypes[itemEquipLoc].ItemSlot, red, green, blue, 0, itemEquipLoc, 1, itemSubType
+			return score, itemLevel, GS_ITEM_TYPES[itemEquipLoc].ItemSlot, red, green, blue, 0, itemEquipLoc, 1, itemSubType
 		end
 	end
 	return -1, itemLevel or 0, 50, 1, 1, 1, 0, itemEquipLoc, 1, itemSubType
@@ -101,8 +114,8 @@ function GS_GetItemData(itemLink)
 			gemCount = gemCount + 1
 			local gemName, gemLink = GetItemGem(itemLink, index)
 			local gemItemId = GS_GetItemIdFromLink(gemLink)
-			local gemItemInfo = gemItemId and GS_GemItems and GS_GemItems[gemItemId] or nil
-			local gemInfo = GS_GemValues and GS_GemValues[gemId] or gemItemInfo
+			local gemItemInfo = gemItemId and GS_GEM_ITEMS and GS_GEM_ITEMS[gemItemId] or nil
+			local gemInfo = GS_GEM_VALUES and GS_GEM_VALUES[gemId] or gemItemInfo
 			local normalized = gemInfo and gemInfo.stats or nil
 			if not gemInfo then
 				unresolvedData = true
@@ -125,7 +138,7 @@ function GS_GetItemData(itemLink)
 			if gemName then
 				gemCount = gemCount + 1
 				local gemItemId = GS_GetItemIdFromLink(gemLink)
-				local gemItemInfo = gemItemId and GS_GemItems and GS_GemItems[gemItemId] or nil
+				local gemItemInfo = gemItemId and GS_GEM_ITEMS and GS_GEM_ITEMS[gemItemId] or nil
 				if gemItemInfo and gemItemInfo.stats then
 					gemStats[index] = gemItemInfo.stats
 				else
@@ -146,8 +159,8 @@ function GS_GetItemData(itemLink)
 			end
 		end
 	end
-	local enchantInfo = GS_EnchantValues[parsed.enchantId or 0]
-	if (parsed.enchantId or 0) > 0 and not enchantInfo and GS_EnchantSlots[itemEquipLoc] then
+	local enchantInfo = GS_ENCHANT_VALUES[parsed.enchantId or 0]
+	if (parsed.enchantId or 0) > 0 and not enchantInfo and GS_ENCHANT_SLOTS[itemEquipLoc] then
 		unresolvedData = true
 		unresolvedReasons[#unresolvedReasons + 1] = "enchant"
 		GS_ReportResolutionIssue({
@@ -163,7 +176,7 @@ function GS_GetItemData(itemLink)
 		link = itemLink, name = itemName, rarity = itemRarity, level = itemLevel or 0, type = itemType, subType = itemSubType,
 		equipLoc = itemEquipLoc, slot = GS_ITEM_SLOTS[itemEquipLoc] or 0, legacyBase = legacyBase > 0 and legacyBase or 0,
 		stats = stats, socketCount = socketCount, gemCount = gemCount, gemStats = gemStats, enchantId = parsed.enchantId or 0,
-		hasEnchant = (parsed.enchantId or 0) > 0, enchantInfo = enchantInfo, resilience = stats.RESILIENCE or 0, armorRank = GS_ArmorClassOrder[itemSubType],
+		hasEnchant = (parsed.enchantId or 0) > 0, enchantInfo = enchantInfo, resilience = stats.RESILIENCE or 0, armorRank = GS_ARMOR_CLASS_ORDER[itemSubType],
 		unresolvedData = unresolvedData, unresolvedReasons = unresolvedReasons,
 	}
 	return GS_StoreCacheEntry(GS_ItemCache, itemLink, cached, "GS_ItemCacheCount", GS_ITEM_CACHE_MAX, GS_ITEM_CACHE_TRIM_TO)
@@ -171,7 +184,7 @@ end
 
 function GS_GetEnchantInfo(item)
 	if not item then return nil end
-	return item.enchantInfo or GS_EnchantValues[item.enchantId]
+	return item.enchantInfo or GS_ENCHANT_VALUES[item.enchantId]
 end
 
 function GS_GetEnchantStats(item)

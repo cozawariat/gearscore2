@@ -241,11 +241,11 @@ For inspected targets, the addon now prefers inspect talent data first and only 
 - while item data is still loading, character and item tooltips show `Scanning...`
 - if inspect talents resolve in time, the active spec comes from the talent tab with the highest point count
 - if inspect talents still do not resolve in time, the addon infers the most likely specialization from the full gear setup and marks the result as `[INFERRED]`
-- if the active spec resolves from talents but the equipped gear scores higher for another inferred spec, the `Spec` line is marked as off-spec
+- if the active spec resolves from talents but a plausible alternate inferred spec scores more than `5%` higher, the `Spec` line is marked as off-spec
 
 This was introduced not only for responsiveness, but also because inspected talent API data proved unreliable during debugging and did not always return usable specialization information in time.
 
-`[INFERRED]` makes that fallback explicit instead of pretending the specialization was confirmed directly from talents, while the off-spec warning highlights targets whose active spec and gear setup do not really match.
+`[INFERRED]` makes that fallback explicit instead of pretending the specialization was confirmed directly from talents, while the off-spec warning highlights targets whose active spec and gear setup do not really match. To avoid noisy false positives, the marker now requires a plausible alternate spec and a lead of more than `5%`.
 
 ## 5. Current Limitations / Expectations
 
@@ -255,7 +255,7 @@ That means:
 
 - spec weights and cap profiles may still be rebalanced,
 - inspect results are asynchronous and may briefly show `Scanning...`,
-- benchmark reports are aligned with the same permanent cap model used by runtime,
+- benchmark reports are aligned with the same permanent cap model, compatibility rules, and offline off-spec comparison logic used by runtime,
 - tooltip informational lines can include temporary cap helpers even though they do not affect score,
 - edge cases around unusual gear setups can still improve over time.
 

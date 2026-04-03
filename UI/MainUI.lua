@@ -6,12 +6,16 @@ local GS = _G.GS2
 local State = GS and GS.State or {}
 local UIState = GS and GS.UI or {}
 local C = GS and GS.Constants or {}
+local Data = GS and GS.Data or {}
+local Tables = Data.Tables or {}
 local GS_InspectCache = State.InspectCache or {}
 local GS_InspectState = State.InspectState or { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
 local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
 local GS_MainFrame = UIState.MainFrame
 local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
 local GS_READY_DELAY = C.READY_DELAY or 0.15
+local GS_COMMAND_LIST = Tables.CommandList or {}
+local GS_DEFAULT_SETTINGS = Tables.DefaultSettings or {}
 
 function GS2_OnEnter(frame, itemSlot, argument)
 	local unit, slot = itemSlot, argument
@@ -210,7 +214,7 @@ function GS_DebugSlotScore(slotToken)
 	local enchantInfo = GS_GetEnchantInfo(item)
 	print("GS2 Debug Slot " .. tostring(slotId) .. " | Unit: " .. tostring(UnitName(unit) or unit) .. " | Spec: " .. tostring(record.specLabel or GS_GetSpecLabel(record.specKey)))
 	if record.offSpec then
-		print("GS2 Debug Inspect Context: off-spec=true | betterFit=" .. tostring(record.offSpecBetterSpecLabel or record.offSpecBetterSpecKey or "?") .. " | betterFitGS2=" .. tostring(record.offSpecBetterGs2 or "?"))
+		print("GS2 Debug Inspect Context: off-spec=true | betterFit=" .. tostring(record.offSpecBetterSpecLabel or record.offSpecBetterSpecKey or "?") .. " | betterFitGS2=" .. tostring(record.offSpecBetterGs2 or "?") .. " | reason=" .. tostring(record.offSpecReason or "unknown"))
 	end
 	print("GS2 Debug Item: " .. tostring(item.name) .. " | enchantId=" .. tostring(item.enchantId or 0) .. " | hasEnchant=" .. tostring(item.hasEnchant))
 	if enchantInfo then
@@ -247,7 +251,7 @@ function GS_MANSET(command)
 	commandWord = commandWord or ""
 	if commandWord == "" or commandWord == "settings" then if GS_ToggleOptionsPanel then GS_ToggleOptionsPanel() end return end
 	if commandWord == "options" or commandWord == "option" or commandWord == "help" then
-		for i, v in ipairs(GS_CommandList) do print(v) end
+		for i, v in ipairs(GS_COMMAND_LIST) do print(v) end
 		print("/gs2 debuginspect")
 		print("/gs2 debugslot 3")
 		print("/gs2 issues")
@@ -309,7 +313,7 @@ function GS_OnEvent(_, event, ...)
 		end
 		if addonName ~= "GearScore2" then return end
 		if not GS2_Settings then
-			GS2_Settings = GS_Settings or GS_DefaultSettings
+			GS2_Settings = GS_Settings or GS_DEFAULT_SETTINGS
 		end
 		GS_Settings = GS2_Settings
 		if GS then
@@ -317,7 +321,7 @@ function GS_OnEvent(_, event, ...)
 		end
 		if not GS_Data then GS_Data = {} end
 		if not GS_Data[GetRealmName()] then GS_Data[GetRealmName()] = { ["Players"] = {} } end
-		for key, value in pairs(GS_DefaultSettings) do if GS2_Settings[key] == nil then GS2_Settings[key] = value end end
+		for key, value in pairs(GS_DEFAULT_SETTINGS) do if GS2_Settings[key] == nil then GS2_Settings[key] = value end end
 		GS2_Settings["IncludeEnchants"] = true
 		if GS_InitializeSettings then
 			GS_InitializeSettings()

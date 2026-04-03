@@ -36,18 +36,24 @@ Use it as the first-reference project brief for future sessions. Follow it by de
 - Treat these documents as the primary written references for scoring behavior:
   - `README.md` for the high-level model / GitHub-facing overview,
   - `docs/GS_ALGORITHM.md` for the implemented scoring logic,
-  - `docs/GS_RUNTIME_TABLES.md` for runtime constants, tables, and profiles.
+  - `docs/GS_RUNTIME_TABLES.md` for runtime constants, tables, and profiles,
+  - `docs/GS2_BALANCE_BENCHMARK.md` for benchmark scope, parity claims, and output interpretation.
 - `docs/GS_ALGORITHM.md` is intended to match the current runtime behavior exactly. If implementation changes materially alter scoring behavior, update the relevant docs so they stay aligned.
+- `tools/warmane_balance_benchmark.py` is expected to stay in practical offline parity with the current addon scoring logic wherever offline parity is possible.
+- Runtime tables are namespaced under `GS.Data` rather than treated as raw top-level globals:
+  - `GS.Data.Tables` for shared runtime tables,
+  - `GS.Data.Enchants.Values` for enchant data,
+  - `GS.Data.Gems.Values` / `GS.Data.Gems.Items` for gem data.
 
 ## Repo Shape
 
 - The addon is intentionally split into focused files such as:
-  - `core.lua`,
-  - `item_logic.lua`,
-  - `score_logic.lua`,
-  - `inspect_logic.lua`,
-  - `tooltip_logic.lua`,
-  - `ui.lua`.
+  - `Runtime/Bootstrap.lua`,
+  - `Runtime/ItemLogic.lua`,
+  - `Runtime/ScoreLogic.lua`,
+  - `Runtime/InspectLogic.lua`,
+  - `UI/TooltipLogic.lua`,
+  - `UI/MainUI.lua`.
 - Prefer extending this modular structure rather than collapsing logic back into a monolithic file.
 - Keep formulas, lookup tables, and runtime scoring data explicit and easy to audit.
 
@@ -69,6 +75,11 @@ Use it as the first-reference project brief for future sessions. Follow it by de
 ## Validation Expectations
 
 - For scoring or runtime logic changes, verify the affected code paths and confirm that docs still describe the behavior accurately.
+- If scoring logic, compatibility logic, cap logic, spec resolution logic, or off-spec comparison behavior changes, also verify whether the benchmark must be updated:
+  - sync `tools/warmane_balance_benchmark.py` with the new runtime behavior,
+  - update `tools/test_warmane_balance_benchmark.py` expectations and coverage,
+  - update `docs/GS2_BALANCE_BENCHMARK.md` and any benchmark-facing README wording if parity claims changed,
+  - regenerate committed benchmark artifacts if they are meant to represent current behavior.
 - For documentation or naming changes, ensure terminology stays aligned across the repo.
 - For broader behavior changes, summarize the expected impact on:
   - `GearScore2`,

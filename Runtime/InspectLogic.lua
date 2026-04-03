@@ -5,6 +5,11 @@
 local GS = _G.GS2
 local State = GS and GS.State or {}
 local C = GS and GS.Constants or {}
+local Data = GS and GS.Data or {}
+local Tables = Data.Tables or {}
+local GS_CLASS_SPEC_ORDER = Tables.ClassSpecOrder or {}
+local GS_CLASS_DEFAULTS = Tables.ClassDefaults or {}
+local GS_SPEC_PROFILES = Tables.SpecProfiles or {}
 local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
 local GS_MOUSEOVER_INSPECT_DELAY = C.MOUSEOVER_INSPECT_DELAY or 0.25
 local GS_INSPECT_THROTTLE = C.INSPECT_THROTTLE or 0.35
@@ -17,6 +22,7 @@ local GS_READY_DELAY = C.READY_DELAY or 0.15
 local GS_MIN_INSPECT_ITEMS = C.MIN_INSPECT_ITEMS or 8
 local GS_FORCE_POLL_DELAY = C.FORCE_POLL_DELAY or 0.20
 local GS_TALENT_SPEC_WAIT = C.TALENT_SPEC_WAIT or 1.0
+local GS_OFFSPEC_MIN_RATIO = C.OFFSPEC_MIN_RATIO or 0.05
 local GS_InspectQueue = State.InspectQueue or {}
 local GS_InspectCache = State.InspectCache or {}
 local GS_InspectState = State.InspectState or { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
@@ -98,8 +104,9 @@ function GS_CanInspectUnitByPolicy(unit)
 end
 
 function GS_DetectSpec(unit, classToken, inspect, talentsReady)
-	local order = GS_ClassSpecOrder[classToken]
-	if not order then return GS_ClassDefaults[classToken], not inspect end
+	local order = GS_CLASS_SPEC_ORDER[classToken]
+	if not order then return GS_CLASS_DEFAULTS[classToken], not inspect end
+	local talentGroup = GetActiveTalentGroup and GetActiveTalentGroup(inspect) or nil
 	local numTabs = GetNumTalentTabs and GetNumTalentTabs(inspect, false) or 3
 	if not numTabs or numTabs < 1 then
 		numTabs = 3
@@ -107,7 +114,7 @@ function GS_DetectSpec(unit, classToken, inspect, talentsReady)
 	local bestPoints, bestSpec, sawPointValue = -1, nil, false
 	local debugTabs = {}
 	for tab = 1, numTabs do
-		local _, _, _, _, points = GetTalentTabInfo(tab, inspect, false)
+		local _, _, points = GetTalentTabInfo(tab, inspect, nil, talentGroup)
 		debugTabs[#debugTabs + 1] = tostring(points)
 		if points ~= nil then
 			sawPointValue = true
@@ -119,7 +126,7 @@ function GS_DetectSpec(unit, classToken, inspect, talentsReady)
 		end
 	end
 	if inspect then
-		GS_DebugInspect("tabs for " .. (UnitName(unit) or "?") .. ": [" .. table.concat(debugTabs, ", ") .. "] best=" .. tostring(bestSpec) .. " bestPoints=" .. tostring(bestPoints) .. " talentReady=" .. tostring(talentsReady))
+		GS_DebugInspect("tabs for " .. (UnitName(unit) or "?") .. ": [" .. table.concat(debugTabs, ", ") .. "] best=" .. tostring(bestSpec) .. " bestPoints=" .. tostring(bestPoints) .. " talentReady=" .. tostring(talentsReady) .. " talentGroup=" .. tostring(talentGroup))
 	end
 	if inspect then
 		if sawPointValue and bestSpec then
@@ -127,7 +134,7 @@ function GS_DetectSpec(unit, classToken, inspect, talentsReady)
 		end
 		return nil, false
 	end
-	return bestSpec or GS_ClassDefaults[classToken], true
+	return bestSpec or GS_CLASS_DEFAULTS[classToken], true
 end
 
 function GS_CollectSnapshot(unit, inspect)
@@ -184,7 +191,7 @@ function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
 end
 
 function GS_GetSnapshotSpecScore(snapshot, specKey)
-	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not GS_SpecProfiles[specKey] then
+	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not GS_SPEC_PROFILES[specKey] then
 		return nil
 	end
 	local total = 0
@@ -200,31 +207,145 @@ function GS_GetSnapshotSpecScore(snapshot, specKey)
 	return total + (capAdjustedGs2 or 0)
 end
 
-function GS_GetBestSnapshotSpec(snapshot, excludedSpecKey)
-	if not snapshot or not snapshot.classToken or not snapshot.items then
-		return nil, nil
+local function GS_GetCandidateSignatureFloor(role, itemCount)
+	itemCount = tonumber(itemCount) or 0
+	if role == "TANK" then
+		return 2
 	end
-	local candidates = GS_ClassSpecOrder[snapshot.classToken]
-	if not candidates or #candidates == 0 then
-		return nil, nil
+	if role == "HEALER" then
+		return max(3, floor(itemCount * 0.18))
 	end
-	local bestSpec, bestScore = nil, nil
-	for index = 1, #candidates do
-		local candidateSpec = candidates[index]
-		if candidateSpec ~= excludedSpecKey and GS_SpecProfiles[candidateSpec] then
-			local total = GS_GetSnapshotSpecScore(snapshot, candidateSpec)
-			GS_DebugInspect("infer candidate " .. tostring(candidateSpec) .. " total=" .. tostring(total) .. " for " .. tostring(snapshot.name))
-			if total and (not bestScore or total > bestScore) then
-				bestScore = total
-				bestSpec = candidateSpec
+	if role == "CASTER" then
+		return max(4, floor(itemCount * 0.25))
+	end
+	return max(4, floor(itemCount * 0.25))
+end
+
+function GS_GetSnapshotSpecDiagnostics(snapshot, specKey)
+	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not GS_SPEC_PROFILES[specKey] then
+		return nil
+	end
+	local profile = GS_SPEC_PROFILES[specKey]
+	local compatibleItems, matchedItems, signatureItems = 0, 0, 0
+	local positiveSlots, signatureSlots = {}, {}
+	local totalBeforeCaps, legacyTotal = 0, 0
+	for itemIndex = 1, #snapshot.items do
+		local entry = snapshot.items[itemIndex]
+		local item = entry.item
+		if GS_IsItemCompatible(item, snapshot.classToken, profile) then
+			local itemGS2 = GS_ScoreItem(item, snapshot.classToken, specKey)
+			if itemGS2 == nil then
+				return nil
+			end
+			compatibleItems = compatibleItems + 1
+			legacyTotal = legacyTotal + (entry.legacy or 0)
+			totalBeforeCaps = totalBeforeCaps + itemGS2
+
+			local rawScore = GS_ScoreStats(item and item.stats, profile.pve)
+			local gemScore = 0
+			if item and item.gemStats then
+				for gemIndex = 1, 4 do
+					gemScore = gemScore + GS_ScoreStats(item.gemStats[gemIndex], profile.pve)
+				end
+			end
+			local enchantScore = GS_ScoreStats(GS_GetEnchantStats(item), profile.pve)
+			if rawScore > 0 or gemScore > 0 or enchantScore > 0 then
+				matchedItems = matchedItems + 1
+				positiveSlots[#positiveSlots + 1] = tostring(entry.slotId)
+			end
+			if GS_GetRoleSignatureKind(item) == profile.role then
+				signatureItems = signatureItems + 1
+				signatureSlots[#signatureSlots + 1] = tostring(entry.slotId)
 			end
 		end
 	end
-	return bestSpec, bestScore
+	local capBonus = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = specKey, raceToken = snapshot.raceToken, items = snapshot.items }, totalBeforeCaps) or 0
+	return {
+		specKey = specKey,
+		specLabel = GS_GetSpecLabel(specKey),
+		role = profile.role,
+		itemCount = #snapshot.items,
+		compatibleItems = compatibleItems,
+		matchedItems = matchedItems,
+		signatureItems = signatureItems,
+		legacyTotal = legacyTotal,
+		totalBeforeCaps = totalBeforeCaps,
+		capBonus = capBonus,
+		total = totalBeforeCaps + capBonus,
+		positiveSlots = positiveSlots,
+		signatureSlots = signatureSlots,
+	}
+end
+
+local function GS_IsPlausibleOffSpecCandidate(snapshot, diagnostics)
+	if not snapshot or not diagnostics then
+		return false, "no diagnostics"
+	end
+	local itemCount = diagnostics.itemCount or (#snapshot.items or 0)
+	local requiredMatchedItems = max(4, floor(itemCount * 0.35))
+	local requiredSignatureItems = GS_GetCandidateSignatureFloor(diagnostics.role, itemCount)
+	if diagnostics.compatibleItems < max(6, floor(itemCount * 0.6)) then
+		return false, "too few compatible items"
+	end
+	if diagnostics.matchedItems < requiredMatchedItems then
+		return false, "too few matched items"
+	end
+	if diagnostics.role == "TANK" or diagnostics.role == "HEALER" or diagnostics.role == "CASTER" then
+		if diagnostics.signatureItems < requiredSignatureItems then
+			return false, "insufficient role signature"
+		end
+	end
+	return true, "plausible"
+end
+
+local function GS_GetOffSpecReason(activeDiagnostics, alternateDiagnostics)
+	if not activeDiagnostics or not alternateDiagnostics then
+		return "unknown"
+	end
+	if (alternateDiagnostics.compatibleItems or 0) > (activeDiagnostics.compatibleItems or 0) then
+		return "item acceptance"
+	end
+	return "weight overlap"
+end
+
+function GS_GetBestSnapshotSpec(snapshot, excludedSpecKey)
+	if not snapshot or not snapshot.classToken or not snapshot.items then
+		return nil, nil, nil
+	end
+	local candidates = GS_CLASS_SPEC_ORDER[snapshot.classToken]
+	if not candidates or #candidates == 0 then
+		return nil, nil, nil
+	end
+	local bestSpec, bestScore, bestDiagnostics = nil, nil, nil
+	for index = 1, #candidates do
+		local candidateSpec = candidates[index]
+		if candidateSpec ~= excludedSpecKey and GS_SPEC_PROFILES[candidateSpec] then
+			local diagnostics = GS_GetSnapshotSpecDiagnostics(snapshot, candidateSpec)
+			local plausible, plausibilityReason = GS_IsPlausibleOffSpecCandidate(snapshot, diagnostics)
+			local total = diagnostics and diagnostics.total or nil
+			GS_DebugInspect("infer candidate " .. tostring(candidateSpec) .. " total=" .. tostring(total) .. " compatible=" .. tostring(diagnostics and diagnostics.compatibleItems or 0) .. "/" .. tostring(diagnostics and diagnostics.itemCount or 0) .. " matched=" .. tostring(diagnostics and diagnostics.matchedItems or 0) .. " signature=" .. tostring(diagnostics and diagnostics.signatureItems or 0) .. " plausible=" .. tostring(plausible) .. " reason=" .. tostring(plausibilityReason) .. " for " .. tostring(snapshot.name))
+			if plausible and total and (not bestScore or total > bestScore) then
+				bestScore = total
+				bestSpec = candidateSpec
+				bestDiagnostics = diagnostics
+			end
+		end
+	end
+	return bestSpec, bestScore, bestDiagnostics
 end
 
 function GS_InferSpecFromSnapshot(snapshot)
-	return GS_GetBestSnapshotSpec(snapshot, nil)
+	local bestSpec, bestScore = GS_GetBestSnapshotSpec(snapshot, nil)
+	return bestSpec, bestScore
+end
+
+local function GS_IsMeaningfulOffSpecUpgrade(activeGs2, betterGs2)
+	activeGs2 = tonumber(activeGs2)
+	betterGs2 = tonumber(betterGs2)
+	if not activeGs2 or not betterGs2 then
+		return false
+	end
+	return betterGs2 > (activeGs2 * (1 + GS_OFFSPEC_MIN_RATIO))
 end
 
 function GS_GetScanRecord(guid)
@@ -286,25 +407,35 @@ function GS_BuildRecord(snapshot)
 		gs2 = gs2 + (capAdjustedGs2 or 0)
 	end
 	local offSpec = false
-	local offSpecBetterSpecKey, offSpecBetterSpecLabel, offSpecBetterGs2 = nil, nil, nil
+	local offSpecBetterSpecKey, offSpecBetterSpecLabel, offSpecBetterGs2, offSpecReason = nil, nil, nil, nil
 	local specLabel = snapshot.specKey and GS_GetSpecLabel(snapshot.specKey) or "Unknown"
 	local scanStatusText = snapshot.specResolved and specLabel or "Spec unknown"
 	if unresolvedData then
 		scanStatusText = "GS2 unavailable"
 	elseif snapshot.specResolved and snapshot.specSource == "inspect" and snapshot.specKey and gs2 ~= nil then
-		local betterSpecKey, betterGs2 = GS_GetBestSnapshotSpec(snapshot, snapshot.specKey)
-		if betterSpecKey and betterGs2 and betterGs2 > gs2 then
+		local activeDiagnostics = GS_GetSnapshotSpecDiagnostics(snapshot, snapshot.specKey)
+		local betterSpecKey, betterGs2, betterDiagnostics = GS_GetBestSnapshotSpec(snapshot, snapshot.specKey)
+		if activeDiagnostics and betterDiagnostics then
+			local deltaPct = (gs2 > 0 and betterGs2) and (((betterGs2 - gs2) / gs2) * 100) or 0
+			local reason = GS_GetOffSpecReason(activeDiagnostics, betterDiagnostics)
+			GS_DebugInspect("offspec compare " .. tostring(snapshot.name) .. " active=" .. tostring(snapshot.specKey) .. " activeGs2=" .. tostring(floor(gs2)) .. " alt=" .. tostring(betterSpecKey) .. " altGs2=" .. tostring(betterGs2 and floor(betterGs2) or nil) .. " deltaPct=" .. string.format("%.2f", deltaPct) .. " reason=" .. tostring(reason) .. " activeMatched=" .. tostring(activeDiagnostics.matchedItems) .. " altMatched=" .. tostring(betterDiagnostics.matchedItems) .. " activeCompatible=" .. tostring(activeDiagnostics.compatibleItems) .. " altCompatible=" .. tostring(betterDiagnostics.compatibleItems))
+			if State.DebugInspectEnabled and #betterDiagnostics.positiveSlots > 0 then
+				GS_DebugInspect("offspec alt positive slots=" .. table.concat(betterDiagnostics.positiveSlots, ",") .. " signature slots=" .. table.concat(betterDiagnostics.signatureSlots, ","))
+			end
+		end
+		if betterSpecKey and betterGs2 and GS_IsMeaningfulOffSpecUpgrade(gs2, betterGs2) then
 			offSpec = true
 			offSpecBetterSpecKey = betterSpecKey
 			offSpecBetterSpecLabel = GS_GetSpecLabel(betterSpecKey)
 			offSpecBetterGs2 = floor(betterGs2)
+			offSpecReason = GS_GetOffSpecReason(activeDiagnostics, betterDiagnostics)
 		end
 	end
 	if snapshot.specResolved then
 		if snapshot.specSource == "inferred" then
 			scanStatusText = specLabel .. " [INFERRED]"
 		elseif offSpec and offSpecBetterSpecLabel then
-			scanStatusText = specLabel .. " [OFF-SPEC: " .. offSpecBetterSpecLabel .. "]"
+			scanStatusText = specLabel .. " (! " .. offSpecBetterSpecLabel .. ")"
 		else
 			scanStatusText = specLabel
 		end
@@ -324,6 +455,7 @@ function GS_BuildRecord(snapshot)
 		offSpecBetterSpecKey = offSpecBetterSpecKey,
 		offSpecBetterSpecLabel = offSpecBetterSpecLabel,
 		offSpecBetterGs2 = offSpecBetterGs2,
+		offSpecReason = offSpecReason,
 		fingerprint = snapshot.fingerprint,
 		average = snapshot.average,
 		gs2 = (snapshot.specResolved and not unresolvedData) and floor(gs2) or nil,

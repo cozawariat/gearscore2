@@ -8,13 +8,15 @@
 # Original authors
 # Mirrikat45, Gnomezilla [Warmane-Icecrown(A)]
 
-informationLite.lua
-enchant_data.lua
-gem_data.lua
-core.lua
-item_logic.lua
-score_logic.lua
-inspect_logic.lua
-tooltip_logic.lua
-ui.lua
-settings.lua
+Data\RuntimeTables.lua
+Data\EnchantData.lua
+Data\GemData.lua
+Runtime\Bootstrap.lua
+Runtime\RuntimeUtils.lua
+Runtime\Compatibility.lua
+Runtime\ItemLogic.lua
+Runtime\ScoreLogic.lua
+Runtime\InspectLogic.lua
+UI\TooltipLogic.lua
+UI\MainUI.lua
+UI\SettingsUI.lua

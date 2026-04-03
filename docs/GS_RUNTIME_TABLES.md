@@ -1,5 +1,13 @@
 # GearScore2 Runtime Tables
 
+Runtime table data is now namespaced under `GS.Data` instead of being exposed as raw top-level globals.
+
+- `Data/RuntimeTables.lua` populates `GS.Data.Tables`
+- `Data/EnchantData.lua` populates `GS.Data.Enchants.Values`
+- `Data/GemData.lua` populates `GS.Data.Gems.Values` and `GS.Data.Gems.Items`
+
+For readability, section titles below still mention the legacy table names in parentheses, but the canonical runtime access path is the namespaced one.
+
 ## Table of Contents
 
 - [1. Global Scoring Constants](#1-global-scoring-constants)
@@ -41,7 +49,7 @@
 | `GS_CAP_BONUS_MIN` | `20` |
 | `GS_CAP_BONUS_MAX` | `250` |
 
-## 1.1 Rating Conversions (`GS_RatingConversions`)
+## 1.1 Rating Conversions (`GS.Data.Tables.RatingConversions`)
 
 | Conversion | Value |
 |---|---:|
@@ -50,7 +58,7 @@
 | `EXPERTISE` | `8.196` |
 | `DEFENSE` | `4.9185` |
 
-## 1.2 Cap Segment Defaults (`GS_CapSegmentDefaults`)
+## 1.2 Cap Segment Defaults (`GS.Data.Tables.CapSegmentDefaults`)
 
 | Multiplier | Value |
 |---|---:|
@@ -61,7 +69,7 @@
 | `DEFENSE_OVERFLOW` | `0.55` |
 | `ARP_OVERFLOW` | `0.05` |
 
-## 1.3 Live Aura Cap Modifiers (`GS_LiveCapBuffs`)
+## 1.3 Live Aura Cap Modifiers (`GS.Data.Tables.LiveCapBuffs`)
 
 ### Helpful auras
 
@@ -92,10 +100,11 @@
 | `GS_FORCE_POLL_DELAY` | `0.20` | Initial fallback poll delay after `NotifyInspect` |
 | `GS_MIN_INSPECT_ITEMS` | `8` | Minimum item count required before finalizing a snapshot |
 | `GS_TALENT_SPEC_WAIT` | `1.0` | Time allowed for inspect talent data to resolve before gear-based spec inference is allowed |
+| `GS_OFFSPEC_MIN_RATIO` | `0.05` | Minimum relative `GS2` lead required before an alternate inferred spec is marked as off-spec |
 | `GS_CACHE_TTL` | `180` | Cached inspect record lifetime |
 | `GS_FRESH_TTL` | `15` | Freshness window used to avoid immediate re-inspection |
 
-## 2. Legacy Slot Modifiers (`GS_ItemTypes`)
+## 2. Legacy Slot Modifiers (`GS.Data.Tables.ItemTypes`)
 
 | EquipLoc | SlotMOD | ItemSlot | Enchantable |
 |---|---:|---:|---|
@@ -124,7 +133,7 @@
 | `INVTYPE_RANGEDRIGHT` | `0.3164` | `18` | No |
 | `INVTYPE_RELIC` | `0.3164` | `18` | No |
 
-## 3. Legacy Formula Tables (`GS_Formula`)
+## 3. Legacy Formula Tables (`GS.Data.Tables.Formula`)
 
 ### 3.1 Formula A (`itemLevel > 120`)
 
@@ -143,7 +152,7 @@
 | `2` | `8.0000` | `2.0000` |
 | `1` | `0.0000` | `2.2500` |
 
-## 4. Enchantable Slots (`GS_EnchantSlots`)
+## 4. Enchantable Slots (`GS.Data.Tables.EnchantSlots`)
 
 | EquipLoc |
 |---|
@@ -163,7 +172,7 @@
 | `INVTYPE_SHIELD` |
 | `INVTYPE_RANGED` |
 
-## 5. Armor Rank Order (`GS_ArmorClassOrder`)
+## 5. Armor Rank Order (`GS.Data.Tables.ArmorClassOrder`)
 
 | Armor Type | Rank |
 |---|---:|
@@ -172,7 +181,7 @@
 | `MAIL` | `3` |
 | `PLATE` | `4` |
 
-## 6. Class Default Specs (`GS_ClassDefaults`)
+## 6. Class Default Specs (`GS.Data.Tables.ClassDefaults`)
 
 | Class | Default Spec |
 |---|---|
@@ -187,7 +196,7 @@
 | `WARLOCK` | `AFFLICTION` |
 | `DRUID` | `BALANCE` |
 
-## 7. Specialization Profiles (`GS_SpecProfiles`)
+## 7. Specialization Profiles (`GS.Data.Tables.SpecProfiles`)
 
 Each row lists:
 
@@ -232,7 +241,7 @@ Each row lists:
 
 ## 8. Enchant Data Runtime Shape
 
-Entries in `enchant_data.lua` use:
+Entries in `Data/EnchantData.lua` use:
 
 | Field | Meaning |
 |---|---|
@@ -243,7 +252,7 @@ Entries in `enchant_data.lua` use:
 | `special = true` | mixed or special behavior was also detected in source data |
 | `unknownTraits` | source-side traits that were not normalized into runtime stat keys |
 
-## 9. Character Cap Profiles (`GS_CapProfiles`)
+## 9. Character Cap Profiles (`GS.Data.Tables.CapProfiles`)
 
 Cap profiles affect only final character `GearScore2`.
 
@@ -309,9 +318,9 @@ Resolved thresholds still come from the pool data below, but final scoring uses 
 
 ## 10. Permanent And Temporary Cap Context
 
-`GS_CapProfiles` and `GS_PermanentCapRacials` feed the permanent cap context used by scoring.
+`GS.Data.Tables.CapProfiles` and `GS.Data.Tables.PermanentCapRacials` feed the permanent cap context used by scoring.
 
-`GS_LiveCapBuffs` remains in runtime for live tooltip presentation only.
+`GS.Data.Tables.LiveCapBuffs` remains in runtime for live tooltip presentation only.
 
 Temporary buffs from that table do not affect:
 
@@ -320,7 +329,7 @@ Temporary buffs from that table do not affect:
 - `capAdjustedGs2`
 - final `GearScore2`
 
-## 11. Permanent Racial Cap Bonuses (`GS_PermanentCapRacials`)
+## 11. Permanent Racial Cap Bonuses (`GS.Data.Tables.PermanentCapRacials`)
 
 ```lua
 GS_PermanentCapRacials = {

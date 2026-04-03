@@ -8,7 +8,11 @@
 --   special = true   -> the source page also contains non-stat or mixed effects alongside any extracted stats.
 -- This file is intended to be loaded before runtime scoring modules.
 
-GS_EnchantValues = {
+local GS = _G.GS2 or {}
+_G.GS2 = GS
+GS.Data = GS.Data or {}
+GS.Data.Enchants = GS.Data.Enchants or {}
+GS.Data.Enchants.Values = {
 	[1] = { kind = "special", label = "Rockbiter 3" },
 	[2] = { kind = "special", label = "Frostbrand 1" },
 	[3] = { kind = "special", label = "Flametongue 3" },

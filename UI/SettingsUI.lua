@@ -4,6 +4,8 @@
 
 local GS = _G.GS2
 local State = GS and GS.State or {}
+local Data = GS and GS.Data or {}
+local Tables = Data.Tables or {}
 GS.SettingsUI = GS.SettingsUI or {
 	OptionsBindings = {},
 	InterfaceOptionsPanel = nil,
@@ -14,6 +16,7 @@ local GS_OptionsBindings = SettingsUI.OptionsBindings
 local GS_InterfaceOptionsPanel = SettingsUI.InterfaceOptionsPanel
 local GS_MinimapButton = SettingsUI.MinimapButton
 local GS_ExplainState = State.ExplainState or { owner = nil, itemLink = nil, itemSlot = nil }
+local GS_DEFAULT_SETTINGS = Tables.DefaultSettings or {}
 
 local GS_OptionsSections = {
 	{
@@ -361,7 +364,7 @@ function GS_InitializeSettings()
 	if type(GS2_Settings) ~= "table" then
 		GS2_Settings = {}
 	end
-	GS_CopyDefaults(GS2_Settings, GS_DefaultSettings)
+	GS_CopyDefaults(GS2_Settings, GS_DEFAULT_SETTINGS)
 	GS_Settings = GS2_Settings
 	GS.Settings = GS_Settings
 	GS_CreateInterfaceOptionsPanel()
