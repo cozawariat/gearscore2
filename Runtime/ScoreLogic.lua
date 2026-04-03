@@ -536,9 +536,13 @@ GS_RangedHelperClassBySubtype = {
 	CROSSBOW = { HUNTER = true, ROGUE = true, WARRIOR = true },
 	THROWN = { ROGUE = true, WARRIOR = true },
 	LIBRAM = { PALADIN = true },
+	LIBRAMS = { PALADIN = true },
 	TOTEM = { SHAMAN = true },
+	TOTEMS = { SHAMAN = true },
 	IDOL = { DRUID = true },
+	IDOLS = { DRUID = true },
 	SIGIL = { DEATHKNIGHT = true },
+	SIGILS = { DEATHKNIGHT = true },
 }
 
 function GS_IsRangedHelperCompatible(item, classToken, profile)

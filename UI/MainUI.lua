@@ -174,6 +174,39 @@ local function GS_PrintExplainParts(prefix, parts)
 	end
 end
 
+local GS_DEBUG_SLOT_LABELS = {
+	[1] = "Head",
+	[2] = "Neck",
+	[3] = "Shoulder",
+	[5] = "Chest",
+	[6] = "Waist",
+	[7] = "Legs",
+	[8] = "Feet",
+	[9] = "Wrist",
+	[10] = "Hands",
+	[11] = "Finger1",
+	[12] = "Finger2",
+	[13] = "Trinket1",
+	[14] = "Trinket2",
+	[15] = "Back",
+	[16] = "MainHand",
+	[17] = "OffHand",
+	[18] = "Ranged",
+}
+
+local function GS_GetDebugSlotLabel(slotId)
+	return GS_DEBUG_SLOT_LABELS[slotId] or ("Slot" .. tostring(slotId or "?"))
+end
+
+local function GS_GetSortedDetailSlots(detailLinks)
+	local slotIds = {}
+	for slotId in pairs(detailLinks or {}) do
+		slotIds[#slotIds + 1] = slotId
+	end
+	table.sort(slotIds)
+	return slotIds
+end
+
 function GS_DebugSlotScore(slotToken)
 	local slotId = GS_ParseDebugSlotToken(slotToken)
 	if not slotId then
@@ -244,6 +277,87 @@ function GS_DebugSlotScore(slotToken)
 	end
 end
 
+function GS_DebugCharacterScore()
+	local unit = GS_GetDebugUnit()
+	if not unit or not UnitExists(unit) then
+		print("GearScore2: No valid unit to debug.")
+		return
+	end
+	local record = GS_GetRecord(unit) or GS_GetScanRecord(UnitGUID(unit))
+	if not record then
+		if not UnitIsUnit(unit, "player") then
+			GS_QueueInspect(unit)
+		end
+		print("GearScore2: No cached record yet for " .. tostring(UnitName(unit) or unit) .. ". Inspect the character and retry in a moment.")
+		return
+	end
+	if not record.specKey then
+		if not UnitIsUnit(unit, "player") then
+			GS_QueueInspect(unit)
+		end
+		print("GearScore2: Spec/item scan not ready for " .. tostring(UnitName(unit) or unit) .. ". Current state: " .. tostring(record.scanStatusText or "unknown"))
+		return
+	end
+
+	local unitName = UnitName(unit) or unit
+	local classToken = record.classToken or select(2, UnitClass(unit))
+	local slotIds = GS_GetSortedDetailSlots(record.detailLinks)
+	local slotGs2Total, slotLegacyTotal, slotPvpTotal = 0, 0, 0
+	local unresolvedSlots = 0
+
+	print("GS2 Debug Character | Unit: " .. tostring(unitName) .. " | Spec: " .. tostring(record.specLabel or GS_GetSpecLabel(record.specKey)) .. " | source=" .. tostring(record.specSource or "unknown"))
+	print("GS2 Debug Character Result: GS2=" .. tostring(record.gs2 or "nil") .. " | Legacy=" .. tostring(record.legacy or "nil") .. " | PvP=" .. tostring(record.pvp or "nil") .. " | Avg=" .. tostring(record.average or 0))
+
+	if record.offSpec then
+		print("GS2 Debug Character Offspec: true | betterFit=" .. tostring(record.offSpecBetterSpecLabel or record.offSpecBetterSpecKey or "?") .. " | betterFitGS2=" .. tostring(record.offSpecBetterGs2 or "?") .. " | reason=" .. tostring(record.offSpecReason or "unknown"))
+	end
+
+	if record.capBreakdown then
+		print("GS2 Debug Character Caps: " .. tostring(record.capBreakdown.summary or "n/a") .. " | bonus=" .. tostring(record.capAdjustedGs2 or 0) .. " | progress=" .. GS_FormatNumber((record.capBreakdown.overallProgress or 0) * 100) .. "%")
+	end
+
+	for index = 1, #slotIds do
+		local slotId = slotIds[index]
+		local itemLink = record.detailLinks[slotId]
+		local item = itemLink and GS_GetItemData(itemLink) or nil
+		if item then
+			local itemGs2, itemPvp = GS_ScoreItem(item, classToken, record.specKey)
+			local label = GS_GetDebugSlotLabel(slotId)
+			if itemGs2 == nil or itemPvp == nil then
+				unresolvedSlots = unresolvedSlots + 1
+				print("GS2 Debug Char Slot " .. tostring(slotId) .. " (" .. label .. "): " .. tostring(item.name) .. " | unresolved")
+			else
+				slotGs2Total = slotGs2Total + itemGs2
+				slotLegacyTotal = slotLegacyTotal + (item.legacyBase or 0)
+				slotPvpTotal = slotPvpTotal + itemPvp
+				print(
+					"GS2 Debug Char Slot " .. tostring(slotId) .. " (" .. label .. "): "
+					.. tostring(item.name)
+					.. " | GS2=" .. tostring(itemGs2)
+					.. " | Legacy=" .. tostring(item.legacyBase or 0)
+					.. " | PvP=" .. tostring(itemPvp)
+					.. " | enchantId=" .. tostring(item.enchantId or 0)
+					.. " | gems=" .. tostring(item.gemCount or 0)
+				)
+			end
+		else
+			unresolvedSlots = unresolvedSlots + 1
+			print("GS2 Debug Char Slot " .. tostring(slotId) .. " (" .. GS_GetDebugSlotLabel(slotId) .. "): item data unresolved")
+		end
+	end
+
+	print(
+		"GS2 Debug Character Totals: slotGS2=" .. tostring(slotGs2Total)
+		.. " | capBonus=" .. tostring(record.capAdjustedGs2 or 0)
+		.. " | finalGS2=" .. tostring(record.gs2 or "nil")
+		.. " | slotLegacy=" .. tostring(slotLegacyTotal)
+		.. " | finalLegacy=" .. tostring(record.legacy or "nil")
+		.. " | slotPvP=" .. tostring(slotPvpTotal)
+		.. " | finalPvP=" .. tostring(record.pvp or "nil")
+		.. " | unresolvedSlots=" .. tostring(unresolvedSlots)
+	)
+end
+
 function GS_MANSET(command)
 	local raw = command or ""
 	local normalized = strlower(raw)
@@ -253,14 +367,16 @@ function GS_MANSET(command)
 	if commandWord == "options" or commandWord == "option" or commandWord == "help" then
 		for i, v in ipairs(GS_COMMAND_LIST) do print(v) end
 		print("/gs2 debuginspect")
+		print("/gs2 debugchar")
 		print("/gs2 debugslot 3")
 		print("/gs2 issues")
 		return
 	end
 	if commandWord == "debuginspect" then State.DebugInspectEnabled = not State.DebugInspectEnabled print("GS2 Inspect Debug: " .. (State.DebugInspectEnabled and "On" or "Off")) return end
+	if commandWord == "debugchar" then GS_DebugCharacterScore() return end
 	if commandWord == "debugslot" then GS_DebugSlotScore(argument) return end
 	if commandWord == "issues" then GS_ShowResolutionIssuesFrame() return end
-	print("GearScore2: Unknown command. Use '/gs2 settings', '/gs2 debuginspect', '/gs2 debugslot 3', or '/gs2 issues'.")
+	print("GearScore2: Unknown command. Use '/gs2 settings', '/gs2 debuginspect', '/gs2 debugchar', '/gs2 debugslot 3', or '/gs2 issues'.")
 end
 
 function GS_OnEvent(_, event, ...)

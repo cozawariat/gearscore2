@@ -308,8 +308,9 @@ Tables.CommandList = {
 	[1] = "---GearScore2 Commands---",
 	[2] = "/gs2 or /gs2 settings -> Opens the GearScore2 settings panel.",
 	[3] = "/gs2 debuginspect -> Toggles inspect debug messages.",
-	[4] = "/gs2 debugslot 3 -> Prints per-item scoring details for a slot.",
-	[5] = "/gs2 issues -> Opens a copyable report of unresolved gem/enchant data.",
+	[4] = "/gs2 debugchar -> Prints the current character debug summary and per-slot totals.",
+	[5] = "/gs2 debugslot 3 -> Prints per-item scoring details for a slot.",
+	[6] = "/gs2 issues -> Opens a copyable report of unresolved gem/enchant data.",
 }
 
 Tables.EnchantSlots = {

@@ -47,6 +47,11 @@ class WarmaneBalanceBenchmarkTests(unittest.TestCase):
         self.assertEqual(item["stats"]["CRIT"], 58.0)
         self.assertEqual(item["stats"]["HASTE"], 43.0)
 
+    def test_item_resolution_captures_generic_spell_power_lines(self) -> None:
+        item = parse_item_page(39423, 16, self.fetcher)
+        self.assertEqual(item["name"], "Hammer of the Astral Plane")
+        self.assertEqual(item["stats"]["SP"], 461.0)
+
     def test_staff_resolution_uses_inventory_slot_for_two_hand_weapon(self) -> None:
         item = parse_item_page(40455, 16, self.fetcher)
         self.assertEqual(item["name"], "Staff of Restraint")
@@ -104,6 +109,16 @@ class WarmaneBalanceBenchmarkTests(unittest.TestCase):
         self.assertTrue(is_item_compatible(tank_item, "PALADIN", protection))
         self.assertFalse(is_item_compatible(caster_item, "PALADIN", protection))
         self.assertTrue(is_item_compatible(tank_item, "PALADIN", holy))
+
+    def test_relic_compatibility_accepts_plural_relic_subtypes(self) -> None:
+        relic_item = {
+            "slot": 18,
+            "equipLoc": "INVTYPE_RELIC",
+            "subType": "IDOLS",
+            "stats": {},
+        }
+        balance = self.tables["Tables"]["SpecProfiles"]["BALANCE"]
+        self.assertTrue(is_item_compatible(relic_item, "DRUID", balance))
 
     def test_offspec_plausibility_requires_signature_support(self) -> None:
         items = [

@@ -584,6 +584,14 @@ def parse_stats_from_text(text: str) -> tuple[dict[str, float], int]:
             continue
         for pattern, stat_key in [
             (r"improves spell power by (\d+)", "SP"),
+            (r"increases spell power by (\d+)", "SP"),
+            (r"increases damage and healing done by magical spells and effects by up to (\d+)", "SP"),
+            (r"increases damage done by arcane spells and effects by up to (\d+)", "SP"),
+            (r"increases damage done by fire spells and effects by up to (\d+)", "SP"),
+            (r"increases damage done by frost spells and effects by up to (\d+)", "SP"),
+            (r"increases damage done by shadow spells and effects by up to (\d+)", "SP"),
+            (r"increases damage done by holy spells and effects by up to (\d+)", "SP"),
+            (r"increases damage done by nature spells and effects by up to (\d+)", "SP"),
             (r"improves critical strike rating by (\d+)", "CRIT"),
             (r"increases your (?:critical strike|critical) rating by (\d+)", "CRIT"),
             (r"improves hit rating by (\d+)", "HIT"),
@@ -940,10 +948,10 @@ def is_ranged_helper_compatible(item: dict[str, Any], class_token: str, profile:
         return True
     if equip_loc == "INVTYPE_RELIC":
         return (
-            (class_token == "PALADIN" and subtype == "LIBRAM")
-            or (class_token == "SHAMAN" and subtype == "TOTEM")
-            or (class_token == "DRUID" and subtype == "IDOL")
-            or (class_token == "DEATHKNIGHT" and subtype == "SIGIL")
+            (class_token == "PALADIN" and subtype in {"LIBRAM", "LIBRAMS"})
+            or (class_token == "SHAMAN" and subtype in {"TOTEM", "TOTEMS"})
+            or (class_token == "DRUID" and subtype in {"IDOL", "IDOLS"})
+            or (class_token == "DEATHKNIGHT" and subtype in {"SIGIL", "SIGILS"})
         )
     if class_token in {"MAGE", "PRIEST", "WARLOCK"}:
         return equip_loc == "INVTYPE_RANGED" and subtype == "WAND"
