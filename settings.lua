@@ -2,11 +2,20 @@
 --                          GearScore2 Settings UI                            --
 -------------------------------------------------------------------------------
 
-GS_OptionsBindings = {}
-GS_InterfaceOptionsPanel = nil
-GS_MinimapButton = nil
+local GS = _G.GS2
+local State = GS and GS.State or {}
+GS.SettingsUI = GS.SettingsUI or {
+	OptionsBindings = {},
+	InterfaceOptionsPanel = nil,
+	MinimapButton = nil,
+}
+local SettingsUI = GS.SettingsUI
+local GS_OptionsBindings = SettingsUI.OptionsBindings
+local GS_InterfaceOptionsPanel = SettingsUI.InterfaceOptionsPanel
+local GS_MinimapButton = SettingsUI.MinimapButton
+local GS_ExplainState = State.ExplainState or { owner = nil, itemLink = nil, itemSlot = nil }
 
-GS_OptionsSections = {
+local GS_OptionsSections = {
 	{
 		title = "Character Tooltip",
 		items = {
@@ -251,6 +260,7 @@ local function GS_CreateInterfaceOptionsPanel()
 
 	InterfaceOptions_AddCategory(panel)
 	GS_InterfaceOptionsPanel = panel
+	SettingsUI.InterfaceOptionsPanel = panel
 	return panel
 end
 
@@ -327,6 +337,7 @@ local function GS_CreateMinimapButton()
 	end)
 
 	GS_MinimapButton = button
+	SettingsUI.MinimapButton = button
 	GS_ApplyMinimapButtonVisibility()
 	return button
 end
@@ -352,6 +363,7 @@ function GS_InitializeSettings()
 	end
 	GS_CopyDefaults(GS2_Settings, GS_DefaultSettings)
 	GS_Settings = GS2_Settings
+	GS.Settings = GS_Settings
 	GS_CreateInterfaceOptionsPanel()
 	GS_CreateMinimapButton()
 	GS_RefreshOptionsUI()

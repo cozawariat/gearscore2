@@ -2,6 +2,13 @@
 --                          GearScore2 Tooltip Logic                          --
 -------------------------------------------------------------------------------
 
+local GS = _G.GS2
+local State = GS and GS.State or {}
+local C = GS and GS.Constants or {}
+local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
+local GS_ExplainState = State.ExplainState or { owner = nil, itemLink = nil, itemSlot = nil }
+local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
+
 function GS_TooltipHasLine(tooltip, text)
 	if not tooltip or not tooltip.GetName or not text then
 		return false
@@ -278,7 +285,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 	GS_ExplainState.owner = ownerTooltip
 	GS_ExplainState.itemLink = itemLink
-	if GS_PlayerIsInCombat or not IsControlKeyDown() or (GS_Settings and not GS_Settings["enableExplainTooltip"]) then
+	if State.PlayerIsInCombat or not IsControlKeyDown() or (GS_Settings and not GS_Settings["enableExplainTooltip"]) then
 		if GS_ExplainTooltip:IsShown() then
 			GS_ExplainTooltip:Hide()
 		end
@@ -520,7 +527,7 @@ end
 
 function GS2_HookSetUnit()
 	if GS_HasConflict() then return end
-	if GS_PlayerIsInCombat then return end
+	if State.PlayerIsInCombat then return end
 	GS_HideExplainTooltip()
 	local name, unit = GS_GetTooltipUnit()
 	if not name or not unit or not UnitIsPlayer(unit) or (GS_Settings["Player"] ~= 1 and GS_Settings["Player"] ~= 2) then return end
@@ -553,7 +560,7 @@ end
 
 function GS2_HookSetItem()
 	if GS_HasConflict() then return end
-	if not GS_PlayerIsInCombat then
+	if not State.PlayerIsInCombat then
 		local _, link = GameTooltip:GetItem()
 		GS_AddItemLines(GameTooltip, link)
 	else
@@ -563,15 +570,15 @@ end
 
 function GS2_HookRefItem()
 	if GS_HasConflict() then return end
-	if not GS_PlayerIsInCombat then local _, link = ItemRefTooltip:GetItem() GS_AddItemLines(ItemRefTooltip, link) else GS_HideExplainTooltip() end
+	if not State.PlayerIsInCombat then local _, link = ItemRefTooltip:GetItem() GS_AddItemLines(ItemRefTooltip, link) else GS_HideExplainTooltip() end
 end
 
 function GS2_HookCompareItem()
 	if GS_HasConflict() then return end
-	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip1:GetItem() GS_AddItemLines(ShoppingTooltip1, link) else GS_HideExplainTooltip() end
+	if not State.PlayerIsInCombat then local _, link = ShoppingTooltip1:GetItem() GS_AddItemLines(ShoppingTooltip1, link) else GS_HideExplainTooltip() end
 end
 
 function GS2_HookCompareItem2()
 	if GS_HasConflict() then return end
-	if not GS_PlayerIsInCombat then local _, link = ShoppingTooltip2:GetItem() GS_AddItemLines(ShoppingTooltip2, link) else GS_HideExplainTooltip() end
+	if not State.PlayerIsInCombat then local _, link = ShoppingTooltip2:GetItem() GS_AddItemLines(ShoppingTooltip2, link) else GS_HideExplainTooltip() end
 end

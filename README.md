@@ -154,9 +154,9 @@ For the local player, the addon reads the three talent tabs and picks the tab wi
 
 That tab is then mapped through the class-specific specialization order used by the runtime.
 
-For inspected targets, the addon does not wait indefinitely for inspected talent data before producing a useful result.
+For inspected targets, the addon first tries to resolve the active spec from inspect talent data.
 
-Instead, once the inspect snapshot is ready, it compares the observed gear against all candidate specs for that class, chooses the highest-scoring match, and marks the result as `[INFERRED]`.
+If talent data still does not produce a usable result after a short wait, the addon falls back to gear-based inference and marks that result as `[INFERRED]`.
 
 If the inspect snapshot is still incomplete, the tooltip temporarily shows `Scanning...`.
 
@@ -236,15 +236,16 @@ Temporary buffs, elixirs, food, party auras, and target debuffs may still appear
 
 Inspect is asynchronous.
 
-For inspected targets, the addon no longer waits for inspected talent data to produce a useful result:
+For inspected targets, the addon now prefers inspect talent data first and only falls back to inference if talent data still is not usable after a short wait:
 
 - while item data is still loading, character and item tooltips show `Scanning...`
-- once the inspect snapshot is ready, the addon infers the most likely specialization from the full gear setup
-- inferred inspect results are marked as `[INFERRED]`
+- if inspect talents resolve in time, the active spec comes from the talent tab with the highest point count
+- if inspect talents still do not resolve in time, the addon infers the most likely specialization from the full gear setup and marks the result as `[INFERRED]`
+- if the active spec resolves from talents but the equipped gear scores higher for another inferred spec, the `Spec` line is marked as off-spec
 
 This was introduced not only for responsiveness, but also because inspected talent API data proved unreliable during debugging and did not always return usable specialization information in time.
 
-`[INFERRED]` makes that fallback explicit instead of pretending the specialization was confirmed directly from talents.
+`[INFERRED]` makes that fallback explicit instead of pretending the specialization was confirmed directly from talents, while the off-spec warning highlights targets whose active spec and gear setup do not really match.
 
 ## 5. Current Limitations / Expectations
 

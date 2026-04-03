@@ -2,6 +2,18 @@
 --                           GearScore2 Item Logic                            --
 -------------------------------------------------------------------------------
 
+local GS = _G.GS2
+local State = GS and GS.State or {}
+local C = GS and GS.Constants or {}
+local GS_ParsedLinkCache = State.ParsedLinkCache or {}
+local GS_ItemCache = State.ItemCache or {}
+local GS_STAT_KEYS = GS and GS.StatKeys or GS_STAT_KEYS
+local GS_ITEM_SLOTS = GS and GS.ItemSlots or GS_ITEM_SLOTS
+local GS_PARSED_LINK_CACHE_MAX = C.PARSED_LINK_CACHE_MAX or 1200
+local GS_PARSED_LINK_CACHE_TRIM_TO = C.PARSED_LINK_CACHE_TRIM_TO or 900
+local GS_ITEM_CACHE_MAX = C.ITEM_CACHE_MAX or 800
+local GS_ITEM_CACHE_TRIM_TO = C.ITEM_CACHE_TRIM_TO or 600
+
 function GS_ParseItemLink(itemLink)
 	if not itemLink then return nil end
 	local cached = GS_ParsedLinkCache[itemLink]

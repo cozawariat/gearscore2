@@ -91,6 +91,7 @@
 | `GS_READY_DELAY` | `0.15` | Delay after inspect-ready events before polling snapshot data |
 | `GS_FORCE_POLL_DELAY` | `0.20` | Initial fallback poll delay after `NotifyInspect` |
 | `GS_MIN_INSPECT_ITEMS` | `8` | Minimum item count required before finalizing a snapshot |
+| `GS_TALENT_SPEC_WAIT` | `1.0` | Time allowed for inspect talent data to resolve before gear-based spec inference is allowed |
 | `GS_CACHE_TTL` | `180` | Cached inspect record lifetime |
 | `GS_FRESH_TTL` | `15` | Freshness window used to avoid immediate re-inspection |
 

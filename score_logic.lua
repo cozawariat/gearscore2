@@ -2,6 +2,22 @@
 --                           GearScore2 Score Logic                           --
 -------------------------------------------------------------------------------
 
+local GS = _G.GS2
+local C = GS and GS.Constants or {}
+local GS_GEM_SCALE = C.GEM_SCALE or 0.35
+local GS_ENCHANT_SCALE = C.ENCHANT_SCALE or 0.35
+local GS_PVE_RESILIENCE_RATE = C.PVE_RESILIENCE_RATE or 0.0015
+local GS_PVP_RESILIENCE_RATE = C.PVP_RESILIENCE_RATE or 0.0020
+local GS_PVE_RESILIENCE_FLOOR = C.PVE_RESILIENCE_FLOOR or 0.70
+local GS_PVP_RESILIENCE_CAP = C.PVP_RESILIENCE_CAP or 1.35
+local GS_GS2_STAT_SCALE = C.GS2_STAT_SCALE or 0.12
+local GS_CAP_BONUS_ANCHOR_LOW_GS2 = C.CAP_BONUS_ANCHOR_LOW_GS2 or 4000
+local GS_CAP_BONUS_ANCHOR_HIGH_GS2 = C.CAP_BONUS_ANCHOR_HIGH_GS2 or 5000
+local GS_CAP_BONUS_ANCHOR_LOW_BONUS = C.CAP_BONUS_ANCHOR_LOW_BONUS or 180
+local GS_CAP_BONUS_ANCHOR_HIGH_BONUS = C.CAP_BONUS_ANCHOR_HIGH_BONUS or 90
+local GS_CAP_BONUS_MIN = C.CAP_BONUS_MIN or 20
+local GS_CAP_BONUS_MAX = C.CAP_BONUS_MAX or 250
+
 function GS_GetProfile(classToken, specKey)
 	specKey = (specKey and GS_SpecProfiles[specKey]) and specKey or GS_ClassDefaults[classToken]
 	return GS_SpecProfiles[specKey], specKey

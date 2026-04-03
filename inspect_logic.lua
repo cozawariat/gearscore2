@@ -2,6 +2,26 @@
 --                          GearScore2 Inspect Logic                          --
 -------------------------------------------------------------------------------
 
+local GS = _G.GS2
+local State = GS and GS.State or {}
+local C = GS and GS.Constants or {}
+local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
+local GS_MOUSEOVER_INSPECT_DELAY = C.MOUSEOVER_INSPECT_DELAY or 0.25
+local GS_INSPECT_THROTTLE = C.INSPECT_THROTTLE or 0.35
+local GS_RECENT_WINDOW = C.RECENT_WINDOW or 1.5
+local GS_ACTIVE_TIMEOUT = C.ACTIVE_TIMEOUT or 3.0
+local GS_SCAN_TIMEOUT = C.SCAN_TIMEOUT or 3.0
+local GS_CACHE_TTL = C.CACHE_TTL or 180
+local GS_FRESH_TTL = C.FRESH_TTL or 15
+local GS_READY_DELAY = C.READY_DELAY or 0.15
+local GS_MIN_INSPECT_ITEMS = C.MIN_INSPECT_ITEMS or 8
+local GS_FORCE_POLL_DELAY = C.FORCE_POLL_DELAY or 0.20
+local GS_TALENT_SPEC_WAIT = C.TALENT_SPEC_WAIT or 1.0
+local GS_InspectQueue = State.InspectQueue or {}
+local GS_InspectCache = State.InspectCache or {}
+local GS_InspectState = State.InspectState or { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
+local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
+
 function GS_GetTooltipUnit()
 	local _, unit = GameTooltip:GetUnit()
 	if unit and UnitName(unit) then return UnitName(unit), unit end
@@ -163,7 +183,24 @@ function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
 	return snapshot
 end
 
-function GS_InferSpecFromSnapshot(snapshot)
+function GS_GetSnapshotSpecScore(snapshot, specKey)
+	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not GS_SpecProfiles[specKey] then
+		return nil
+	end
+	local total = 0
+	for itemIndex = 1, #snapshot.items do
+		local entry = snapshot.items[itemIndex]
+		local itemGS2 = GS_ScoreItem(entry.item, snapshot.classToken, specKey)
+		if itemGS2 == nil then
+			return nil
+		end
+		total = total + itemGS2
+	end
+	local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = specKey, raceToken = snapshot.raceToken, items = snapshot.items }, total)
+	return total + (capAdjustedGs2 or 0)
+end
+
+function GS_GetBestSnapshotSpec(snapshot, excludedSpecKey)
 	if not snapshot or not snapshot.classToken or not snapshot.items then
 		return nil, nil
 	end
@@ -174,21 +211,8 @@ function GS_InferSpecFromSnapshot(snapshot)
 	local bestSpec, bestScore = nil, nil
 	for index = 1, #candidates do
 		local candidateSpec = candidates[index]
-		if GS_SpecProfiles[candidateSpec] then
-			local total = 0
-			for itemIndex = 1, #snapshot.items do
-				local entry = snapshot.items[itemIndex]
-				local itemGS2 = GS_ScoreItem(entry.item, snapshot.classToken, candidateSpec)
-				if itemGS2 == nil then
-					total = nil
-					break
-				end
-				total = total + itemGS2
-			end
-			if total then
-				local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = candidateSpec, raceToken = snapshot.raceToken, items = snapshot.items }, total)
-				total = total + (capAdjustedGs2 or 0)
-			end
+		if candidateSpec ~= excludedSpecKey and GS_SpecProfiles[candidateSpec] then
+			local total = GS_GetSnapshotSpecScore(snapshot, candidateSpec)
 			GS_DebugInspect("infer candidate " .. tostring(candidateSpec) .. " total=" .. tostring(total) .. " for " .. tostring(snapshot.name))
 			if total and (not bestScore or total > bestScore) then
 				bestScore = total
@@ -197,6 +221,10 @@ function GS_InferSpecFromSnapshot(snapshot)
 		end
 	end
 	return bestSpec, bestScore
+end
+
+function GS_InferSpecFromSnapshot(snapshot)
+	return GS_GetBestSnapshotSpec(snapshot, nil)
 end
 
 function GS_GetScanRecord(guid)
@@ -257,10 +285,29 @@ function GS_BuildRecord(snapshot)
 		capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot, gs2)
 		gs2 = gs2 + (capAdjustedGs2 or 0)
 	end
+	local offSpec = false
+	local offSpecBetterSpecKey, offSpecBetterSpecLabel, offSpecBetterGs2 = nil, nil, nil
 	local specLabel = snapshot.specKey and GS_GetSpecLabel(snapshot.specKey) or "Unknown"
 	local scanStatusText = snapshot.specResolved and specLabel or "Spec unknown"
 	if unresolvedData then
 		scanStatusText = "GS2 unavailable"
+	elseif snapshot.specResolved and snapshot.specSource == "inspect" and snapshot.specKey and gs2 ~= nil then
+		local betterSpecKey, betterGs2 = GS_GetBestSnapshotSpec(snapshot, snapshot.specKey)
+		if betterSpecKey and betterGs2 and betterGs2 > gs2 then
+			offSpec = true
+			offSpecBetterSpecKey = betterSpecKey
+			offSpecBetterSpecLabel = GS_GetSpecLabel(betterSpecKey)
+			offSpecBetterGs2 = floor(betterGs2)
+		end
+	end
+	if snapshot.specResolved then
+		if snapshot.specSource == "inferred" then
+			scanStatusText = specLabel .. " [INFERRED]"
+		elseif offSpec and offSpecBetterSpecLabel then
+			scanStatusText = specLabel .. " [OFF-SPEC: " .. offSpecBetterSpecLabel .. "]"
+		else
+			scanStatusText = specLabel
+		end
 	end
 	cached = {
 		guid = snapshot.guid,
@@ -273,6 +320,10 @@ function GS_BuildRecord(snapshot)
 		scanExpired = snapshot.scanExpired and true or false,
 		gs2Available = snapshot.specResolved and snapshot.specKey ~= nil and not unresolvedData,
 		scanStatusText = scanStatusText,
+		offSpec = offSpec,
+		offSpecBetterSpecKey = offSpecBetterSpecKey,
+		offSpecBetterSpecLabel = offSpecBetterSpecLabel,
+		offSpecBetterGs2 = offSpecBetterGs2,
 		fingerprint = snapshot.fingerprint,
 		average = snapshot.average,
 		gs2 = (snapshot.specResolved and not unresolvedData) and floor(gs2) or nil,
@@ -373,19 +424,33 @@ function GS_ProcessInspectQueue()
 		local inspectUnit = UnitGUID(active.unit) == active.guid and active.unit or GS_ResolveUnitByGUID(active.guid)
 		local snapshot = inspectUnit and GS_CollectSnapshot(inspectUnit, true) or nil
 		local itemCount = snapshot and snapshot.itemCount or 0
+		local inspectSpec, inspectSpecResolved = nil, false
+		if snapshot and inspectUnit then
+			inspectSpec, inspectSpecResolved = GS_DetectSpec(inspectUnit, snapshot.classToken, true, active.talentReady)
+		end
 		if snapshot then
-			GS_DebugInspect("poll " .. tostring(snapshot.name) .. " items=" .. tostring(itemCount) .. " timedOut=" .. tostring((now - active.startedAt) >= GS_SCAN_TIMEOUT))
+			GS_DebugInspect("poll " .. tostring(snapshot.name) .. " items=" .. tostring(itemCount) .. " timedOut=" .. tostring((now - active.startedAt) >= GS_SCAN_TIMEOUT) .. " inspectSpec=" .. tostring(inspectSpec))
 		else
 			GS_DebugInspect("poll failed: no snapshot for guid=" .. tostring(active.guid))
 		end
 		if snapshot and itemCount >= GS_MIN_INSPECT_ITEMS then
-			local inferredSpec = GS_InferSpecFromSnapshot(snapshot)
-			if inferredSpec then
-				GS_FinalizeSnapshotSpec(snapshot, inferredSpec, "inferred", false)
-				GS_DebugInspect("finalize inferred " .. tostring(snapshot.name) .. " spec=" .. tostring(inferredSpec))
+			if inspectSpecResolved and inspectSpec then
+				GS_FinalizeSnapshotSpec(snapshot, inspectSpec, "inspect", false)
+				GS_DebugInspect("finalize inspect " .. tostring(snapshot.name) .. " spec=" .. tostring(inspectSpec))
+			elseif now >= (active.inferAt or active.startedAt) then
+				local inferredSpec = GS_InferSpecFromSnapshot(snapshot)
+				if inferredSpec then
+					GS_FinalizeSnapshotSpec(snapshot, inferredSpec, "inferred", false)
+					GS_DebugInspect("finalize inferred " .. tostring(snapshot.name) .. " spec=" .. tostring(inferredSpec))
+				else
+					GS_FinalizeSnapshotSpec(snapshot, nil, "none", false)
+					GS_DebugInspect("finalize none " .. tostring(snapshot.name))
+				end
 			else
-				GS_FinalizeSnapshotSpec(snapshot, nil, "none", false)
-				GS_DebugInspect("finalize none " .. tostring(snapshot.name))
+				active.readyRetries = active.readyRetries + 1
+				active.readyAt = now + GS_READY_DELAY
+				active.pollAt = now + GS_READY_DELAY
+				return
 			end
 			GS_BuildRecord(snapshot)
 			GS_ClearInspectIfSafe()
@@ -395,13 +460,18 @@ function GS_ProcessInspectQueue()
 		end
 		if (now - active.startedAt) >= GS_SCAN_TIMEOUT then
 			if snapshot then
-				local inferredSpec = GS_InferSpecFromSnapshot(snapshot)
-				if inferredSpec then
-					GS_FinalizeSnapshotSpec(snapshot, inferredSpec, "inferred", true)
-					GS_DebugInspect("timeout finalize inferred " .. tostring(snapshot.name) .. " spec=" .. tostring(inferredSpec))
+				if inspectSpecResolved and inspectSpec then
+					GS_FinalizeSnapshotSpec(snapshot, inspectSpec, "inspect", true)
+					GS_DebugInspect("timeout finalize inspect " .. tostring(snapshot.name) .. " spec=" .. tostring(inspectSpec))
 				else
-					GS_FinalizeSnapshotSpec(snapshot, nil, "none", true)
-					GS_DebugInspect("timeout finalize none " .. tostring(snapshot.name))
+					local inferredSpec = GS_InferSpecFromSnapshot(snapshot)
+					if inferredSpec then
+						GS_FinalizeSnapshotSpec(snapshot, inferredSpec, "inferred", true)
+						GS_DebugInspect("timeout finalize inferred " .. tostring(snapshot.name) .. " spec=" .. tostring(inferredSpec))
+					else
+						GS_FinalizeSnapshotSpec(snapshot, nil, "none", true)
+						GS_DebugInspect("timeout finalize none " .. tostring(snapshot.name))
+					end
 				end
 				GS_BuildRecord(snapshot)
 			end
@@ -424,7 +494,7 @@ function GS_ProcessInspectQueue()
 		if dispatchUnit and UnitGUID(dispatchUnit) == request.guid and GS_CanInspectUnitByPolicy(dispatchUnit) then
 			GS_DebugInspect("NotifyInspect " .. (UnitName(dispatchUnit) or "?") .. " guid=" .. tostring(request.guid))
 			NotifyInspect(dispatchUnit)
-			GS_InspectState.active = { guid = request.guid, unit = dispatchUnit, startedAt = now, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0, specResolvedAt = nil, talentReady = false, timedOut = false }
+			GS_InspectState.active = { guid = request.guid, unit = dispatchUnit, startedAt = now, inferAt = now + GS_TALENT_SPEC_WAIT, pollAt = now + GS_FORCE_POLL_DELAY, readyRetries = 0, specResolvedAt = nil, talentReady = false, timedOut = false }
 			GS_InspectState.recent[request.guid], GS_InspectState.lastInspectAt = now, now
 			return
 		end

@@ -303,11 +303,13 @@ For the local player, `GS_DetectSpec(unit, classToken, inspect)`:
 2. chooses the tab with the highest point count once point values are available
 3. maps the winning tab to `GS_ClassSpecOrder[classToken][tab]`
 
-For inspected non-player units, the runtime does not wait for inspected talent data.
+For inspected non-player units, the runtime prefers inspect talent data first.
 
-- it first gathers an inspect snapshot of equipped items
-- then it evaluates all candidate specs for that class against the observed gear
-- it selects the highest-scoring candidate and marks the result as inferred
+- it gathers an inspect snapshot of equipped items
+- it attempts to resolve the active spec from the talent tab with the highest point count
+- if inspect talent data is still unusable after a short wait window, it evaluates all candidate specs for that class against the observed gear
+- it selects the highest-scoring fallback candidate and marks the result as inferred
+- if talent-resolved active spec remains lower-scoring than the best alternate inferred spec, the record is marked as off-spec while scoring still stays on the active spec
 
 If the inspect snapshot itself is still incomplete, the target remains in `Scanning...` until the timeout window is reached.
 

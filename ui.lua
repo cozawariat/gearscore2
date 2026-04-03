@@ -2,6 +2,17 @@
 --                               GearScore2 UI                                --
 -------------------------------------------------------------------------------
 
+local GS = _G.GS2
+local State = GS and GS.State or {}
+local UIState = GS and GS.UI or {}
+local C = GS and GS.Constants or {}
+local GS_InspectCache = State.InspectCache or {}
+local GS_InspectState = State.InspectState or { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
+local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
+local GS_MainFrame = UIState.MainFrame
+local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
+local GS_READY_DELAY = C.READY_DELAY or 0.15
+
 function GS2_OnEnter(frame, itemSlot, argument)
 	local unit, slot = itemSlot, argument
 	if type(unit) == "string" and type(slot) == "number" then
@@ -17,13 +28,13 @@ function GS2_OnEnter(frame, itemSlot, argument)
 end
 
 function GS_UpdatePaperDoll()
-	if GS_PlayerIsInCombat then return end
+	if State.PlayerIsInCombat then return end
 	GS_GetRecord("player")
 end
 
 local function GS_CreateResolutionIssuesFrame()
-	if GS_ResolutionIssuesFrame then
-		return GS_ResolutionIssuesFrame
+	if State.ResolutionIssuesFrame then
+		return State.ResolutionIssuesFrame
 	end
 	local frame = CreateFrame("Frame", "GS2ResolutionIssuesFrame", UIParent)
 	frame:SetWidth(760)
@@ -101,7 +112,7 @@ local function GS_CreateResolutionIssuesFrame()
 	end)
 
 	frame:Hide()
-	GS_ResolutionIssuesFrame = frame
+	State.ResolutionIssuesFrame = frame
 	return frame
 end
 
@@ -198,6 +209,9 @@ function GS_DebugSlotScore(slotToken)
 	local gs2, pvp, explain = GS_ScoreItem(item, record.classToken or select(2, UnitClass(unit)), record.specKey, true)
 	local enchantInfo = GS_GetEnchantInfo(item)
 	print("GS2 Debug Slot " .. tostring(slotId) .. " | Unit: " .. tostring(UnitName(unit) or unit) .. " | Spec: " .. tostring(record.specLabel or GS_GetSpecLabel(record.specKey)))
+	if record.offSpec then
+		print("GS2 Debug Inspect Context: off-spec=true | betterFit=" .. tostring(record.offSpecBetterSpecLabel or record.offSpecBetterSpecKey or "?") .. " | betterFitGS2=" .. tostring(record.offSpecBetterGs2 or "?"))
+	end
 	print("GS2 Debug Item: " .. tostring(item.name) .. " | enchantId=" .. tostring(item.enchantId or 0) .. " | hasEnchant=" .. tostring(item.hasEnchant))
 	if enchantInfo then
 		print("GS2 Debug Enchant: kind=" .. tostring(enchantInfo.kind) .. " | label=" .. tostring(enchantInfo.label or "?"))
@@ -239,15 +253,15 @@ function GS_MANSET(command)
 		print("/gs2 issues")
 		return
 	end
-	if commandWord == "debuginspect" then GS_DebugInspectEnabled = not GS_DebugInspectEnabled print("GS2 Inspect Debug: " .. (GS_DebugInspectEnabled and "On" or "Off")) return end
+	if commandWord == "debuginspect" then State.DebugInspectEnabled = not State.DebugInspectEnabled print("GS2 Inspect Debug: " .. (State.DebugInspectEnabled and "On" or "Off")) return end
 	if commandWord == "debugslot" then GS_DebugSlotScore(argument) return end
 	if commandWord == "issues" then GS_ShowResolutionIssuesFrame() return end
 	print("GearScore2: Unknown command. Use '/gs2 settings', '/gs2 debuginspect', '/gs2 debugslot 3', or '/gs2 issues'.")
 end
 
 function GS_OnEvent(_, event, ...)
-	if event == "PLAYER_REGEN_ENABLED" then GS_PlayerIsInCombat = false return end
-	if event == "PLAYER_REGEN_DISABLED" then GS_PlayerIsInCombat = true return end
+	if event == "PLAYER_REGEN_ENABLED" then State.PlayerIsInCombat = false return end
+	if event == "PLAYER_REGEN_DISABLED" then State.PlayerIsInCombat = true return end
 	if event == "PLAYER_EQUIPMENT_CHANGED" then GS_InspectCache[UnitGUID("player")] = nil GS_UpdatePaperDoll() return end
 	if event == "UNIT_INVENTORY_CHANGED" then local unit = ... if unit and UnitGUID(unit) then GS_InspectCache[UnitGUID(unit)] = nil end return end
 	if event == "UNIT_AURA" then local unit = ... if unit and UnitGUID(unit) then GS_InspectCache[UnitGUID(unit)] = nil if UnitIsUnit(unit, "player") then GS_UpdatePaperDoll() end end return end
@@ -298,6 +312,9 @@ function GS_OnEvent(_, event, ...)
 			GS2_Settings = GS_Settings or GS_DefaultSettings
 		end
 		GS_Settings = GS2_Settings
+		if GS then
+			GS.Settings = GS_Settings
+		end
 		if not GS_Data then GS_Data = {} end
 		if not GS_Data[GetRealmName()] then GS_Data[GetRealmName()] = { ["Players"] = {} } end
 		for key, value in pairs(GS_DefaultSettings) do if GS2_Settings[key] == nil then GS2_Settings[key] = value end end
@@ -320,7 +337,8 @@ GS_MainFrame:RegisterEvent("MODIFIER_STATE_CHANGED")
 GS_MainFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
 GS_MainFrame:RegisterEvent("UNIT_AURA")
 
-GS_ExplainTooltip = CreateFrame("GameTooltip", "GS2ExplainTooltip", UIParent, "GameTooltipTemplate")
+GS_ExplainTooltip = UIState.ExplainTooltip or CreateFrame("GameTooltip", "GS2ExplainTooltip", UIParent, "GameTooltipTemplate")
+UIState.ExplainTooltip = GS_ExplainTooltip
 GS_ExplainTooltip:SetFrameStrata("TOOLTIP")
 GS_ExplainTooltip:SetClampedToScreen(true)
 GS_ExplainTooltip:EnableMouse(false)
@@ -334,7 +352,8 @@ ShoppingTooltip1:HookScript("OnTooltipSetItem", GS2_HookCompareItem)
 ShoppingTooltip2:HookScript("OnTooltipSetItem", GS2_HookCompareItem2)
 ItemRefTooltip:HookScript("OnTooltipSetItem", GS2_HookRefItem)
 
-GS_OriginalSetInventoryItem = GameTooltip.SetInventoryItem
+GS_OriginalSetInventoryItem = State.OriginalSetInventoryItem or GameTooltip.SetInventoryItem
+State.OriginalSetInventoryItem = GS_OriginalSetInventoryItem
 GameTooltip.SetInventoryItem = GS2_OnEnter
 
 SlashCmdList["GS2SCRIPT"] = GS_MANSET
