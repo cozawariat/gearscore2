@@ -2,7 +2,7 @@
 
 [![Character tooltip settings](/docs/GearScore2_character_tooltip.png "Character tooltip settings")](docs/GearScore2_character_tooltip.png)
 
-## Int`GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
+## `GearScore2` (WotLK 3.3.5a)
 
 It is a smarter PvE-oriented successor to `GearScoreLite: Reborn` (https://github.com/Arcitec/GearScoreLite_Reborn) and a practical alternative to classic `GearScore`.
 
@@ -148,7 +148,21 @@ Examples:
 
 Because of this, the same item can score differently for different specs.
 
-### 3.4 Gems and enchants can help, but do not punish by themselves
+### 3.4 How specialization is matched
+
+For the local player, the addon reads the three talent tabs and picks the tab with the highest point count.
+
+That tab is then mapped through the class-specific specialization order used by the runtime.
+
+For inspected targets, the addon does not wait indefinitely for inspected talent data before producing a useful result.
+
+Instead, once the inspect snapshot is ready, it compares the observed gear against all candidate specs for that class, chooses the highest-scoring match, and marks the result as `[INFERRED]`.
+
+If the inspect snapshot is still incomplete, the tooltip temporarily shows `Scanning...`.
+
+If no explicit specialization is available, item scoring can still fall back to the class default profile.
+
+### 3.5 Gems and enchants can help, but do not punish by themselves
 
 Current runtime behavior:
 
@@ -161,7 +175,7 @@ Current runtime behavior:
 
 So `GearScore2` does not punish empty or bad enhancements directly; it simply refuses to reward them.
 
-### 3.5 Resilience lowers PvE value
+### 3.6 Resilience lowers PvE value
 
 `Resilience` is not handled as a flat penalty.
 
@@ -228,6 +242,10 @@ For inspected targets, the addon no longer waits for inspected talent data to pr
 - once the inspect snapshot is ready, the addon infers the most likely specialization from the full gear setup
 - inferred inspect results are marked as `[INFERRED]`
 
+This was introduced not only for responsiveness, but also because inspected talent API data proved unreliable during debugging and did not always return usable specialization information in time.
+
+`[INFERRED]` makes that fallback explicit instead of pretending the specialization was confirmed directly from talents.
+
 ## 5. Current Limitations / Expectations
 
 `GearScore2` is an evolving system, not a frozen standard.
@@ -264,9 +282,3 @@ Use the deeper docs when you need exact runtime behavior:
   - runtime constants, spec profiles, cap profiles, and tables
 - [docs/GS2_BALANCE_BENCHMARK.md](docs/GS2_BALANCE_BENCHMARK.md)
   - benchmark workflow, output format, and interpretation
-Score2` usually means “high item level, lower real PvE efficiency”.
-
-If you need the exact formulas, thresholds, or spec tables, use:
-
-- [GS_ALGORITHM.md](docs/GS_ALGORITHM.md)
-- [GS_RUNTIME_TABLES.md](docs/GS_RUNTIME_TABLES.md)
