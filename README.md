@@ -2,7 +2,7 @@
 
 [![Character tooltip settings](/docs/GearScore2_character_tooltip.png "Character tooltip settings")](docs/GearScore2_character_tooltip.png)
 
-## `GearScore2` (WotLK 3.3.5a)
+## `GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
 
 It is a smarter PvE-oriented successor to `GearScoreLite: Reborn` (https://github.com/Arcitec/GearScoreLite_Reborn) and a practical alternative to classic `GearScore`.
 
