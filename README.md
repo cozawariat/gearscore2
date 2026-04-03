@@ -2,20 +2,18 @@
 
 [![Character tooltip settings](/docs/GearScore2_character_tooltip.png "Character tooltip settings")](docs/GearScore2_character_tooltip.png)
 
-## Intro
+## Int`GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
 
-`GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
+It is a smarter PvE-oriented successor to `GearScoreLite: Reborn` and (https://github.com/Arcitec/GearScoreLite_Reborn) a practical alternative to classic `GearScore`.
 
-It is a smarter PvE-oriented successor to `GearScoreLite: Reborn` (https://github.com/Arcitec/GearScoreLite_Reborn) and a practical alternative to classic `GearScore`.
-
+Ins
 I am fully aware that the chance of the wider WoW 3.3.5a community abandoning classic `GearScore` and migrating to `GS2` is probably very small, even if that would be the dream outcome.
 
 That is not really the main point.
 
-This addon is first and foremost a functional proof of concept: an attempt to show that a gear score can be made much more intelligent, more spec-aware, and more useful than the original item-level-heavy model.
+This addon is first and foremost a functional proof of concept: an attempt to show that a GearScore can be made much more intelligent, more spec-aware, and more useful than the original item-level-heavy model.
 
-
-Instead of treating item level as the whole story, `GearScore2` tries to answer a more useful question:
+tead of treating item level as the whole story, `GearScore2` tries to answer a more useful question:
 
 > how good is this gear for the actual class and specialization using it?
 
@@ -47,10 +45,10 @@ In practice, `GearScore2` is meant to be the score you use when you want a more 
 
 ## Why Use It
 
+Cla
 [![GearScore2 Benchmark](/docs/benchmark.png "GearScore2 Benchmark")](docs/benchmark.png)
 [GearScore2 Benchmark](https://docs.google.com/spreadsheets/d/1tRMymwR-nn13KqoDOHtIFytayMQhZsvDvcox4lgYlPA/edit?usp=sharing) (Probe from top 40 Naxxramas runs on Warmane)
-
-Classic `GearScore` is fast, but it is also easy to game. It tends to overvalue raw item level, ignores gems and enchants, and does not care whether the item is actually appropriate for the spec wearing it.
+ssic `GearScore` is fast, but it is also easy to game. It tends to overvalue raw item level, ignores gems and enchants, and does not care whether the item is actually appropriate for the spec wearing it.
 
 `GearScore2` is designed to improve that by:
 
@@ -267,3 +265,9 @@ Use the deeper docs when you need exact runtime behavior:
   - runtime constants, spec profiles, cap profiles, and tables
 - [docs/GS2_BALANCE_BENCHMARK.md](docs/GS2_BALANCE_BENCHMARK.md)
   - benchmark workflow, output format, and interpretation
+Score2` usually means “high item level, lower real PvE efficiency”.
+
+If you need the exact formulas, thresholds, or spec tables, use:
+
+- [GS_ALGORITHM.md](docs/GS_ALGORITHM.md)
+- [GS_RUNTIME_TABLES.md](docs/GS_RUNTIME_TABLES.md)
