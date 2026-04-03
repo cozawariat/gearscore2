@@ -386,9 +386,6 @@ function GS_FormatCapSummary(capBreakdown)
 			else
 				label = label .. " " .. tostring(floor((pool.progress or 0) * 100 + 0.5)) .. "%"
 			end
-			if pool.usedLiveBuffs then
-				label = label .. " " .. (GS_CAP_BUFF_MARKER or "*")
-			end
 			parts[#parts + 1] = label .. " (+" .. tostring(pool.bonusGs2 or 0) .. " GS2)"
 		end
 	end

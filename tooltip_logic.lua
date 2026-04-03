@@ -63,8 +63,17 @@ function GS_FormatCapStatDetail(pool)
 		local hitPercent = (pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.SPELL_HIT or 26.231992)
 		return rawValue .. " (" .. GS_FormatNumber(hitPercent) .. "%" .. bonusSuffix .. ")"
 	end
-	if pool.stat == "DEFENSE" or pool.stat == "EXPERTISE" then
-		local detail = rawValue .. " (" .. tostring(floor((pool.current or 0) + 0.5)) .. ")"
+	if pool.stat == "DEFENSE" then
+		local defenseSkill = 400 + floor(((pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.DEFENSE or 4.9185)) + permanentBonus)
+		local detail = rawValue .. " (" .. tostring(defenseSkill) .. ")"
+		if bonusSuffix ~= "" then
+			detail = detail .. " " .. bonusSuffix
+		end
+		return detail
+	end
+	if pool.stat == "EXPERTISE" then
+		local expertisePoints = floor(((pool.rawValue or 0) / (GS_RatingConversions and GS_RatingConversions.EXPERTISE or 8.196)) + permanentBonus)
+		local detail = rawValue .. " (" .. tostring(expertisePoints) .. ")"
 		if bonusSuffix ~= "" then
 			detail = detail .. " " .. bonusSuffix
 		end
@@ -81,11 +90,7 @@ function GS_GetCapLineLabel(pool)
 		return "CAP"
 	end
 	local icon = pool.capped and "|TInterface\\Buttons\\UI-CheckBox-Check:14:14:0:0:64:64:4:60:4:60|t " or ""
-	local label = icon .. GS_GetCapStatAbbrev(pool) .. ": " .. GS_FormatCapStatDetail(pool)
-	if pool.usedLiveBuffs then
-		label = label .. " " .. (GS_CAP_BUFF_MARKER or "*")
-	end
-	return label
+	return icon .. GS_GetCapStatAbbrev(pool) .. ": " .. GS_FormatCapStatDetail(pool)
 end
 
 function GS_AddCharacterCapLines(tooltip, capBreakdown)
@@ -529,7 +534,7 @@ function GS2_HookSetUnit()
 			GS_QueueInspect(unit)
 		end
 		GS_AddScoreLines(GameTooltip, record)
-		if (not GS_Settings or GS_Settings["showCharacterCompare"]) and record.gs2Available then
+		if (not GS_Settings or GS_Settings["showCharacterCompare"]) and record.gs2Available and not UnitIsUnit(unit, "player") then
 			local mine = GS_GetRecord("player")
 			if mine then
 				local diff = mine.gs2 - record.gs2
