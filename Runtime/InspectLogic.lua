@@ -179,7 +179,7 @@ function GS_CollectSnapshot(unit, inspect)
 			end
 		end
 	end
-	return {
+	local snapshot = {
 		name = name,
 		guid = guid,
 		unit = unit,
@@ -194,11 +194,47 @@ function GS_CollectSnapshot(unit, inspect)
 		fingerprint = table.concat(fingerprint, "|"),
 		average = itemCount > 0 and floor(levelTotal / itemCount) or 0,
 	}
+	if specResolved and specKey then
+		return GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, false)
+	end
+	return snapshot
+end
+
+local function GS_ResolveDruidFeralSnapshotSpec(snapshot)
+	if not snapshot or snapshot.classToken ~= "DRUID" or not snapshot.items then
+		return nil, nil
+	end
+	local feralCandidates = { "DRUID_FERAL_DPS", "DRUID_FERAL_TANK" }
+	local bestSpec, bestDiagnostics = nil, nil
+	for index = 1, #feralCandidates do
+		local candidateSpec = feralCandidates[index]
+		local diagnostics = GS_GetSnapshotSpecDiagnostics(snapshot, candidateSpec)
+		if diagnostics then
+			local currentTotal = diagnostics.total or 0
+			local bestTotal = bestDiagnostics and bestDiagnostics.total or 0
+			local currentCompatible = diagnostics.compatibleItems or 0
+			local bestCompatible = bestDiagnostics and bestDiagnostics.compatibleItems or 0
+			local currentMatched = diagnostics.matchedItems or 0
+			local bestMatched = bestDiagnostics and bestDiagnostics.matchedItems or 0
+			if not bestDiagnostics
+				or currentCompatible > bestCompatible
+				or (currentCompatible == bestCompatible and currentMatched > bestMatched)
+				or (currentCompatible == bestCompatible and currentMatched == bestMatched and currentTotal > bestTotal)
+				or (currentCompatible == bestCompatible and currentMatched == bestMatched and currentTotal == bestTotal and candidateSpec == "DRUID_FERAL_TANK") then
+				bestSpec = candidateSpec
+				bestDiagnostics = diagnostics
+			end
+		end
+	end
+	return bestSpec or "DRUID_FERAL_DPS", bestDiagnostics
 end
 
 function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
 	if not snapshot then
 		return nil
+	end
+	if snapshot.classToken == "DRUID" and specKey == "FERAL" then
+		specKey = GS_ResolveDruidFeralSnapshotSpec(snapshot)
 	end
 	snapshot.specKey = specKey
 	snapshot.specResolved = specKey ~= nil and specSource ~= "none"
@@ -307,6 +343,9 @@ local function GS_IsPlausibleOffSpecCandidate(snapshot, diagnostics)
 	if diagnostics.matchedItems < requiredMatchedItems then
 		return false, "too few matched items"
 	end
+	if diagnostics.specKey == "DRUID_FERAL_TANK" then
+		return true, "plausible"
+	end
 	if diagnostics.role == "TANK" or diagnostics.role == "HEALER" or diagnostics.role == "CASTER" then
 		if diagnostics.signatureItems < requiredSignatureItems then
 			return false, "insufficient role signature"
@@ -329,7 +368,7 @@ function GS_GetBestSnapshotSpec(snapshot, excludedSpecKey)
 	if not snapshot or not snapshot.classToken or not snapshot.items then
 		return nil, nil, nil
 	end
-	local candidates = GS_CLASS_SPEC_ORDER[snapshot.classToken]
+	local candidates = GS_GetClassSpecCandidates(snapshot.classToken)
 	if not candidates or #candidates == 0 then
 		return nil, nil, nil
 	end

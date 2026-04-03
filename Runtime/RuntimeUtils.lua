@@ -8,7 +8,11 @@ local State = GS and GS.State or {}
 
 local GS_SPEC_LABEL_OVERRIDES = {
 	BEASTMASTERY = "Beast Mastery",
+	PRIEST_HOLY = "Holy",
 	MAGE_FROST = "Frost",
+	FERAL = "Feral",
+	DRUID_FERAL_DPS = "Feral DPS",
+	DRUID_FERAL_TANK = "Feral Tank",
 	DRUID_RESTORATION = "Restoration",
 }
 

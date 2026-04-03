@@ -6,6 +6,7 @@ local GS = _G.GS2
 local C = GS and GS.Constants or {}
 local Data = GS and GS.Data or {}
 local Tables = Data.Tables or {}
+local GS_CLASS_SPEC_ORDER = Tables.ClassSpecOrder or {}
 local GS_SPEC_PROFILES = Tables.SpecProfiles or {}
 local GS_CLASS_DEFAULTS = Tables.ClassDefaults or {}
 local GS_CAP_PROFILES = Tables.CapProfiles or {}
@@ -29,9 +30,35 @@ local GS_CAP_BONUS_ANCHOR_HIGH_BONUS = C.CAP_BONUS_ANCHOR_HIGH_BONUS or 90
 local GS_CAP_BONUS_MIN = C.CAP_BONUS_MIN or 20
 local GS_CAP_BONUS_MAX = C.CAP_BONUS_MAX or 250
 
+local GS_GENERIC_TREE_PROFILE_DEFAULTS = {
+	FERAL = "DRUID_FERAL_DPS",
+}
+
+function GS_GetClassSpecCandidates(classToken)
+	local candidates = {}
+	local order = GS_CLASS_SPEC_ORDER and GS_CLASS_SPEC_ORDER[classToken] or nil
+	if not order then
+		return candidates
+	end
+	for index = 1, #order do
+		local specKey = order[index]
+		if classToken == "DRUID" and specKey == "FERAL" then
+			candidates[#candidates + 1] = "DRUID_FERAL_DPS"
+			candidates[#candidates + 1] = "DRUID_FERAL_TANK"
+		elseif GS_SPEC_PROFILES[specKey] then
+			candidates[#candidates + 1] = specKey
+		end
+	end
+	return candidates
+end
+
 function GS_GetProfile(classToken, specKey)
-	specKey = (specKey and GS_SPEC_PROFILES[specKey]) and specKey or GS_CLASS_DEFAULTS[classToken]
-	return GS_SPEC_PROFILES[specKey], specKey
+	local resolvedSpecKey = (specKey and GS_SPEC_PROFILES[specKey]) and specKey or nil
+	if not resolvedSpecKey and specKey and GS_GENERIC_TREE_PROFILE_DEFAULTS[specKey] and GS_SPEC_PROFILES[GS_GENERIC_TREE_PROFILE_DEFAULTS[specKey]] then
+		resolvedSpecKey = GS_GENERIC_TREE_PROFILE_DEFAULTS[specKey]
+	end
+	resolvedSpecKey = resolvedSpecKey or GS_CLASS_DEFAULTS[classToken]
+	return GS_SPEC_PROFILES[resolvedSpecKey], resolvedSpecKey
 end
 
 function GS_GetAuraNameFromId(spellId)
@@ -564,12 +591,19 @@ function GS_GetRoleSignatureKind(item)
 	return nil
 end
 
+local function GS_ShouldIgnoreArmorDowngrade(classToken, profile)
+	if classToken ~= "DRUID" or not profile then
+		return false
+	end
+	return profile.role == "CASTER" or profile.role == "HEALER"
+end
+
 function GS_IsItemCompatible(item, classToken, profile)
 	if not item or not profile or item.slot == 0 then return false end
 	local stats = item.stats or {}
 	local roleSignature = GS_GetRoleSignatureKind(item)
 	if GS_ARMOR_CLASS_ORDER[profile.armor] and item.armorRank and item.slot ~= 15 and item.slot ~= 2 and item.slot ~= 11 and item.slot ~= 13 then
-		if item.armorRank < GS_ARMOR_CLASS_ORDER[profile.armor] then return false end
+		if item.armorRank < GS_ARMOR_CLASS_ORDER[profile.armor] and not GS_ShouldIgnoreArmorDowngrade(classToken, profile) then return false end
 	end
 	if item.equipLoc == "INVTYPE_SHIELD" and not profile.shield then return false end
 	if item.equipLoc == "INVTYPE_WEAPONOFFHAND" and not profile.dualwield then return false end

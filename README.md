@@ -283,3 +283,5 @@ Use the deeper docs when you need exact runtime behavior:
   - runtime constants, spec profiles, cap profiles, and tables
 - [docs/GS2_BALANCE_BENCHMARK.md](docs/GS2_BALANCE_BENCHMARK.md)
   - benchmark workflow, output format, and interpretation
+- [docs/GS_WOWHEAD_PROFILE_AUDIT.md](docs/GS_WOWHEAD_PROFILE_AUDIT.md)
+  - curated Wowhead WotLK PvE archetype audit and profile refactor notes

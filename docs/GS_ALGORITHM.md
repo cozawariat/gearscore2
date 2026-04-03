@@ -304,7 +304,8 @@ If the result is negative, it is clamped to `0`.
 `GS_GetProfile(classToken, specKey)` resolves the active profile as:
 
 1. use `specKey` if it exists in `GS.Data.Tables.SpecProfiles`
-2. otherwise use `GS.Data.Tables.ClassDefaults[classToken]`
+2. otherwise resolve any known tree alias to its default scoring profile
+3. otherwise use `GS.Data.Tables.ClassDefaults[classToken]`
 
 ### 6.2 Inspect-Side Spec Detection
 
@@ -313,6 +314,7 @@ For the local player, `GS_DetectSpec(unit, classToken, inspect)`:
 1. reads 3 talent tabs through `GetTalentTabInfo(tab, inspect, false)`
 2. chooses the tab with the highest point count once point values are available
 3. maps the winning tab to `GS.Data.Tables.ClassSpecOrder[classToken][tab]`
+4. if the winning tab is the druid feral tree, runtime scoring resolves it into `DRUID_FERAL_DPS` or `DRUID_FERAL_TANK` from gear-fit diagnostics before final scoring
 
 For inspected non-player units, the runtime prefers inspect talent data first.
 
@@ -334,6 +336,7 @@ If the inspect snapshot itself is still incomplete, the target remains in `Scann
 - profile is missing
 - item slot is `0`
 - item armor class is below the target armor class for most armor slots
+- exception: druid caster/healer specs do not hard-reject cloth armor for `GS2`
 - item is a shield and the profile does not use shields
 - item is an off-hand weapon and the profile does not use dual wield
 - item is a holdable and the profile is neither caster nor healer

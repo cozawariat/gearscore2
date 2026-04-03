@@ -224,6 +224,7 @@ Each row lists:
 | `COMBAT` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 1.1, AP 0.45, HIT 0.7, HASTE 0.42, CRIT 0.58, ARP 0.52, EXPERTISE 0.55` | `AGI 2.0, AP 0.9, HASTE 0.7, CRIT 0.8, RESILIENCE 2.2` |
 | `SUBTLETY` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 2.2, AP 1.0, HIT 1.5, HASTE 0.8, CRIT 1.2, ARP 1.0, EXPERTISE 1.1` | `AGI 2.3, AP 1.0, CRIT 1.0, RESILIENCE 2.4` |
 | `DISCIPLINE` | `HEALER` | `CLOTH` | No | No | No | `INT 2.0, SP 2.3, CRIT 1.2, HASTE 1.1, MP5 0.9, SPI 0.65` | `INT 2.1, SP 2.2, CRIT 0.9, HASTE 0.8, RESILIENCE 2.4` |
+| `PRIEST_HOLY` | `HEALER` | `CLOTH` | No | No | No | `INT 2.35, SP 3.05, HASTE 2.2, CRIT 1.75, SPI 1.9, MP5 1.25` | `INT 2.0, SP 2.2, HASTE 0.9, CRIT 0.8, SPI 0.9, RESILIENCE 2.4` |
 | `SHADOW` | `CASTER` | `CLOTH` | No | No | No | `INT 1.1, SP 1.8, HIT 1.0, HASTE 0.8, CRIT 0.6, SPI 0.45` | `INT 1.6, SP 2.3, HASTE 1.0, CRIT 0.8, RESILIENCE 2.3` |
 | `BLOOD` | `TANK` | `PLATE` | No | No | No | `STA 2.95, STR 1.8, DEFENSE 3.9, DODGE 3.1, PARRY 3.1, HIT 1.5, EXPERTISE 1.75` | `STR 1.0, RESILIENCE 2.0` |
 | `FROST` | `MELEE` | `PLATE` | No | No | Yes | `STR 2.5, HIT 1.7, HASTE 1.2, CRIT 1.2, EXPERTISE 1.3, AP 0.9` | `STR 2.2, CRIT 0.9, RESILIENCE 2.2` |
@@ -238,8 +239,15 @@ Each row lists:
 | `DEMONOLOGY` | `CASTER` | `CLOTH` | No | No | No | `INT 1.7, SP 2.7, HIT 1.7, HASTE 1.4, CRIT 1.1, SPI 0.4` | `INT 1.6, SP 2.2, HASTE 0.9, RESILIENCE 2.2` |
 | `DESTRUCTION` | `CASTER` | `CLOTH` | No | No | No | `INT 2.45, SP 3.55, HIT 2.25, HASTE 2.1, CRIT 1.75, SPI 0.65` | `INT 1.6, SP 2.3, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
 | `BALANCE` | `CASTER` | `LEATHER` | No | No | No | `INT 2.95, SP 3.85, HIT 2.6, HASTE 2.45, CRIT 1.95, SPI 1.85` | `INT 1.7, SP 2.2, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
-| `FERAL` | `MELEE` | `LEATHER` | No | No | No | `AGI 2.5, AP 1.1, HIT 1.6, HASTE 1.0, CRIT 1.3, ARP 1.5, EXPERTISE 1.2` | `AGI 2.2, AP 0.9, RESILIENCE 2.3` |
+| `DRUID_FERAL_DPS` | `MELEE` | `LEATHER` | No | No | No | `AGI 2.5, AP 1.1, HIT 1.6, HASTE 1.0, CRIT 1.3, ARP 1.5, EXPERTISE 1.2` | `AGI 2.2, AP 0.9, RESILIENCE 2.3` |
+| `DRUID_FERAL_TANK` | `TANK` | `LEATHER` | No | No | No | `STA 2.9, AGI 2.2, DODGE 1.9, DEFENSE 0.8, HIT 1.2, EXPERTISE 1.35, AP 0.45, CRIT 0.55` | `STA 1.6, AGI 1.8, DODGE 1.0, RESILIENCE 2.3` |
 | `DRUID_RESTORATION` | `HEALER` | `LEATHER` | No | No | No | `INT 4.1, SP 4.2, HASTE 3.15, CRIT 1.65, MP5 2.0, SPI 2.25` | `INT 2.0, SP 2.2, HASTE 0.9, SPI 0.7, RESILIENCE 2.4` |
+
+Notes:
+
+- `PALADIN` still uses `HOLY` as its spec key.
+- `PRIEST` uses `PRIEST_HOLY` to avoid colliding with Paladin `HOLY`.
+- `DRUID` still detects the feral talent tree as `FERAL`, but runtime scoring resolves that tree into `DRUID_FERAL_DPS` or `DRUID_FERAL_TANK` before final scoring.
 
 ## 8. Enchant Data Runtime Shape
 
@@ -270,7 +278,7 @@ Resolved thresholds still come from the pool data below, but final scoring uses 
 | `RETRIBUTION` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
 | `FROST` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
 | `UNHOLY` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
-| `FERAL` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `DRUID_FERAL_DPS` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
 
 ### 9.2 Tanks
 
@@ -278,6 +286,7 @@ Resolved thresholds still come from the pool data below, but final scoring uses 
 |---|---|
 | `PROTECTION` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
 | `BLOOD` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
+| `DRUID_FERAL_TANK` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
 
 ### 9.3 Rogues / Enhancement Hit Progress Targets
 

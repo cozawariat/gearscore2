@@ -381,7 +381,7 @@ Tables.ClassSpecOrder = {
 	PALADIN = { "HOLY", "PROTECTION", "RETRIBUTION" },
 	HUNTER = { "BEASTMASTERY", "MARKSMANSHIP", "SURVIVAL" },
 	ROGUE = { "ASSASSINATION", "COMBAT", "SUBTLETY" },
-	PRIEST = { "DISCIPLINE", "HOLY", "SHADOW" },
+	PRIEST = { "DISCIPLINE", "PRIEST_HOLY", "SHADOW" },
 	DEATHKNIGHT = { "BLOOD", "FROST", "UNHOLY" },
 	SHAMAN = { "ELEMENTAL", "ENHANCEMENT", "RESTORATION" },
 	MAGE = { "ARCANE", "FIRE", "MAGE_FROST" },
@@ -402,6 +402,7 @@ Tables.SpecProfiles = {
 	COMBAT = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, pve = { AGI = 1.1, AP = 0.45, HIT = 0.7, HASTE = 0.42, CRIT = 0.58, ARP = 0.52, EXPERTISE = 0.55 }, pvp = { AGI = 2.0, AP = 0.9, HASTE = 0.7, CRIT = 0.8, RESILIENCE = 2.2 } },
 	SUBTLETY = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, pve = { AGI = 2.2, AP = 1.0, HIT = 1.5, HASTE = 0.8, CRIT = 1.2, ARP = 1.0, EXPERTISE = 1.1 }, pvp = { AGI = 2.3, AP = 1.0, CRIT = 1.0, RESILIENCE = 2.4 } },
 	DISCIPLINE = { role = "HEALER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 2.0, SP = 2.3, CRIT = 1.2, HASTE = 1.1, MP5 = 0.9, SPI = 0.65 }, pvp = { INT = 2.1, SP = 2.2, CRIT = 0.9, HASTE = 0.8, RESILIENCE = 2.4 } },
+	PRIEST_HOLY = { role = "HEALER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 2.35, SP = 3.05, HASTE = 2.2, CRIT = 1.75, SPI = 1.9, MP5 = 1.25 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, CRIT = 0.8, SPI = 0.9, RESILIENCE = 2.4 } },
 	SHADOW = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.1, SP = 1.8, HIT = 1.0, HASTE = 0.8, CRIT = 0.6, SPI = 0.45 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, CRIT = 0.8, RESILIENCE = 2.3 } },
 	BLOOD = { role = "TANK", armor = "PLATE", shield = false, ranged = false, pve = { STA = 2.95, STR = 1.8, DEFENSE = 3.9, DODGE = 3.1, PARRY = 3.1, HIT = 1.5, EXPERTISE = 1.75 }, pvp = { STR = 1.0, RESILIENCE = 2.0 } },
 	FROST = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, pve = { STR = 2.5, HIT = 1.7, HASTE = 1.2, CRIT = 1.2, EXPERTISE = 1.3, AP = 0.9 }, pvp = { STR = 2.2, CRIT = 0.9, RESILIENCE = 2.2 } },
@@ -416,7 +417,8 @@ Tables.SpecProfiles = {
 	DEMONOLOGY = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.7, SP = 2.7, HIT = 1.7, HASTE = 1.4, CRIT = 1.1, SPI = 0.4 }, pvp = { INT = 1.6, SP = 2.2, HASTE = 0.9, RESILIENCE = 2.2 } },
 	DESTRUCTION = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 2.45, SP = 3.55, HIT = 2.25, HASTE = 2.1, CRIT = 1.75, SPI = 0.65 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
 	BALANCE = { role = "CASTER", armor = "LEATHER", shield = false, ranged = false, pve = { INT = 2.95, SP = 3.85, HIT = 2.6, HASTE = 2.45, CRIT = 1.95, SPI = 1.85 }, pvp = { INT = 1.7, SP = 2.2, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
-	FERAL = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, pve = { AGI = 2.5, AP = 1.1, HIT = 1.6, HASTE = 1.0, CRIT = 1.3, ARP = 1.5, EXPERTISE = 1.2 }, pvp = { AGI = 2.2, AP = 0.9, RESILIENCE = 2.3 } },
+	DRUID_FERAL_DPS = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, pve = { AGI = 2.5, AP = 1.1, HIT = 1.6, HASTE = 1.0, CRIT = 1.3, ARP = 1.5, EXPERTISE = 1.2 }, pvp = { AGI = 2.2, AP = 0.9, RESILIENCE = 2.3 } },
+	DRUID_FERAL_TANK = { role = "TANK", armor = "LEATHER", shield = false, ranged = false, pve = { STA = 2.9, AGI = 2.2, DODGE = 1.9, DEFENSE = 0.8, HIT = 1.2, EXPERTISE = 1.35, AP = 0.45, CRIT = 0.55 }, pvp = { STA = 1.6, AGI = 1.8, DODGE = 1.0, RESILIENCE = 2.3 } },
 	DRUID_RESTORATION = { role = "HEALER", armor = "LEATHER", shield = false, ranged = false, pve = { INT = 4.1, SP = 4.2, HASTE = 3.15, CRIT = 1.65, MP5 = 2.0, SPI = 2.25 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, SPI = 0.7, RESILIENCE = 2.4 } },
 }
 
@@ -638,12 +640,19 @@ Tables.CapProfiles = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 4, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	FERAL = {
+	DRUID_FERAL_DPS = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
+		},
+	},
+	DRUID_FERAL_TANK = {
+		order = { "HIT", "EXPERTISE" },
+		pools = {
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
+			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
 }
