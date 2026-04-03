@@ -130,7 +130,11 @@ function GS_AddScoreLines(tooltip, record)
 	local showCharacterSpec = not GS_Settings or GS_Settings["showCharacterSpec"]
 	local specText = record and record.scanStatusText or "Spec unknown"
 	if record and record.specResolved then
-		specText = record.scanStatusText or record.specLabel or specText
+		if record.offSpec and record.specLabel then
+			specText = record.specLabel
+		else
+			specText = record.scanStatusText or record.specLabel or specText
+		end
 	elseif record and not record.scanExpired then
 		specText = "Scanning..."
 	end
@@ -144,8 +148,16 @@ function GS_AddScoreLines(tooltip, record)
 	local showCharacterCapSummary = not GS_Settings or GS_Settings["showCharacterCapSummary"]
 	if record.gs2Available and record.gs2 ~= nil then
 		if showCharacterGS2 then
-			local r, g, b = GS2_GetQuality(record.gs2)
-			tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)
+			if record.offSpec and record.specLabel and record.offSpecBetterSpecLabel and record.offSpecBetterGs2 ~= nil then
+				local activeR, activeG, activeB = GS2_GetQuality(record.gs2)
+				local offR, offG, offB = GS2_GetQuality(record.offSpecBetterGs2)
+				tooltip:AddLine("GearScore2", 0.85, 0.9, 1)
+				tooltip:AddDoubleLine("  " .. tostring(record.specLabel), tostring(record.gs2), activeR, activeG, activeB, activeR, activeG, activeB)
+				tooltip:AddDoubleLine("  " .. tostring(record.offSpecBetterSpecLabel), tostring(record.offSpecBetterGs2), offR, offG, offB, offR, offG, offB)
+			else
+				local r, g, b = GS2_GetQuality(record.gs2)
+				tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)
+			end
 		end
 	end
 	local r, g, b
