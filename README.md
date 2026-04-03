@@ -46,6 +46,7 @@ In practice, `GearScore2` is meant to be the score you use when you want a more 
 
 [![GearScore2 Benchmark](docs/benchmark.png "GearScore2 Benchmark")](docs/benchmark.png)
 [GearScore2 Benchmark](https://docs.google.com/spreadsheets/d/1tRMymwR-nn13KqoDOHtIFytayMQhZsvDvcox4lgYlPA/edit?usp=sharing) (Probe from top 40 Naxxramas runs on Warmane)
+
 Classic `GearScore` is fast, but it is also easy to game. It tends to overvalue raw item level, ignores gems and enchants, and does not care whether the item is actually appropriate for the spec wearing it.
 
 `GearScore2` is designed to improve that by:
