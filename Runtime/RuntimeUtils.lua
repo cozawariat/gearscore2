@@ -7,13 +7,23 @@ local C = GS and GS.Constants or {}
 local State = GS and GS.State or {}
 
 local GS_SPEC_LABEL_OVERRIDES = {
-	BEASTMASTERY = "Beast Mastery",
-	PRIEST_HOLY = "Holy",
-	MAGE_FROST = "Frost",
+	HUNTER_BEASTMASTERY = "Beast Mastery",
 	FERAL = "Feral",
 	DRUID_FERAL_DPS = "Feral DPS",
 	DRUID_FERAL_TANK = "Feral Tank",
-	DRUID_RESTORATION = "Restoration",
+}
+
+local GS_CLASS_PREFIXES = {
+	WARRIOR = true,
+	PALADIN = true,
+	HUNTER = true,
+	ROGUE = true,
+	PRIEST = true,
+	DEATHKNIGHT = true,
+	SHAMAN = true,
+	MAGE = true,
+	WARLOCK = true,
+	DRUID = true,
 }
 
 function GS_FormatNumber(value)
@@ -31,8 +41,13 @@ function GS_GetSpecLabel(specKey)
 	if GS_SPEC_LABEL_OVERRIDES[specKey] then
 		return GS_SPEC_LABEL_OVERRIDES[specKey]
 	end
+	local labelKey = specKey
+	local prefix, remainder = string.match(specKey, "^([A-Z]+)_(.+)$")
+	if prefix and remainder and GS_CLASS_PREFIXES[prefix] then
+		labelKey = remainder
+	end
 	local words = {}
-	for word in string.gmatch(string.lower(string.gsub(specKey, "_", " ")), "%S+") do
+	for word in string.gmatch(string.lower(string.gsub(labelKey, "_", " ")), "%S+") do
 		words[#words + 1] = string.upper(string.sub(word, 1, 1)) .. string.sub(word, 2)
 	end
 	return #words > 0 and table.concat(words, " ") or specKey

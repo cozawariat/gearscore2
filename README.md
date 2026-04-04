@@ -51,11 +51,13 @@ Classic `GearScore` is fast, but it is also easy to game. It tends to overvalue 
 
 `GearScore2` is designed to improve that by:
 
-- rejecting obviously wrong off-role or off-spec gear,
+- heavily penalizing obviously wrong off-role or off-spec gear instead of rewarding it like a normal match,
 - weighting stats per specialization,
 - rewarding useful gems and enchants,
 - reducing PvE value of `Resilience`,
 - adding a character-level cap layer for important PvE stats.
+
+Internally, runtime scoring now uses canonical `CLASS_SPEC` profile keys such as `PALADIN_PROTECTION` or `MAGE_ARCANE`, with only narrow input adapters where external text labels are not already canonical.
 
 The result is not meant to be a universal standard. It is an evolving system, but already much closer to real PvE gear quality than a pure item-level score.
 
@@ -125,16 +127,16 @@ Each item still begins with the old legacy base derived from:
 
 Higher-ilvl gear still matters. It is just no longer the only thing that matters.
 
-### 3.2 Off-spec and obviously wrong gear is rejected
+### 3.2 Off-spec and obviously wrong gear is heavily penalized
 
-Items can be ignored by `GearScore2` if they are clearly wrong for the class or spec, for example:
+Items are scored much more weakly by `GearScore2` if they are clearly wrong for the class or spec, for example:
 
 - lower-than-expected armor class,
 - wrong role category,
 - caster-style item on a melee profile,
 - melee-style item on a caster profile.
 
-This is one of the biggest differences from `Legacy GearScore`.
+The important rule is that an incompatible item is not dropped to `0`. It keeps its legacy base, but loses most of the spec-aware PvE bonus.
 
 ### 3.3 Stats are weighted per spec
 
@@ -228,7 +230,7 @@ Temporary buffs, elixirs, food, party auras, and target debuffs may still appear
 ### 4.3 Important runtime semantics
 
 - overcap does not reduce cap progress below `100%`
-- `ASSASSINATION`, `COMBAT`, and `SUBTLETY` track separate `HIT` and `SPELL_HIT` pools
+- `ROGUE_ASSASSINATION`, `ROGUE_COMBAT`, and `ROGUE_SUBTLETY` track separate `HIT` and `SPELL_HIT` pools
 - caster spell-hit lines are presented as `SPHIT` in the UI
 - cap logic is used only for final character `GearScore2`
 
@@ -241,7 +243,8 @@ For inspected targets, the addon now prefers inspect talent data first and only 
 - while item data is still loading, character and item tooltips show `Scanning...`
 - if inspect talents resolve in time, the active spec comes from the talent tab with the highest point count
 - if inspect talents still do not resolve in time, the addon infers the most likely specialization from the full gear setup and marks the result as `[INFERRED]`
-- if the active spec resolves from talents but a plausible alternate inferred spec scores more than `5%` higher, the `Spec` line is marked as off-spec
+- if the active spec resolves from talents, the tooltip keeps that active result visible and also shows the best plausible inferred comparison result when one exists
+- if the inferred result leads the active result by more than `5%`, the `Spec` line is also marked as off-spec
 
 This was introduced not only for responsiveness, but also because inspected talent API data proved unreliable during debugging and did not always return usable specialization information in time.
 

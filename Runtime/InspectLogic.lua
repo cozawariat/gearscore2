@@ -233,7 +233,7 @@ function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
 	if not snapshot then
 		return nil
 	end
-	if snapshot.classToken == "DRUID" and specKey == "FERAL" then
+	if snapshot.classToken == "DRUID" and (specKey == "FERAL" or specKey == "DRUID_FERAL_DPS") then
 		specKey = GS_ResolveDruidFeralSnapshotSpec(snapshot)
 	end
 	snapshot.specKey = specKey
@@ -244,7 +244,11 @@ function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
 end
 
 function GS_GetSnapshotSpecScore(snapshot, specKey)
-	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not GS_SPEC_PROFILES[specKey] then
+	local profile, resolvedSpecKey = nil, specKey
+	if snapshot and snapshot.classToken and specKey then
+		profile, resolvedSpecKey = GS_GetProfile(snapshot.classToken, specKey)
+	end
+	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not profile then
 		return nil
 	end
 	local total = 0
@@ -256,7 +260,7 @@ function GS_GetSnapshotSpecScore(snapshot, specKey)
 		end
 		total = total + itemGS2
 	end
-	local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = specKey, raceToken = snapshot.raceToken, items = snapshot.items }, total)
+	local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, classToken = snapshot.classToken, specKey = resolvedSpecKey, raceToken = snapshot.raceToken, items = snapshot.items }, total)
 	return total + (capAdjustedGs2 or 0)
 end
 
@@ -275,24 +279,27 @@ local function GS_GetCandidateSignatureFloor(role, itemCount)
 end
 
 function GS_GetSnapshotSpecDiagnostics(snapshot, specKey)
-	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not GS_SPEC_PROFILES[specKey] then
+	local profile, resolvedSpecKey = nil, specKey
+	if snapshot and snapshot.classToken and specKey then
+		profile, resolvedSpecKey = GS_GetProfile(snapshot.classToken, specKey)
+	end
+	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not profile then
 		return nil
 	end
-	local profile = GS_SPEC_PROFILES[specKey]
 	local compatibleItems, matchedItems, signatureItems = 0, 0, 0
 	local positiveSlots, signatureSlots = {}, {}
 	local totalBeforeCaps, legacyTotal = 0, 0
 	for itemIndex = 1, #snapshot.items do
 		local entry = snapshot.items[itemIndex]
 		local item = entry.item
+		local itemGS2 = GS_ScoreItem(item, snapshot.classToken, specKey)
+		if itemGS2 == nil then
+			return nil
+		end
+		legacyTotal = legacyTotal + (entry.legacy or 0)
+		totalBeforeCaps = totalBeforeCaps + itemGS2
 		if GS_IsItemCompatible(item, snapshot.classToken, profile) then
-			local itemGS2 = GS_ScoreItem(item, snapshot.classToken, specKey)
-			if itemGS2 == nil then
-				return nil
-			end
 			compatibleItems = compatibleItems + 1
-			legacyTotal = legacyTotal + (entry.legacy or 0)
-			totalBeforeCaps = totalBeforeCaps + itemGS2
 
 			local rawScore = GS_ScoreStats(item and item.stats, profile.pve)
 			local gemScore = 0
@@ -312,10 +319,10 @@ function GS_GetSnapshotSpecDiagnostics(snapshot, specKey)
 			end
 		end
 	end
-	local capBonus = GS_ApplyCharacterCaps({ unit = snapshot.unit, specKey = specKey, raceToken = snapshot.raceToken, items = snapshot.items }, totalBeforeCaps) or 0
+	local capBonus = GS_ApplyCharacterCaps({ unit = snapshot.unit, classToken = snapshot.classToken, specKey = resolvedSpecKey, raceToken = snapshot.raceToken, items = snapshot.items }, totalBeforeCaps) or 0
 	return {
-		specKey = specKey,
-		specLabel = GS_GetSpecLabel(specKey),
+		specKey = resolvedSpecKey,
+		specLabel = GS_GetSpecLabel(resolvedSpecKey),
 		role = profile.role,
 		itemCount = #snapshot.items,
 		compatibleItems = compatibleItems,
@@ -479,12 +486,14 @@ function GS_BuildRecord(snapshot)
 				GS_DebugInspect("offspec alt positive slots=" .. table.concat(betterDiagnostics.positiveSlots, ",") .. " signature slots=" .. table.concat(betterDiagnostics.signatureSlots, ","))
 			end
 		end
-		if betterSpecKey and betterGs2 and GS_IsMeaningfulOffSpecUpgrade(gs2, betterGs2) then
-			offSpec = true
+		if betterSpecKey and betterGs2 then
 			offSpecBetterSpecKey = betterSpecKey
 			offSpecBetterSpecLabel = GS_GetSpecLabel(betterSpecKey)
 			offSpecBetterGs2 = floor(betterGs2)
 			offSpecReason = GS_GetOffSpecReason(activeDiagnostics, betterDiagnostics)
+			if GS_IsMeaningfulOffSpecUpgrade(gs2, betterGs2) then
+				offSpec = true
+			end
 		end
 	end
 	if snapshot.specResolved then

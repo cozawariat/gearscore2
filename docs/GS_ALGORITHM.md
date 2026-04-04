@@ -303,9 +303,12 @@ If the result is negative, it is clamped to `0`.
 
 `GS_GetProfile(classToken, specKey)` resolves the active profile as:
 
-1. use `specKey` if it exists in `GS.Data.Tables.SpecProfiles`
-2. otherwise resolve any known tree alias to its default scoring profile
+1. use `specKey` if it already exists in `GS.Data.Tables.SpecProfiles`
+2. otherwise resolve any known shared tree alias such as druid `FERAL`
 3. otherwise use `GS.Data.Tables.ClassDefaults[classToken]`
+
+The runtime source of truth is now always a canonical `CLASS_SPEC` key such as `WARRIOR_PROTECTION` or `PALADIN_PROTECTION`.
+Legacy short keys are no longer part of runtime profile resolution.
 
 ### 6.2 Inspect-Side Spec Detection
 
@@ -322,7 +325,7 @@ For inspected non-player units, the runtime prefers inspect talent data first.
 - it attempts to resolve the active spec from the talent tab with the highest point count
 - if inspect talent data is still unusable after a short wait window, it evaluates all candidate specs for that class against the observed gear
 - it selects the highest-scoring fallback candidate and marks the result as inferred
-- if talent-resolved active spec remains lower-scoring than the best plausible alternate inferred spec, the record is marked as off-spec while scoring still stays on the active spec
+- if talent-resolved active spec remains lower-scoring than the best plausible alternate inferred spec, the addon keeps the active score visible but also surfaces the inferred score for comparison
 - "plausible" means the alternate spec must pass whole-snapshot compatibility/signature checks before it can participate in off-spec comparison
 - the marker currently requires the alternate inferred spec to lead by more than `5%`
 
@@ -336,7 +339,9 @@ If the inspect snapshot itself is still incomplete, the target remains in `Scann
 - profile is missing
 - item slot is `0`
 - item armor class is below the target armor class for most armor slots
-- exception: druid caster/healer specs do not hard-reject cloth armor for `GS2`
+- exceptions:
+  - druid caster/healer specs do not hard-reject cloth armor for `GS2`
+  - any profile with `allowLowerArmor = true` also skips that hard reject
 - item is a shield and the profile does not use shields
 - item is an off-hand weapon and the profile does not use dual wield
 - item is a holdable and the profile is neither caster nor healer
@@ -344,6 +349,7 @@ If the inspect snapshot itself is still incomplete, the target remains in `Scann
 - hunter is trying to use shield or holdable
 - a caster/healer item is treated as invalid when it has `STR` but no `SP` and no `INT`
 - a melee/ranged item is treated as invalid when it has `SP` but no `STR`, `AGI`, `AP`, or `RAP`
+- exception: profiles with `hybridCasterItems = true` do not hard-reject those hybrid spellpower items
 
 Helper-slot compatibility is class-aware:
 
@@ -354,9 +360,9 @@ Helper-slot compatibility is class-aware:
 
 If compatibility fails:
 
-- `GearScore2 = 0`
-- `PvP GearScore = 0`
-- explain tooltip emits an offspec/incompatible-item flag
+- the item is not discarded to `0`
+- incompatible items keep their `Legacy GearScore` base and receive a strong penalty only on the spec-aware `GS2` bonus bucket
+- explain tooltip emits an offspec/incompatible-item penalty flag
 
 `Legacy GearScore` is not filtered by this compatibility logic.
 
@@ -390,7 +396,7 @@ pvpStatBonus = floor(pvpStatRaw * GS_GS2_STAT_SCALE)
 Applied as:
 
 ```text
-pveScore = pveScore + pveStatBonus
+pveBonusBucket = pveBonusBucket + pveStatBonus
 pvpScore = pvpScore + pvpStatBonus
 ```
 
@@ -456,7 +462,25 @@ If the slot is enchantable but no enchant exists:
 
 ### 8.5 Pre-Multiplier Base
 
-After base stats, gems, and enchant:
+After base stats, gems, and enchant, runtime applies the profile's `gs2Scale` to the summed PvE bonus bucket only:
+
+```text
+compatibilityPenaltyScale = 1 for compatible items, otherwise GS_INCOMPATIBLE_PVE_BONUS_SCALE
+pveScaledBonus = floor(pveBonusBucket * profile.gs2Scale * compatibilityPenaltyScale) only if pveBonusBucket > 0 else 0
+
+pveScore = item.legacyBase + pveScaledBonus
+pvpScore = item.legacyBase + pvpStatBonus + pvpGemBonus + pvpEnchantBonus
+```
+
+This keeps:
+
+- `Legacy GearScore` unchanged
+- `PvP GearScore` unchanged
+- PvE stat priorities intact inside each spec
+
+The scale is a cross-spec normalization knob, not a stat-priority table.
+
+After that:
 
 ```text
 pveBaseScore = max(0, pveScore)
@@ -640,7 +664,7 @@ Important runtime details:
 
 - overcap never reduces pool progress below `100%`
 - the cap layer no longer uses overflow penalties to reduce the final bonus
-- `ASSASSINATION`, `COMBAT`, and `SUBTLETY` now track two separate hit pools: `HIT` for the `8%` melee special cap and `SPELL_HIT` for the `17%` poison/spell cap
+- `ROGUE_ASSASSINATION`, `ROGUE_COMBAT`, and `ROGUE_SUBTLETY` now track two separate hit pools: `HIT` for the `8%` melee special cap and `SPELL_HIT` for the `17%` poison/spell cap
 - tank `EXPERTISE` still uses `26` as the progress target even though the pool table also contains a secondary `56` threshold
 
 ### 9.7 Threshold Resolution
@@ -814,7 +838,7 @@ Normalized item:
 ```text
 legacyBase = 100
 item.stats = { AGI = 40, HIT = 20 }
-profile = ASSASSINATION
+profile = ROGUE_ASSASSINATION
 GS_GEM_SCALE = 0.35
 GS_ENCHANT_SCALE = 0.35
 resilience = 0
@@ -866,7 +890,7 @@ Gem:
 
 ```text
 gemStats = { INT = 16 }
-profile = ASSASSINATION
+profile = ROGUE_ASSASSINATION
 ```
 
 PvE gem raw:
@@ -947,13 +971,13 @@ GearScore2 = floor(160 * 0.85) = 136
 PvP GearScore = floor(150 * 1.20) = 180
 ```
 
-### 13.7 Example G: Rejected Item
+### 13.7 Example G: Incompatible Item With Penalty
 
 If `GS_IsItemCompatible(...)` returns `false`:
 
 ```text
-GearScore2 = 0
-PvP GearScore = 0
+GearScore2 = legacyBase + heavily penalized PvE bonus bucket
+PvP GearScore = unchanged PvP item algorithm
 Legacy GearScore = unchanged legacy base logic
 ```
 

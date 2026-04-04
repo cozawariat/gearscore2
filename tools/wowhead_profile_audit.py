@@ -14,7 +14,7 @@ MANIFEST_PATH = REPO_ROOT / "tools" / "data" / "wowhead_wotlk_pve_guides.json"
 OUTPUT_DIR = REPO_ROOT / "output"
 
 SUPPORT_NOTES: dict[str, dict[str, Any]] = {
-    "BALANCE": {
+    "DRUID_BALANCE": {
         "support_status": "exact_match",
         "support_path": "direct_profile",
         "notes": "Audit keeps Balance as a direct profile. Wowhead gear lists justify cloth tolerance on druid caster/healer profiles instead of hard-rejecting cloth."
@@ -44,7 +44,8 @@ SUPPORT_NOTES: dict[str, dict[str, Any]] = {
 
 def build_audit_rows() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    tables = load_runtime_tables(REPO_ROOT)["Tables"]
+    runtime_tables = load_runtime_tables(REPO_ROOT)
+    tables = runtime_tables["Tables"]
     phases = manifest["phases"]
     rows: list[dict[str, Any]] = []
     summary = {
@@ -57,7 +58,7 @@ def build_audit_rows() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         class_token = guide["class"]
         archetype = guide["build_archetype"]
         spec_profiles = tables["SpecProfiles"]
-        class_candidates = get_class_spec_candidates(class_token, {"GS_ClassSpecOrder": tables["ClassSpecOrder"], "GS_SpecProfiles": spec_profiles})
+        class_candidates = get_class_spec_candidates(class_token, runtime_tables)
         profile_present = archetype in spec_profiles
         note = SUPPORT_NOTES.get(archetype, {})
         support_status = note.get("support_status")
@@ -70,7 +71,7 @@ def build_audit_rows() -> tuple[list[dict[str, Any]], dict[str, Any]]:
             mismatch_categories.append("missing_profile")
         if support_path == "druid_feral_tree_split":
             mismatch_categories.append("spec_resolution_mismatch")
-        if archetype in {"BALANCE", "DRUID_RESTORATION"}:
+        if archetype in {"DRUID_BALANCE", "DRUID_RESTORATION"}:
             mismatch_categories.append("compatibility_mismatch")
 
         summary["profile_status_counts"][support_status] = summary["profile_status_counts"].get(support_status, 0) + 1

@@ -10,10 +10,29 @@ The repeatable machine-readable exports are produced by:
 python tools\wowhead_profile_audit.py
 ```
 
+This audit is intentionally separate from the scored synthetic guide benchmark:
+
+```powershell
+python tools\wowhead_bis_benchmark.py
+```
+
 Generated artifacts:
 
 - `output/wowhead_profile_audit.csv`
 - `output/wowhead_profile_audit.json`
+
+The audit answers:
+
+- do our runtime profile keys cover Wowhead's supported PvE archetypes?
+- do role and spec splits line up with the guide taxonomy?
+
+It does not answer:
+
+- what a full guide-listed BiS set scores as in `GS2`
+- how strong one Phase 1 synthetic guide build is versus another
+
+Those scored comparisons now live in `output/wowhead_bis_phase1_benchmark.csv` and `output/wowhead_bis_phase1_benchmark.json`.
+That separate benchmark now uses the first embedded Wowhead `gear-planner` build on each guide page as the authoritative synthetic loadout.
 
 ## Current Findings
 

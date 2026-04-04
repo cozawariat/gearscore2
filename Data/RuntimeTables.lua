@@ -372,55 +372,56 @@ GS.Data.Enchants = GS.Data.Enchants or {}
 GS.Data.Enchants.Values = GS.Data.Enchants.Values or {}
 
 Tables.ClassDefaults = {
-	WARRIOR = "FURY", PALADIN = "RETRIBUTION", HUNTER = "MARKSMANSHIP", ROGUE = "COMBAT",
-	PRIEST = "SHADOW", DEATHKNIGHT = "UNHOLY", SHAMAN = "ELEMENTAL", MAGE = "ARCANE",
-	WARLOCK = "AFFLICTION", DRUID = "BALANCE",
+	WARRIOR = "WARRIOR_FURY", PALADIN = "PALADIN_RETRIBUTION", HUNTER = "HUNTER_MARKSMANSHIP", ROGUE = "ROGUE_COMBAT",
+	PRIEST = "PRIEST_SHADOW", DEATHKNIGHT = "DEATHKNIGHT_UNHOLY", SHAMAN = "SHAMAN_ELEMENTAL", MAGE = "MAGE_ARCANE",
+	WARLOCK = "WARLOCK_AFFLICTION", DRUID = "DRUID_BALANCE",
 }
 
 Tables.ClassSpecOrder = {
-	WARRIOR = { "ARMS", "FURY", "PROTECTION" },
-	PALADIN = { "HOLY", "PROTECTION", "RETRIBUTION" },
-	HUNTER = { "BEASTMASTERY", "MARKSMANSHIP", "SURVIVAL" },
-	ROGUE = { "ASSASSINATION", "COMBAT", "SUBTLETY" },
-	PRIEST = { "DISCIPLINE", "PRIEST_HOLY", "SHADOW" },
-	DEATHKNIGHT = { "BLOOD", "FROST", "UNHOLY" },
-	SHAMAN = { "ELEMENTAL", "ENHANCEMENT", "RESTORATION" },
-	MAGE = { "ARCANE", "FIRE", "MAGE_FROST" },
-	WARLOCK = { "AFFLICTION", "DEMONOLOGY", "DESTRUCTION" },
-	DRUID = { "BALANCE", "FERAL", "DRUID_RESTORATION" },
+	WARRIOR = { "WARRIOR_ARMS", "WARRIOR_FURY", "WARRIOR_PROTECTION" },
+	PALADIN = { "PALADIN_HOLY", "PALADIN_PROTECTION", "PALADIN_RETRIBUTION" },
+	HUNTER = { "HUNTER_BEASTMASTERY", "HUNTER_MARKSMANSHIP", "HUNTER_SURVIVAL" },
+	ROGUE = { "ROGUE_ASSASSINATION", "ROGUE_COMBAT", "ROGUE_SUBTLETY" },
+	PRIEST = { "PRIEST_DISCIPLINE", "PRIEST_HOLY", "PRIEST_SHADOW" },
+	DEATHKNIGHT = { "DEATHKNIGHT_BLOOD", "DEATHKNIGHT_FROST", "DEATHKNIGHT_UNHOLY" },
+	SHAMAN = { "SHAMAN_ELEMENTAL", "SHAMAN_ENHANCEMENT", "SHAMAN_RESTORATION" },
+	MAGE = { "MAGE_ARCANE", "MAGE_FIRE", "MAGE_FROST" },
+	WARLOCK = { "WARLOCK_AFFLICTION", "WARLOCK_DEMONOLOGY", "WARLOCK_DESTRUCTION" },
+	DRUID = { "DRUID_BALANCE", "DRUID_FERAL_DPS", "DRUID_RESTORATION" },
 }
 
 Tables.SpecProfiles = {
-	ARMS = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, pve = { STR = 3.95, CRIT = 2.35, HIT = 2.6, HASTE = 1.9, ARP = 3.05, AP = 2.0, EXPERTISE = 2.2 }, pvp = { STR = 2.2, CRIT = 1.2, HIT = 0.8, HASTE = 0.9, ARP = 1.3, AP = 1.0, RESILIENCE = 2.2 } },
-	FURY = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, pve = { STR = 3.35, CRIT = 1.95, HIT = 2.35, HASTE = 1.75, ARP = 2.35, AP = 1.55, EXPERTISE = 1.75 }, pvp = { STR = 2.0, CRIT = 1.0, HASTE = 0.8, AP = 0.9, RESILIENCE = 2.2 } },
-	PROTECTION = { role = "TANK", armor = "PLATE", shield = true, ranged = false, pve = { STA = 1.8, STR = 0.9, DEFENSE = 2.8, DODGE = 2.4, PARRY = 2.3, BLOCK = 2.0, BLOCKVALUE = 1.5, HIT = 1.1, EXPERTISE = 1.3 }, pvp = { STR = 0.8, DODGE = 1.4, PARRY = 1.3, BLOCK = 1.2, RESILIENCE = 1.7 } },
-	HOLY = { role = "HEALER", armor = "PLATE", shield = true, ranged = false, pve = { INT = 2.5, SP = 2.9, HASTE = 1.9, CRIT = 1.4, MP5 = 1.7, SPI = 0.5 }, pvp = { INT = 2.0, SP = 2.4, HASTE = 1.1, CRIT = 0.8, MP5 = 0.8, RESILIENCE = 2.2 } },
-	RETRIBUTION = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, pve = { STR = 5.5, CRIT = 3.1, HIT = 3.45, HASTE = 3.2, EXPERTISE = 3.25, ARP = 3.95, AP = 2.8 }, pvp = { STR = 2.2, CRIT = 1.0, AP = 0.9, RESILIENCE = 2.2 } },
-	BEASTMASTERY = { role = "RANGED", armor = "MAIL", shield = false, ranged = true, pve = { AGI = 2.05, RAP = 1.15, AP = 0.7, HIT = 1.35, CRIT = 1.15, HASTE = 0.8, ARP = 0.85 }, pvp = { AGI = 2.1, RAP = 1.0, CRIT = 1.0, HASTE = 0.7, RESILIENCE = 2.2 } },
-	MARKSMANSHIP = { role = "RANGED", armor = "MAIL", shield = false, ranged = true, pve = { AGI = 2.9, RAP = 1.6, AP = 0.9, HIT = 1.8, CRIT = 1.7, HASTE = 1.2, ARP = 2.0 }, pvp = { AGI = 2.2, RAP = 1.0, CRIT = 1.0, ARP = 1.0, RESILIENCE = 2.2 } },
-	SURVIVAL = { role = "RANGED", armor = "MAIL", shield = false, ranged = true, pve = { AGI = 2.45, RAP = 1.2, AP = 0.7, HIT = 1.45, CRIT = 1.2, HASTE = 1.0 }, pvp = { AGI = 2.2, CRIT = 1.0, HASTE = 0.8, RESILIENCE = 2.2 } },
-	ASSASSINATION = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, pve = { AGI = 1.15, AP = 0.5, HIT = 0.7, HASTE = 0.4, CRIT = 0.6, EXPERTISE = 0.55 }, pvp = { AGI = 2.2, AP = 1.0, HASTE = 0.8, CRIT = 0.9, RESILIENCE = 2.2 } },
-	COMBAT = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, pve = { AGI = 1.1, AP = 0.45, HIT = 0.7, HASTE = 0.42, CRIT = 0.58, ARP = 0.52, EXPERTISE = 0.55 }, pvp = { AGI = 2.0, AP = 0.9, HASTE = 0.7, CRIT = 0.8, RESILIENCE = 2.2 } },
-	SUBTLETY = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, pve = { AGI = 2.2, AP = 1.0, HIT = 1.5, HASTE = 0.8, CRIT = 1.2, ARP = 1.0, EXPERTISE = 1.1 }, pvp = { AGI = 2.3, AP = 1.0, CRIT = 1.0, RESILIENCE = 2.4 } },
-	DISCIPLINE = { role = "HEALER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 2.0, SP = 2.3, CRIT = 1.2, HASTE = 1.1, MP5 = 0.9, SPI = 0.65 }, pvp = { INT = 2.1, SP = 2.2, CRIT = 0.9, HASTE = 0.8, RESILIENCE = 2.4 } },
-	PRIEST_HOLY = { role = "HEALER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 2.35, SP = 3.05, HASTE = 2.2, CRIT = 1.75, SPI = 1.9, MP5 = 1.25 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, CRIT = 0.8, SPI = 0.9, RESILIENCE = 2.4 } },
-	SHADOW = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.1, SP = 1.8, HIT = 1.0, HASTE = 0.8, CRIT = 0.6, SPI = 0.45 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, CRIT = 0.8, RESILIENCE = 2.3 } },
-	BLOOD = { role = "TANK", armor = "PLATE", shield = false, ranged = false, pve = { STA = 2.95, STR = 1.8, DEFENSE = 3.9, DODGE = 3.1, PARRY = 3.1, HIT = 1.5, EXPERTISE = 1.75 }, pvp = { STR = 1.0, RESILIENCE = 2.0 } },
-	FROST = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, pve = { STR = 2.5, HIT = 1.7, HASTE = 1.2, CRIT = 1.2, EXPERTISE = 1.3, AP = 0.9 }, pvp = { STR = 2.2, CRIT = 0.9, RESILIENCE = 2.2 } },
-	UNHOLY = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, pve = { STR = 2.6, HIT = 1.8, HASTE = 1.5, CRIT = 1.2, EXPERTISE = 1.3, AP = 1.1 }, pvp = { STR = 2.2, HASTE = 0.8, RESILIENCE = 2.2 } },
-	ELEMENTAL = { role = "CASTER", armor = "CLOTH", shield = true, ranged = false, pve = { INT = 1.1, SP = 1.8, HIT = 1.05, HASTE = 0.9, CRIT = 0.7, MP5 = 0.55 }, pvp = { INT = 1.5, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
-	ENHANCEMENT = { role = "MELEE", armor = "MAIL", shield = false, ranged = false, dualwield = true, pve = { AGI = 2.65, AP = 1.65, HIT = 2.4, HASTE = 2.0, CRIT = 1.65, EXPERTISE = 1.95 }, pvp = { AGI = 1.8, AP = 1.0, HASTE = 0.9, RESILIENCE = 2.2 } },
-	RESTORATION = { role = "HEALER", armor = "MAIL", shield = true, ranged = false, pve = { INT = 2.3, SP = 2.7, HASTE = 1.8, CRIT = 1.2, MP5 = 1.4, SPI = 0.2 }, pvp = { INT = 2.0, SP = 2.3, HASTE = 0.9, MP5 = 0.7, RESILIENCE = 2.3 } },
-	ARCANE = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.85, SP = 2.7, HIT = 1.75, HASTE = 1.45, CRIT = 1.15, SPI = 0.4 }, pvp = { INT = 1.8, SP = 2.2, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.2 } },
-	FIRE = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.45, SP = 2.4, HIT = 1.4, HASTE = 1.3, CRIT = 1.0, SPI = 0.2 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, CRIT = 0.8, RESILIENCE = 2.2 } },
-	MAGE_FROST = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.7, SP = 2.6, HIT = 1.7, HASTE = 1.3, CRIT = 1.2 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.5 } },
-	AFFLICTION = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.7, SP = 2.8, HIT = 1.8, HASTE = 1.6, CRIT = 1.0, SPI = 0.5 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, RESILIENCE = 2.3 } },
-	DEMONOLOGY = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 1.7, SP = 2.7, HIT = 1.7, HASTE = 1.4, CRIT = 1.1, SPI = 0.4 }, pvp = { INT = 1.6, SP = 2.2, HASTE = 0.9, RESILIENCE = 2.2 } },
-	DESTRUCTION = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, pve = { INT = 2.45, SP = 3.55, HIT = 2.25, HASTE = 2.1, CRIT = 1.75, SPI = 0.65 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
-	BALANCE = { role = "CASTER", armor = "LEATHER", shield = false, ranged = false, pve = { INT = 2.95, SP = 3.85, HIT = 2.6, HASTE = 2.45, CRIT = 1.95, SPI = 1.85 }, pvp = { INT = 1.7, SP = 2.2, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
-	DRUID_FERAL_DPS = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, pve = { AGI = 2.5, AP = 1.1, HIT = 1.6, HASTE = 1.0, CRIT = 1.3, ARP = 1.5, EXPERTISE = 1.2 }, pvp = { AGI = 2.2, AP = 0.9, RESILIENCE = 2.3 } },
-	DRUID_FERAL_TANK = { role = "TANK", armor = "LEATHER", shield = false, ranged = false, pve = { STA = 2.9, AGI = 2.2, DODGE = 1.9, DEFENSE = 0.8, HIT = 1.2, EXPERTISE = 1.35, AP = 0.45, CRIT = 0.55 }, pvp = { STA = 1.6, AGI = 1.8, DODGE = 1.0, RESILIENCE = 2.3 } },
-	DRUID_RESTORATION = { role = "HEALER", armor = "LEATHER", shield = false, ranged = false, pve = { INT = 4.1, SP = 4.2, HASTE = 3.15, CRIT = 1.65, MP5 = 2.0, SPI = 2.25 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, SPI = 0.7, RESILIENCE = 2.4 } },
+	WARRIOR_ARMS = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, allowLowerArmor = true, gs2Scale = 0.755, pve = { STR = 3.95, CRIT = 2.35, HIT = 2.6, HASTE = 1.9, ARP = 3.05, AP = 2.0, EXPERTISE = 2.2 }, pvp = { STR = 2.2, CRIT = 1.2, HIT = 0.8, HASTE = 0.9, ARP = 1.3, AP = 1.0, RESILIENCE = 2.2 } },
+	WARRIOR_FURY = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, allowLowerArmor = true, gs2Scale = 0.620, pve = { STR = 3.35, CRIT = 1.95, HIT = 2.35, HASTE = 1.75, ARP = 2.35, AP = 1.55, EXPERTISE = 1.75 }, pvp = { STR = 2.0, CRIT = 1.0, HASTE = 0.8, AP = 0.9, RESILIENCE = 2.2 } },
+	WARRIOR_PROTECTION = { role = "TANK", armor = "PLATE", shield = true, ranged = false, gs2Scale = 1.211, pve = { STA = 1.8, STR = 0.9, DEFENSE = 2.8, DODGE = 2.4, PARRY = 2.3, BLOCK = 2.0, BLOCKVALUE = 1.5, HIT = 1.1, EXPERTISE = 1.3 }, pvp = { STR = 0.8, DODGE = 1.4, PARRY = 1.3, BLOCK = 1.2, RESILIENCE = 1.7 } },
+	PALADIN_HOLY = { role = "HEALER", armor = "PLATE", shield = true, ranged = false, allowLowerArmor = true, gs2Scale = 0.780, pve = { INT = 2.5, SP = 2.9, HASTE = 1.9, CRIT = 1.4, MP5 = 1.7, SPI = 0.5 }, pvp = { INT = 2.0, SP = 2.4, HASTE = 1.1, CRIT = 0.8, MP5 = 0.8, RESILIENCE = 2.2 } },
+	PALADIN_PROTECTION = { role = "TANK", armor = "PLATE", shield = true, ranged = false, gs2Scale = 1.162, pve = { STA = 1.8, STR = 0.9, DEFENSE = 2.8, DODGE = 2.4, PARRY = 2.3, BLOCK = 2.0, BLOCKVALUE = 1.5, HIT = 1.1, EXPERTISE = 1.3 }, pvp = { STR = 0.8, DODGE = 1.4, PARRY = 1.3, BLOCK = 1.2, RESILIENCE = 1.7 } },
+	PALADIN_RETRIBUTION = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, allowLowerArmor = true, gs2Scale = 0.600, pve = { STR = 5.5, CRIT = 3.1, HIT = 3.45, HASTE = 3.2, EXPERTISE = 3.25, ARP = 3.95, AP = 2.8 }, pvp = { STR = 2.2, CRIT = 1.0, AP = 0.9, RESILIENCE = 2.2 } },
+	HUNTER_BEASTMASTERY = { role = "RANGED", armor = "MAIL", shield = false, ranged = true, allowLowerArmor = true, gs2Scale = 1.420, pve = { AGI = 2.05, RAP = 1.15, AP = 0.7, HIT = 1.35, CRIT = 1.15, HASTE = 0.8, ARP = 0.85 }, pvp = { AGI = 2.1, RAP = 1.0, CRIT = 1.0, HASTE = 0.7, RESILIENCE = 2.2 } },
+	HUNTER_MARKSMANSHIP = { role = "RANGED", armor = "MAIL", shield = false, ranged = true, allowLowerArmor = true, gs2Scale = 1.060, pve = { AGI = 2.9, RAP = 1.6, AP = 0.9, HIT = 1.8, CRIT = 1.7, HASTE = 1.2, ARP = 2.0 }, pvp = { AGI = 2.2, RAP = 1.0, CRIT = 1.0, ARP = 1.0, RESILIENCE = 2.2 } },
+	HUNTER_SURVIVAL = { role = "RANGED", armor = "MAIL", shield = false, ranged = true, allowLowerArmor = true, gs2Scale = 1.280, pve = { AGI = 2.45, RAP = 1.2, AP = 0.7, HIT = 1.45, CRIT = 1.2, HASTE = 1.0 }, pvp = { AGI = 2.2, CRIT = 1.0, HASTE = 0.8, RESILIENCE = 2.2 } },
+	ROGUE_ASSASSINATION = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, gs2Scale = 2.284, pve = { AGI = 1.15, AP = 0.5, HIT = 0.7, HASTE = 0.4, CRIT = 0.6, EXPERTISE = 0.55 }, pvp = { AGI = 2.2, AP = 1.0, HASTE = 0.8, CRIT = 0.9, RESILIENCE = 2.2 } },
+	ROGUE_COMBAT = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, gs2Scale = 2.257, pve = { AGI = 1.1, AP = 0.45, HIT = 0.7, HASTE = 0.42, CRIT = 0.58, ARP = 0.52, EXPERTISE = 0.55 }, pvp = { AGI = 2.0, AP = 0.9, HASTE = 0.7, CRIT = 0.8, RESILIENCE = 2.2 } },
+	ROGUE_SUBTLETY = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, dualwield = true, gs2Scale = 1.213, pve = { AGI = 2.2, AP = 1.0, HIT = 1.5, HASTE = 0.8, CRIT = 1.2, ARP = 1.0, EXPERTISE = 1.1 }, pvp = { AGI = 2.3, AP = 1.0, CRIT = 1.0, RESILIENCE = 2.4 } },
+	PRIEST_DISCIPLINE = { role = "HEALER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 1.028, pve = { INT = 2.0, SP = 2.3, CRIT = 1.2, HASTE = 1.1, MP5 = 0.9, SPI = 0.65 }, pvp = { INT = 2.1, SP = 2.2, CRIT = 0.9, HASTE = 0.8, RESILIENCE = 2.4 } },
+	PRIEST_HOLY = { role = "HEALER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 0.947, pve = { INT = 2.35, SP = 3.05, HASTE = 2.2, CRIT = 1.75, SPI = 1.9, MP5 = 1.25 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, CRIT = 0.8, SPI = 0.9, RESILIENCE = 2.4 } },
+	PRIEST_SHADOW = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 1.020, pve = { INT = 1.1, SP = 1.8, HIT = 1.0, HASTE = 0.8, CRIT = 0.6, SPI = 0.45 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, CRIT = 0.8, RESILIENCE = 2.3 } },
+	DEATHKNIGHT_BLOOD = { role = "TANK", armor = "PLATE", shield = false, ranged = false, gs2Scale = 0.755, pve = { STA = 2.95, STR = 1.8, DEFENSE = 3.9, DODGE = 3.1, PARRY = 3.1, HIT = 1.5, EXPERTISE = 1.75 }, pvp = { STR = 1.0, RESILIENCE = 2.0 } },
+	DEATHKNIGHT_FROST = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, gs2Scale = 1.580, pve = { STR = 2.5, HIT = 1.7, HASTE = 1.2, CRIT = 1.2, EXPERTISE = 1.3, AP = 0.9 }, pvp = { STR = 2.2, CRIT = 0.9, RESILIENCE = 2.2 } },
+	DEATHKNIGHT_UNHOLY = { role = "MELEE", armor = "PLATE", shield = false, ranged = false, dualwield = true, gs2Scale = 1.324, pve = { STR = 2.6, HIT = 1.8, HASTE = 1.5, CRIT = 1.2, EXPERTISE = 1.3, AP = 1.1 }, pvp = { STR = 2.2, HASTE = 0.8, RESILIENCE = 2.2 } },
+	SHAMAN_ELEMENTAL = { role = "CASTER", armor = "CLOTH", shield = true, ranged = false, gs2Scale = 1.247, pve = { INT = 1.1, SP = 1.8, HIT = 1.05, HASTE = 0.9, CRIT = 0.7, MP5 = 0.55 }, pvp = { INT = 1.5, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
+	SHAMAN_ENHANCEMENT = { role = "MELEE", armor = "MAIL", shield = false, ranged = false, dualwield = true, hybridCasterItems = true, gs2Scale = 0.960, pve = { AGI = 2.65, AP = 1.65, HIT = 2.4, HASTE = 2.0, CRIT = 1.65, EXPERTISE = 1.95 }, pvp = { AGI = 1.8, AP = 1.0, HASTE = 0.9, RESILIENCE = 2.2 } },
+	SHAMAN_RESTORATION = { role = "HEALER", armor = "MAIL", shield = true, ranged = false, allowLowerArmor = true, gs2Scale = 0.899, pve = { INT = 2.3, SP = 2.7, HASTE = 1.8, CRIT = 1.2, MP5 = 1.4, SPI = 0.2 }, pvp = { INT = 2.0, SP = 2.3, HASTE = 0.9, MP5 = 0.7, RESILIENCE = 2.3 } },
+	MAGE_ARCANE = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 0.835, pve = { INT = 1.85, SP = 2.7, HIT = 1.75, HASTE = 1.45, CRIT = 1.15, SPI = 0.4 }, pvp = { INT = 1.8, SP = 2.2, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.2 } },
+	MAGE_FIRE = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 0.919, pve = { INT = 1.45, SP = 2.4, HIT = 1.4, HASTE = 1.3, CRIT = 1.0, SPI = 0.2 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, CRIT = 0.8, RESILIENCE = 2.2 } },
+	MAGE_FROST = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 0.845, pve = { INT = 1.7, SP = 2.6, HIT = 1.7, HASTE = 1.3, CRIT = 1.2 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.5 } },
+	WARLOCK_AFFLICTION = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 0.815, pve = { INT = 1.7, SP = 2.8, HIT = 1.8, HASTE = 1.6, CRIT = 1.0, SPI = 0.5 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 1.0, RESILIENCE = 2.3 } },
+	WARLOCK_DEMONOLOGY = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 0.858, pve = { INT = 1.7, SP = 2.7, HIT = 1.7, HASTE = 1.4, CRIT = 1.1, SPI = 0.4 }, pvp = { INT = 1.6, SP = 2.2, HASTE = 0.9, RESILIENCE = 2.2 } },
+	WARLOCK_DESTRUCTION = { role = "CASTER", armor = "CLOTH", shield = false, ranged = false, gs2Scale = 0.623, pve = { INT = 2.45, SP = 3.55, HIT = 2.25, HASTE = 2.1, CRIT = 1.75, SPI = 0.65 }, pvp = { INT = 1.6, SP = 2.3, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
+	DRUID_BALANCE = { role = "CASTER", armor = "LEATHER", shield = false, ranged = false, gs2Scale = 0.585, pve = { INT = 2.95, SP = 3.85, HIT = 2.6, HASTE = 2.45, CRIT = 1.95, SPI = 1.85 }, pvp = { INT = 1.7, SP = 2.2, HASTE = 0.9, CRIT = 0.8, RESILIENCE = 2.3 } },
+	DRUID_FERAL_DPS = { role = "MELEE", armor = "LEATHER", shield = false, ranged = false, gs2Scale = 1.210, pve = { AGI = 2.5, AP = 1.1, HIT = 1.6, HASTE = 1.0, CRIT = 1.3, ARP = 1.5, EXPERTISE = 1.2 }, pvp = { AGI = 2.2, AP = 0.9, RESILIENCE = 2.3 } },
+	DRUID_FERAL_TANK = { role = "TANK", armor = "LEATHER", shield = false, ranged = false, gs2Scale = 1.151, pve = { STA = 2.9, AGI = 2.2, DODGE = 1.9, DEFENSE = 0.8, HIT = 1.2, EXPERTISE = 1.35, AP = 0.45, CRIT = 0.55 }, pvp = { STA = 1.6, AGI = 1.8, DODGE = 1.0, RESILIENCE = 2.3 } },
+	DRUID_RESTORATION = { role = "HEALER", armor = "LEATHER", shield = false, ranged = false, gs2Scale = 0.531, pve = { INT = 4.1, SP = 4.2, HASTE = 3.15, CRIT = 1.65, MP5 = 2.0, SPI = 2.25 }, pvp = { INT = 2.0, SP = 2.2, HASTE = 0.9, SPI = 0.7, RESILIENCE = 2.4 } },
 }
 
 Tables.RatingConversions = {
@@ -483,7 +484,7 @@ Tables.PermanentCapRacials = {
 }
 
 Tables.CapProfiles = {
-	ARMS = {
+	WARRIOR_ARMS = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
@@ -491,7 +492,7 @@ Tables.CapProfiles = {
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
 	},
-	FURY = {
+	WARRIOR_FURY = {
 		order = { "HIT", "EXPERTISE", "ARP" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
@@ -499,7 +500,7 @@ Tables.CapProfiles = {
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
 	},
-	PROTECTION = {
+	WARRIOR_PROTECTION = {
 		order = { "DEFENSE", "EXPERTISE", "HIT" },
 		pools = {
 			DEFENSE = { summary = "Defense", overflow = GS_CapSegmentDefaults.DEFENSE_OVERFLOW, segments = { { mode = "DEFENSE_SKILL", threshold = 540, mult = GS_CapSegmentDefaults.CRITICAL, label = "Crit immunity cap" } } },
@@ -507,33 +508,41 @@ Tables.CapProfiles = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Taunt / special hit cap" } } },
 		},
 	},
-	RETRIBUTION = {
+	PALADIN_PROTECTION = {
+		order = { "DEFENSE", "EXPERTISE", "HIT" },
+		pools = {
+			DEFENSE = { summary = "Defense", overflow = GS_CapSegmentDefaults.DEFENSE_OVERFLOW, segments = { { mode = "DEFENSE_SKILL", threshold = 540, mult = GS_CapSegmentDefaults.CRITICAL, label = "Crit immunity cap" } } },
+			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" }, { mode = "EXPERTISE_POINTS", threshold = 56, mult = GS_CapSegmentDefaults.USEFUL, label = "Front-facing expertise cap" } } },
+			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Taunt / special hit cap" } } },
+		},
+	},
+	PALADIN_RETRIBUTION = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
-	BEASTMASTERY = {
+	HUNTER_BEASTMASTERY = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
 		},
 	},
-	MARKSMANSHIP = {
+	HUNTER_MARKSMANSHIP = {
 		order = { "HIT", "ARP" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
 	},
-	SURVIVAL = {
+	HUNTER_SURVIVAL = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Ranged hit cap" } } },
 		},
 	},
-	ASSASSINATION = {
+	ROGUE_ASSASSINATION = {
 		order = { "HIT", "SPELL_HIT", "EXPERTISE" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
@@ -541,7 +550,7 @@ Tables.CapProfiles = {
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
-	COMBAT = {
+	ROGUE_COMBAT = {
 		order = { "HIT", "SPELL_HIT", "EXPERTISE", "ARP" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
@@ -550,7 +559,7 @@ Tables.CapProfiles = {
 			ARP = { summary = "Armor Penetration", overflow = GS_CapSegmentDefaults.ARP_OVERFLOW, segments = { { mode = "RATING", threshold = 1400, mult = GS_CapSegmentDefaults.CRITICAL, label = "Armor penetration hard cap" } } },
 		},
 	},
-	SUBTLETY = {
+	ROGUE_SUBTLETY = {
 		order = { "HIT", "SPELL_HIT", "EXPERTISE" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 5, spellHitBonus = 5, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
@@ -558,13 +567,13 @@ Tables.CapProfiles = {
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
-	SHADOW = {
+	PRIEST_SHADOW = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	BLOOD = {
+	DEATHKNIGHT_BLOOD = {
 		order = { "DEFENSE", "EXPERTISE", "HIT" },
 		pools = {
 			DEFENSE = { summary = "Defense", overflow = GS_CapSegmentDefaults.DEFENSE_OVERFLOW, segments = { { mode = "DEFENSE_SKILL", threshold = 540, mult = GS_CapSegmentDefaults.CRITICAL, label = "Crit immunity cap" } } },
@@ -572,40 +581,40 @@ Tables.CapProfiles = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 		},
 	},
-	FROST = {
+	DEATHKNIGHT_FROST = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
-	UNHOLY = {
+	DEATHKNIGHT_UNHOLY = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
-	ELEMENTAL = {
+	SHAMAN_ELEMENTAL = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	ENHANCEMENT = {
+	SHAMAN_ENHANCEMENT = {
 		order = { "HIT", "EXPERTISE" },
 		pools = {
 			HIT = { summary = "Hit", meleeHitBonus = 3, spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "MELEE_HIT_PERCENT", threshold = 8, mult = GS_CapSegmentDefaults.CRITICAL, label = "Special hit cap" }, { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.USEFUL, label = "Spell hit cap" } } },
 			EXPERTISE = { summary = "Expertise", overflow = GS_CapSegmentDefaults.OVERFLOW, segments = { { mode = "EXPERTISE_POINTS", threshold = 26, mult = GS_CapSegmentDefaults.CRITICAL, label = "Expertise soft cap" } } },
 		},
 	},
-	ARCANE = {
+	MAGE_ARCANE = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	FIRE = {
+	MAGE_FIRE = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
@@ -617,25 +626,25 @@ Tables.CapProfiles = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	AFFLICTION = {
+	WARLOCK_AFFLICTION = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 3, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	DEMONOLOGY = {
+	WARLOCK_DEMONOLOGY = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	DESTRUCTION = {
+	WARLOCK_DESTRUCTION = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 0, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },
 		},
 	},
-	BALANCE = {
+	DRUID_BALANCE = {
 		order = { "HIT" },
 		pools = {
 			HIT = { summary = "Spell Hit", spellHitBonus = 4, overflow = GS_CapSegmentDefaults.HIT_OVERFLOW, segments = { { mode = "SPELL_HIT_PERCENT", threshold = 17, mult = GS_CapSegmentDefaults.CRITICAL, label = "Spell hit cap" } } },

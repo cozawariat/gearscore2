@@ -187,16 +187,16 @@ For readability, section titles below still mention the legacy table names in pa
 
 | Class | Default Spec |
 |---|---|
-| `WARRIOR` | `FURY` |
-| `PALADIN` | `RETRIBUTION` |
-| `HUNTER` | `MARKSMANSHIP` |
-| `ROGUE` | `COMBAT` |
-| `PRIEST` | `SHADOW` |
-| `DEATHKNIGHT` | `UNHOLY` |
-| `SHAMAN` | `ELEMENTAL` |
-| `MAGE` | `ARCANE` |
-| `WARLOCK` | `AFFLICTION` |
-| `DRUID` | `BALANCE` |
+| `WARRIOR` | `WARRIOR_FURY` |
+| `PALADIN` | `PALADIN_RETRIBUTION` |
+| `HUNTER` | `HUNTER_MARKSMANSHIP` |
+| `ROGUE` | `ROGUE_COMBAT` |
+| `PRIEST` | `PRIEST_SHADOW` |
+| `DEATHKNIGHT` | `DEATHKNIGHT_UNHOLY` |
+| `SHAMAN` | `SHAMAN_ELEMENTAL` |
+| `MAGE` | `MAGE_ARCANE` |
+| `WARLOCK` | `WARLOCK_AFFLICTION` |
+| `DRUID` | `DRUID_BALANCE` |
 
 ## 7. Specialization Profiles (`GS.Data.Tables.SpecProfiles`)
 
@@ -207,46 +207,49 @@ Each row lists:
 - shield usage
 - ranged usage
 - dual wield usage when present
+- `gs2Scale`, applied to the summed PvE bonus bucket before resilience
 - PvE weights
 - PvP weights
 
 | Spec | Role | Armor | Shield | Ranged | Dual Wield | PvE Weights | PvP Weights |
 |---|---|---|---|---|---|---|---|
-| `ARMS` | `MELEE` | `PLATE` | No | No | No | `STR 3.95, CRIT 2.35, HIT 2.6, HASTE 1.9, ARP 3.05, AP 2.0, EXPERTISE 2.2` | `STR 2.2, CRIT 1.2, HIT 0.8, HASTE 0.9, ARP 1.3, AP 1.0, RESILIENCE 2.2` |
-| `FURY` | `MELEE` | `PLATE` | No | No | Yes | `STR 3.35, CRIT 1.95, HIT 2.35, HASTE 1.75, ARP 2.35, AP 1.55, EXPERTISE 1.75` | `STR 2.0, CRIT 1.0, HASTE 0.8, AP 0.9, RESILIENCE 2.2` |
-| `PROTECTION` | `TANK` | `PLATE` | Yes | No | No | `STA 1.8, STR 0.9, DEFENSE 2.8, DODGE 2.4, PARRY 2.3, BLOCK 2.0, BLOCKVALUE 1.5, HIT 1.1, EXPERTISE 1.3` | `STR 0.8, DODGE 1.4, PARRY 1.3, BLOCK 1.2, RESILIENCE 1.7` |
-| `HOLY` | `HEALER` | `PLATE` | Yes | No | No | `INT 2.5, SP 2.9, HASTE 1.9, CRIT 1.4, MP5 1.7, SPI 0.5` | `INT 2.0, SP 2.4, HASTE 1.1, CRIT 0.8, MP5 0.8, RESILIENCE 2.2` |
-| `RETRIBUTION` | `MELEE` | `PLATE` | No | No | No | `STR 5.5, CRIT 3.1, HIT 3.45, HASTE 3.2, EXPERTISE 3.25, ARP 3.95, AP 2.8` | `STR 2.2, CRIT 1.0, AP 0.9, RESILIENCE 2.2` |
-| `BEASTMASTERY` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.05, RAP 1.15, AP 0.7, HIT 1.35, CRIT 1.15, HASTE 0.8, ARP 0.85` | `AGI 2.1, RAP 1.0, CRIT 1.0, HASTE 0.7, RESILIENCE 2.2` |
-| `MARKSMANSHIP` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.9, RAP 1.6, AP 0.9, HIT 1.8, CRIT 1.7, HASTE 1.2, ARP 2.0` | `AGI 2.2, RAP 1.0, CRIT 1.0, ARP 1.0, RESILIENCE 2.2` |
-| `SURVIVAL` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.45, RAP 1.2, AP 0.7, HIT 1.45, CRIT 1.2, HASTE 1.0` | `AGI 2.2, CRIT 1.0, HASTE 0.8, RESILIENCE 2.2` |
-| `ASSASSINATION` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 1.15, AP 0.5, HIT 0.7, HASTE 0.4, CRIT 0.6, EXPERTISE 0.55` | `AGI 2.2, AP 1.0, HASTE 0.8, CRIT 0.9, RESILIENCE 2.2` |
-| `COMBAT` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 1.1, AP 0.45, HIT 0.7, HASTE 0.42, CRIT 0.58, ARP 0.52, EXPERTISE 0.55` | `AGI 2.0, AP 0.9, HASTE 0.7, CRIT 0.8, RESILIENCE 2.2` |
-| `SUBTLETY` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 2.2, AP 1.0, HIT 1.5, HASTE 0.8, CRIT 1.2, ARP 1.0, EXPERTISE 1.1` | `AGI 2.3, AP 1.0, CRIT 1.0, RESILIENCE 2.4` |
-| `DISCIPLINE` | `HEALER` | `CLOTH` | No | No | No | `INT 2.0, SP 2.3, CRIT 1.2, HASTE 1.1, MP5 0.9, SPI 0.65` | `INT 2.1, SP 2.2, CRIT 0.9, HASTE 0.8, RESILIENCE 2.4` |
+| `WARRIOR_ARMS` | `MELEE` | `PLATE` | No | No | No | `STR 3.95, CRIT 2.35, HIT 2.6, HASTE 1.9, ARP 3.05, AP 2.0, EXPERTISE 2.2` | `STR 2.2, CRIT 1.2, HIT 0.8, HASTE 0.9, ARP 1.3, AP 1.0, RESILIENCE 2.2` |
+| `WARRIOR_FURY` | `MELEE` | `PLATE` | No | No | Yes | `STR 3.35, CRIT 1.95, HIT 2.35, HASTE 1.75, ARP 2.35, AP 1.55, EXPERTISE 1.75` | `STR 2.0, CRIT 1.0, HASTE 0.8, AP 0.9, RESILIENCE 2.2` |
+| `WARRIOR_PROTECTION` | `TANK` | `PLATE` | Yes | No | No | `STA 1.8, STR 0.9, DEFENSE 2.8, DODGE 2.4, PARRY 2.3, BLOCK 2.0, BLOCKVALUE 1.5, HIT 1.1, EXPERTISE 1.3` | `STR 0.8, DODGE 1.4, PARRY 1.3, BLOCK 1.2, RESILIENCE 1.7` |
+| `PALADIN_HOLY` | `HEALER` | `PLATE` | Yes | No | No | `INT 2.5, SP 2.9, HASTE 1.9, CRIT 1.4, MP5 1.7, SPI 0.5` | `INT 2.0, SP 2.4, HASTE 1.1, CRIT 0.8, MP5 0.8, RESILIENCE 2.2` |
+| `PALADIN_PROTECTION` | `TANK` | `PLATE` | Yes | No | No | `STA 1.8, STR 0.9, DEFENSE 2.8, DODGE 2.4, PARRY 2.3, BLOCK 2.0, BLOCKVALUE 1.5, HIT 1.1, EXPERTISE 1.3` | `STR 0.8, DODGE 1.4, PARRY 1.3, BLOCK 1.2, RESILIENCE 1.7` |
+| `PALADIN_RETRIBUTION` | `MELEE` | `PLATE` | No | No | No | `STR 5.5, CRIT 3.1, HIT 3.45, HASTE 3.2, EXPERTISE 3.25, ARP 3.95, AP 2.8` | `STR 2.2, CRIT 1.0, AP 0.9, RESILIENCE 2.2` |
+| `HUNTER_BEASTMASTERY` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.05, RAP 1.15, AP 0.7, HIT 1.35, CRIT 1.15, HASTE 0.8, ARP 0.85` | `AGI 2.1, RAP 1.0, CRIT 1.0, HASTE 0.7, RESILIENCE 2.2` |
+| `HUNTER_MARKSMANSHIP` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.9, RAP 1.6, AP 0.9, HIT 1.8, CRIT 1.7, HASTE 1.2, ARP 2.0` | `AGI 2.2, RAP 1.0, CRIT 1.0, ARP 1.0, RESILIENCE 2.2` |
+| `HUNTER_SURVIVAL` | `RANGED` | `MAIL` | No | Yes | No | `AGI 2.45, RAP 1.2, AP 0.7, HIT 1.45, CRIT 1.2, HASTE 1.0` | `AGI 2.2, CRIT 1.0, HASTE 0.8, RESILIENCE 2.2` |
+| `ROGUE_ASSASSINATION` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 1.15, AP 0.5, HIT 0.7, HASTE 0.4, CRIT 0.6, EXPERTISE 0.55` | `AGI 2.2, AP 1.0, HASTE 0.8, CRIT 0.9, RESILIENCE 2.2` |
+| `ROGUE_COMBAT` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 1.1, AP 0.45, HIT 0.7, HASTE 0.42, CRIT 0.58, ARP 0.52, EXPERTISE 0.55` | `AGI 2.0, AP 0.9, HASTE 0.7, CRIT 0.8, RESILIENCE 2.2` |
+| `ROGUE_SUBTLETY` | `MELEE` | `LEATHER` | No | No | Yes | `AGI 2.2, AP 1.0, HIT 1.5, HASTE 0.8, CRIT 1.2, ARP 1.0, EXPERTISE 1.1` | `AGI 2.3, AP 1.0, CRIT 1.0, RESILIENCE 2.4` |
+| `PRIEST_DISCIPLINE` | `HEALER` | `CLOTH` | No | No | No | `INT 2.0, SP 2.3, CRIT 1.2, HASTE 1.1, MP5 0.9, SPI 0.65` | `INT 2.1, SP 2.2, CRIT 0.9, HASTE 0.8, RESILIENCE 2.4` |
 | `PRIEST_HOLY` | `HEALER` | `CLOTH` | No | No | No | `INT 2.35, SP 3.05, HASTE 2.2, CRIT 1.75, SPI 1.9, MP5 1.25` | `INT 2.0, SP 2.2, HASTE 0.9, CRIT 0.8, SPI 0.9, RESILIENCE 2.4` |
-| `SHADOW` | `CASTER` | `CLOTH` | No | No | No | `INT 1.1, SP 1.8, HIT 1.0, HASTE 0.8, CRIT 0.6, SPI 0.45` | `INT 1.6, SP 2.3, HASTE 1.0, CRIT 0.8, RESILIENCE 2.3` |
-| `BLOOD` | `TANK` | `PLATE` | No | No | No | `STA 2.95, STR 1.8, DEFENSE 3.9, DODGE 3.1, PARRY 3.1, HIT 1.5, EXPERTISE 1.75` | `STR 1.0, RESILIENCE 2.0` |
-| `FROST` | `MELEE` | `PLATE` | No | No | Yes | `STR 2.5, HIT 1.7, HASTE 1.2, CRIT 1.2, EXPERTISE 1.3, AP 0.9` | `STR 2.2, CRIT 0.9, RESILIENCE 2.2` |
-| `UNHOLY` | `MELEE` | `PLATE` | No | No | No | `STR 2.6, HIT 1.8, HASTE 1.5, CRIT 1.2, EXPERTISE 1.3, AP 1.1` | `STR 2.2, HASTE 0.8, RESILIENCE 2.2` |
-| `ELEMENTAL` | `CASTER` | `CLOTH` | Yes | No | No | `INT 1.1, SP 1.8, HIT 1.05, HASTE 0.9, CRIT 0.7, MP5 0.55` | `INT 1.5, SP 2.3, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
-| `ENHANCEMENT` | `MELEE` | `MAIL` | No | No | Yes | `AGI 2.65, AP 1.65, HIT 2.4, HASTE 2.0, CRIT 1.65, EXPERTISE 1.95` | `AGI 1.8, AP 1.0, HASTE 0.9, RESILIENCE 2.2` |
-| `RESTORATION` | `HEALER` | `MAIL` | Yes | No | No | `INT 2.3, SP 2.7, HASTE 1.8, CRIT 1.2, MP5 1.4, SPI 0.2` | `INT 2.0, SP 2.3, HASTE 0.9, MP5 0.7, RESILIENCE 2.3` |
-| `ARCANE` | `CASTER` | `CLOTH` | No | No | No | `INT 1.85, SP 2.7, HIT 1.75, HASTE 1.45, CRIT 1.15, SPI 0.4` | `INT 1.8, SP 2.2, HASTE 0.9, CRIT 0.8, RESILIENCE 2.2` |
-| `FIRE` | `CASTER` | `CLOTH` | No | No | No | `INT 1.45, SP 2.4, HIT 1.4, HASTE 1.3, CRIT 1.0, SPI 0.2` | `INT 1.6, SP 2.3, HASTE 1.0, CRIT 0.8, RESILIENCE 2.2` |
+| `PRIEST_SHADOW` | `CASTER` | `CLOTH` | No | No | No | `INT 1.1, SP 1.8, HIT 1.0, HASTE 0.8, CRIT 0.6, SPI 0.45` | `INT 1.6, SP 2.3, HASTE 1.0, CRIT 0.8, RESILIENCE 2.3` |
+| `DEATHKNIGHT_BLOOD` | `TANK` | `PLATE` | No | No | No | `STA 2.95, STR 1.8, DEFENSE 3.9, DODGE 3.1, PARRY 3.1, HIT 1.5, EXPERTISE 1.75` | `STR 1.0, RESILIENCE 2.0` |
+| `DEATHKNIGHT_FROST` | `MELEE` | `PLATE` | No | No | Yes | `STR 2.5, HIT 1.7, HASTE 1.2, CRIT 1.2, EXPERTISE 1.3, AP 0.9` | `STR 2.2, CRIT 0.9, RESILIENCE 2.2` |
+| `DEATHKNIGHT_UNHOLY` | `MELEE` | `PLATE` | No | No | Yes | `STR 2.6, HIT 1.8, HASTE 1.5, CRIT 1.2, EXPERTISE 1.3, AP 1.1` | `STR 2.2, HASTE 0.8, RESILIENCE 2.2` |
+| `SHAMAN_ELEMENTAL` | `CASTER` | `CLOTH` | Yes | No | No | `INT 1.1, SP 1.8, HIT 1.05, HASTE 0.9, CRIT 0.7, MP5 0.55` | `INT 1.5, SP 2.3, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
+| `SHAMAN_ENHANCEMENT` | `MELEE` | `MAIL` | No | No | Yes | `AGI 2.65, AP 1.65, HIT 2.4, HASTE 2.0, CRIT 1.65, EXPERTISE 1.95` | `AGI 1.8, AP 1.0, HASTE 0.9, RESILIENCE 2.2` |
+| `SHAMAN_RESTORATION` | `HEALER` | `MAIL` | Yes | No | No | `INT 2.3, SP 2.7, HASTE 1.8, CRIT 1.2, MP5 1.4, SPI 0.2` | `INT 2.0, SP 2.3, HASTE 0.9, MP5 0.7, RESILIENCE 2.3` |
+| `MAGE_ARCANE` | `CASTER` | `CLOTH` | No | No | No | `INT 1.85, SP 2.7, HIT 1.75, HASTE 1.45, CRIT 1.15, SPI 0.4` | `INT 1.8, SP 2.2, HASTE 0.9, CRIT 0.8, RESILIENCE 2.2` |
+| `MAGE_FIRE` | `CASTER` | `CLOTH` | No | No | No | `INT 1.45, SP 2.4, HIT 1.4, HASTE 1.3, CRIT 1.0, SPI 0.2` | `INT 1.6, SP 2.3, HASTE 1.0, CRIT 0.8, RESILIENCE 2.2` |
 | `MAGE_FROST` | `CASTER` | `CLOTH` | No | No | No | `INT 1.7, SP 2.6, HIT 1.7, HASTE 1.3, CRIT 1.2` | `INT 1.6, SP 2.3, HASTE 0.9, CRIT 0.8, RESILIENCE 2.5` |
-| `AFFLICTION` | `CASTER` | `CLOTH` | No | No | No | `INT 1.7, SP 2.8, HIT 1.8, HASTE 1.6, CRIT 1.0, SPI 0.5` | `INT 1.6, SP 2.3, HASTE 1.0, RESILIENCE 2.3` |
-| `DEMONOLOGY` | `CASTER` | `CLOTH` | No | No | No | `INT 1.7, SP 2.7, HIT 1.7, HASTE 1.4, CRIT 1.1, SPI 0.4` | `INT 1.6, SP 2.2, HASTE 0.9, RESILIENCE 2.2` |
-| `DESTRUCTION` | `CASTER` | `CLOTH` | No | No | No | `INT 2.45, SP 3.55, HIT 2.25, HASTE 2.1, CRIT 1.75, SPI 0.65` | `INT 1.6, SP 2.3, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
-| `BALANCE` | `CASTER` | `LEATHER` | No | No | No | `INT 2.95, SP 3.85, HIT 2.6, HASTE 2.45, CRIT 1.95, SPI 1.85` | `INT 1.7, SP 2.2, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
+| `WARLOCK_AFFLICTION` | `CASTER` | `CLOTH` | No | No | No | `INT 1.7, SP 2.8, HIT 1.8, HASTE 1.6, CRIT 1.0, SPI 0.5` | `INT 1.6, SP 2.3, HASTE 1.0, RESILIENCE 2.3` |
+| `WARLOCK_DEMONOLOGY` | `CASTER` | `CLOTH` | No | No | No | `INT 1.7, SP 2.7, HIT 1.7, HASTE 1.4, CRIT 1.1, SPI 0.4` | `INT 1.6, SP 2.2, HASTE 0.9, RESILIENCE 2.2` |
+| `WARLOCK_DESTRUCTION` | `CASTER` | `CLOTH` | No | No | No | `INT 2.45, SP 3.55, HIT 2.25, HASTE 2.1, CRIT 1.75, SPI 0.65` | `INT 1.6, SP 2.3, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
+| `DRUID_BALANCE` | `CASTER` | `LEATHER` | No | No | No | `INT 2.95, SP 3.85, HIT 2.6, HASTE 2.45, CRIT 1.95, SPI 1.85` | `INT 1.7, SP 2.2, HASTE 0.9, CRIT 0.8, RESILIENCE 2.3` |
 | `DRUID_FERAL_DPS` | `MELEE` | `LEATHER` | No | No | No | `AGI 2.5, AP 1.1, HIT 1.6, HASTE 1.0, CRIT 1.3, ARP 1.5, EXPERTISE 1.2` | `AGI 2.2, AP 0.9, RESILIENCE 2.3` |
 | `DRUID_FERAL_TANK` | `TANK` | `LEATHER` | No | No | No | `STA 2.9, AGI 2.2, DODGE 1.9, DEFENSE 0.8, HIT 1.2, EXPERTISE 1.35, AP 0.45, CRIT 0.55` | `STA 1.6, AGI 1.8, DODGE 1.0, RESILIENCE 2.3` |
 | `DRUID_RESTORATION` | `HEALER` | `LEATHER` | No | No | No | `INT 4.1, SP 4.2, HASTE 3.15, CRIT 1.65, MP5 2.0, SPI 2.25` | `INT 2.0, SP 2.2, HASTE 0.9, SPI 0.7, RESILIENCE 2.4` |
 
 Notes:
 
-- `PALADIN` still uses `HOLY` as its spec key.
-- `PRIEST` uses `PRIEST_HOLY` to avoid colliding with Paladin `HOLY`.
+- canonical runtime profile keys now always use the `CLASS_SPEC` format
+- runtime does not maintain a global short-key alias table anymore
+- `gs2Scale` is the explicit cross-spec normalization control for `GearScore2`
 - `DRUID` still detects the feral talent tree as `FERAL`, but runtime scoring resolves that tree into `DRUID_FERAL_DPS` or `DRUID_FERAL_TANK` before final scoring.
 
 ## 8. Enchant Data Runtime Shape
@@ -273,59 +276,60 @@ Resolved thresholds still come from the pool data below, but final scoring uses 
 
 | Spec | Pools |
 |---|---|
-| `ARMS` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
-| `FURY` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
-| `RETRIBUTION` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
-| `FROST` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
-| `UNHOLY` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
+| `WARRIOR_ARMS` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `WARRIOR_FURY` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `PALADIN_RETRIBUTION` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
+| `DEATHKNIGHT_FROST` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
+| `DEATHKNIGHT_UNHOLY` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
 | `DRUID_FERAL_DPS` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
 
 ### 9.2 Tanks
 
 | Spec | Pools |
 |---|---|
-| `PROTECTION` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
-| `BLOOD` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
+| `WARRIOR_PROTECTION` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
+| `PALADIN_PROTECTION` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
+| `DEATHKNIGHT_BLOOD` | `DEFENSE: 540 progress target`, `EXPERTISE: 26 progress target`, `HIT: 8% special progress target` |
 | `DRUID_FERAL_TANK` | `HIT: 8% special progress target`, `EXPERTISE: 26 progress target` |
 
 ### 9.3 Rogues / Enhancement Hit Progress Targets
 
 | Spec | Pools |
 |---|---|
-| `ASSASSINATION` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
-| `COMBAT` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
-| `SUBTLETY` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
-| `ENHANCEMENT` | `HIT: 8% melee special progress target`, `EXPERTISE: 26 progress target` |
+| `ROGUE_ASSASSINATION` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
+| `ROGUE_COMBAT` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target`, `ARP: 1400 progress target` |
+| `ROGUE_SUBTLETY` | `HIT: 8% melee special progress target`, `SPELL_HIT: 17% poison/spell progress target`, `EXPERTISE: 26 progress target` |
+| `SHAMAN_ENHANCEMENT` | `HIT: 8% melee special progress target`, `EXPERTISE: 26 progress target` |
 
 ### 9.4 Casters / Spell-Hit Specs
 
 | Spec | Pools |
 |---|---|
-| `SHADOW` | `HIT: 17% spell-hit progress target` |
-| `ELEMENTAL` | `HIT: 17% spell-hit progress target` |
-| `ARCANE` | `HIT: 17% spell-hit progress target` |
-| `FIRE` | `HIT: 17% spell-hit progress target` |
+| `PRIEST_SHADOW` | `HIT: 17% spell-hit progress target` |
+| `SHAMAN_ELEMENTAL` | `HIT: 17% spell-hit progress target` |
+| `MAGE_ARCANE` | `HIT: 17% spell-hit progress target` |
+| `MAGE_FIRE` | `HIT: 17% spell-hit progress target` |
 | `MAGE_FROST` | `HIT: 17% spell-hit progress target` |
-| `AFFLICTION` | `HIT: 17% spell-hit progress target` |
-| `DEMONOLOGY` | `HIT: 17% spell-hit progress target` |
-| `DESTRUCTION` | `HIT: 17% spell-hit progress target` |
-| `BALANCE` | `HIT: 17% spell-hit progress target` |
+| `WARLOCK_AFFLICTION` | `HIT: 17% spell-hit progress target` |
+| `WARLOCK_DEMONOLOGY` | `HIT: 17% spell-hit progress target` |
+| `WARLOCK_DESTRUCTION` | `HIT: 17% spell-hit progress target` |
+| `DRUID_BALANCE` | `HIT: 17% spell-hit progress target` |
 
 ### 9.5 Spec-Defined Passive Bonuses Used In Threshold Resolution
 
 | Spec | Passive Context |
 |---|---|
-| `ASSASSINATION` | `meleeHitBonus 5`, `spellHitBonus 5` |
-| `COMBAT` | `meleeHitBonus 5`, `spellHitBonus 5` |
-| `SUBTLETY` | `meleeHitBonus 5`, `spellHitBonus 5` |
-| `ENHANCEMENT` | `meleeHitBonus 3`, `spellHitBonus 3` |
-| `SHADOW` | `spellHitBonus 3` |
-| `ELEMENTAL` | `spellHitBonus 3` |
-| `ARCANE` | `spellHitBonus 3` |
-| `FIRE` | `spellHitBonus 3` |
+| `ROGUE_ASSASSINATION` | `meleeHitBonus 5`, `spellHitBonus 5` |
+| `ROGUE_COMBAT` | `meleeHitBonus 5`, `spellHitBonus 5` |
+| `ROGUE_SUBTLETY` | `meleeHitBonus 5`, `spellHitBonus 5` |
+| `SHAMAN_ENHANCEMENT` | `meleeHitBonus 3`, `spellHitBonus 3` |
+| `PRIEST_SHADOW` | `spellHitBonus 3` |
+| `SHAMAN_ELEMENTAL` | `spellHitBonus 3` |
+| `MAGE_ARCANE` | `spellHitBonus 3` |
+| `MAGE_FIRE` | `spellHitBonus 3` |
 | `MAGE_FROST` | `spellHitBonus 3` |
-| `AFFLICTION` | `spellHitBonus 3` |
-| `BALANCE` | `spellHitBonus 4` |
+| `WARLOCK_AFFLICTION` | `spellHitBonus 3` |
+| `DRUID_BALANCE` | `spellHitBonus 4` |
 
 ## 10. Permanent And Temporary Cap Context
 

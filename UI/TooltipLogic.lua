@@ -148,12 +148,12 @@ function GS_AddScoreLines(tooltip, record)
 	local showCharacterCapSummary = not GS_Settings or GS_Settings["showCharacterCapSummary"]
 	if record.gs2Available and record.gs2 ~= nil then
 		if showCharacterGS2 then
-			if record.offSpec and record.specLabel and record.offSpecBetterSpecLabel and record.offSpecBetterGs2 ~= nil then
+			if record.specLabel and record.offSpecBetterSpecLabel and record.offSpecBetterGs2 ~= nil then
 				local activeR, activeG, activeB = GS2_GetQuality(record.gs2)
 				local offR, offG, offB = GS2_GetQuality(record.offSpecBetterGs2)
 				tooltip:AddLine("GearScore2", 0.85, 0.9, 1)
-				tooltip:AddDoubleLine("  " .. tostring(record.specLabel), tostring(record.gs2), activeR, activeG, activeB, activeR, activeG, activeB)
-				tooltip:AddDoubleLine("  " .. tostring(record.offSpecBetterSpecLabel), tostring(record.offSpecBetterGs2), offR, offG, offB, offR, offG, offB)
+				tooltip:AddDoubleLine("  Active: " .. tostring(record.specLabel), tostring(record.gs2), activeR, activeG, activeB, activeR, activeG, activeB)
+				tooltip:AddDoubleLine("  Inferred: " .. tostring(record.offSpecBetterSpecLabel), tostring(record.offSpecBetterGs2), offR, offG, offB, offR, offG, offB)
 			else
 				local r, g, b = GS2_GetQuality(record.gs2)
 				tooltip:AddDoubleLine("GearScore2", tostring(record.gs2), r, g, b, r, g, b)

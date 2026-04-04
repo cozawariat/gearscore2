@@ -18,6 +18,7 @@ local GS_ENCHANT_SLOTS = Tables.EnchantSlots or {}
 local GS_QUALITY = Tables.Quality or {}
 local GS_GEM_SCALE = C.GEM_SCALE or 0.35
 local GS_ENCHANT_SCALE = C.ENCHANT_SCALE or 0.35
+local GS_INCOMPATIBLE_PVE_BONUS_SCALE = C.INCOMPATIBLE_PVE_BONUS_SCALE or 0.15
 local GS_PVE_RESILIENCE_RATE = C.PVE_RESILIENCE_RATE or 0.0015
 local GS_PVP_RESILIENCE_RATE = C.PVP_RESILIENCE_RATE or 0.0020
 local GS_PVE_RESILIENCE_FLOOR = C.PVE_RESILIENCE_FLOOR or 0.70
@@ -42,7 +43,7 @@ function GS_GetClassSpecCandidates(classToken)
 	end
 	for index = 1, #order do
 		local specKey = order[index]
-		if classToken == "DRUID" and specKey == "FERAL" then
+		if classToken == "DRUID" and specKey == "DRUID_FERAL_DPS" then
 			candidates[#candidates + 1] = "DRUID_FERAL_DPS"
 			candidates[#candidates + 1] = "DRUID_FERAL_TANK"
 		elseif GS_SPEC_PROFILES[specKey] then
@@ -53,7 +54,10 @@ function GS_GetClassSpecCandidates(classToken)
 end
 
 function GS_GetProfile(classToken, specKey)
-	local resolvedSpecKey = (specKey and GS_SPEC_PROFILES[specKey]) and specKey or nil
+	local resolvedSpecKey = specKey
+	if resolvedSpecKey and not GS_SPEC_PROFILES[resolvedSpecKey] then
+		resolvedSpecKey = nil
+	end
 	if not resolvedSpecKey and specKey and GS_GENERIC_TREE_PROFILE_DEFAULTS[specKey] and GS_SPEC_PROFILES[GS_GENERIC_TREE_PROFILE_DEFAULTS[specKey]] then
 		resolvedSpecKey = GS_GENERIC_TREE_PROFILE_DEFAULTS[specKey]
 	end
@@ -224,7 +228,7 @@ function GS_ResolveCapThreshold(segment, context)
 end
 
 function GS_IsRoguePoisonCapSpec(specKey)
-	return specKey == "ASSASSINATION" or specKey == "COMBAT" or specKey == "SUBTLETY"
+	return specKey == "ROGUE_ASSASSINATION" or specKey == "ROGUE_COMBAT" or specKey == "ROGUE_SUBTLETY"
 end
 
 function GS_FindCapSegment(pool, mode)
@@ -451,7 +455,7 @@ function GS_ApplyCharacterCaps(snapshot, preCapGs2)
 		return 0, nil, nil
 	end
 	local capProfile = GS_CAP_PROFILES[snapshot.specKey]
-	local profile = GS_SPEC_PROFILES[snapshot.specKey]
+	local profile = snapshot.classToken and select(1, GS_GetProfile(snapshot.classToken, snapshot.specKey)) or GS_SPEC_PROFILES[snapshot.specKey]
 	local totalStats = GS_CollectSnapshotStats(snapshot)
 	if not capProfile or not profile or not profile.pve then
 		return 0, nil, totalStats
@@ -596,6 +600,9 @@ function GS_GetRoleSignatureKind(item)
 end
 
 local function GS_ShouldIgnoreArmorDowngrade(classToken, profile)
+	if profile and profile.allowLowerArmor then
+		return true
+	end
 	if classToken ~= "DRUID" or not profile then
 		return false
 	end
@@ -606,6 +613,7 @@ function GS_IsItemCompatible(item, classToken, profile)
 	if not item or not profile or item.slot == 0 then return false end
 	local stats = item.stats or {}
 	local roleSignature = GS_GetRoleSignatureKind(item)
+	local allowHybridCasterItems = profile.hybridCasterItems and true or false
 	if GS_ARMOR_CLASS_ORDER[profile.armor] and item.armorRank and item.slot ~= 15 and item.slot ~= 2 and item.slot ~= 11 and item.slot ~= 13 then
 		if item.armorRank < GS_ARMOR_CLASS_ORDER[profile.armor] and not GS_ShouldIgnoreArmorDowngrade(classToken, profile) then return false end
 	end
@@ -616,11 +624,11 @@ function GS_IsItemCompatible(item, classToken, profile)
 	if (item.equipLoc == "INVTYPE_RANGED" or item.equipLoc == "INVTYPE_RANGEDRIGHT" or item.equipLoc == "INVTYPE_THROWN") and not GS_IsRangedHelperCompatible(item, classToken, profile) then return false end
 	if classToken == "HUNTER" and (item.equipLoc == "INVTYPE_SHIELD" or item.equipLoc == "INVTYPE_HOLDABLE") then return false end
 	if (profile.role == "CASTER" or profile.role == "HEALER") and (stats.STR or 0) > 0 and (stats.SP or 0) == 0 and (stats.INT or 0) == 0 then return false end
-	if (profile.role == "MELEE" or profile.role == "RANGED") and (stats.SP or 0) > 0 and (stats.STR or 0) == 0 and (stats.AGI or 0) == 0 and (stats.AP or 0) == 0 and (stats.RAP or 0) == 0 then return false end
+	if (profile.role == "MELEE" or profile.role == "RANGED") and (stats.SP or 0) > 0 and (stats.STR or 0) == 0 and (stats.AGI or 0) == 0 and (stats.AP or 0) == 0 and (stats.RAP or 0) == 0 and not allowHybridCasterItems then return false end
 	if profile.role == "TANK" and roleSignature == "CASTER" then return false end
 	if profile.role == "TANK" and roleSignature == "HEALER" then return false end
 	if (profile.role == "CASTER" or profile.role == "HEALER") and (roleSignature == "MELEE" or roleSignature == "RANGED") and (stats.SP or 0) == 0 and (stats.INT or 0) == 0 then return false end
-	if (profile.role == "MELEE" or profile.role == "RANGED") and (roleSignature == "CASTER" or roleSignature == "HEALER") and (stats.STR or 0) == 0 and (stats.AGI or 0) == 0 and (stats.AP or 0) == 0 and (stats.RAP or 0) == 0 then return false end
+	if (profile.role == "MELEE" or profile.role == "RANGED") and (roleSignature == "CASTER" or roleSignature == "HEALER") and (stats.STR or 0) == 0 and (stats.AGI or 0) == 0 and (stats.AP or 0) == 0 and (stats.RAP or 0) == 0 and not allowHybridCasterItems then return false end
 	return true
 end
 
@@ -648,21 +656,15 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 		end
 		return nil, nil, explain
 	end
-	if not compatible then
-		if explain then
-			explain.flags[#explain.flags + 1] = "Item rejected: offspec / incompatible armor type / incompatible weapon type"
-			explain.pve.final = 0
-			explain.pvp.final = 0
-		end
-		return 0, 0, explain
-	end
-
 	local pveScore, pvpScore = item.legacyBase, item.legacyBase
+	local pveScale = profile.gs2Scale or 1
+	local compatibilityPenaltyScale = compatible and 1 or GS_INCOMPATIBLE_PVE_BONUS_SCALE
+	local pveBonusBucket = 0
 	local pveStatRaw = GS_ScoreStats(item.stats, profile.pve)
 	local pvpStatRaw = GS_ScoreStats(item.stats, profile.pvp)
 	local pveStatBonus = floor(pveStatRaw * GS_GS2_STAT_SCALE)
 	local pvpStatBonus = floor(pvpStatRaw * GS_GS2_STAT_SCALE)
-	pveScore = pveScore + pveStatBonus
+	pveBonusBucket = pveBonusBucket + pveStatBonus
 	pvpScore = pvpScore + pvpStatBonus
 	if explain then
 		explain.pve.parts[#explain.pve.parts + 1] = { label = "Matched stats", formula = "(" .. GS_FormatNumber(pveStatRaw) .. " * " .. GS_FormatNumber(GS_GS2_STAT_SCALE) .. ")", delta = pveStatBonus }
@@ -675,7 +677,7 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 			local gemPvpRaw = GS_ScoreStats(item.gemStats[index], profile.pvp)
 			local gemPveBonus = gemPveRaw > 0 and floor(gemPveRaw * GS_GEM_SCALE) or 0
 			local gemPvpBonus = gemPvpRaw > 0 and floor(gemPvpRaw * GS_GEM_SCALE) or 0
-			pveScore = pveScore + gemPveBonus
+			pveBonusBucket = pveBonusBucket + gemPveBonus
 			pvpScore = pvpScore + gemPvpBonus
 			if explain then
 				local pveFormula = gemPveRaw > 0 and ("(" .. GS_FormatNumber(gemPveRaw) .. " * " .. GS_FormatNumber(GS_GEM_SCALE) .. ")") or ("(" .. GS_FormatNumber(gemPveRaw) .. " <= 0 => +0)")
@@ -700,7 +702,7 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 			local pvpEnchantRaw = GS_ScoreStats(enchantStats, profile.pvp)
 			local pveEnchant = pveEnchantRaw > 0 and floor(pveEnchantRaw * GS_ENCHANT_SCALE) or 0
 			local pvpEnchant = pvpEnchantRaw > 0 and floor(pvpEnchantRaw * GS_ENCHANT_SCALE) or 0
-			pveScore = pveScore + pveEnchant
+			pveBonusBucket = pveBonusBucket + pveEnchant
 			pvpScore = pvpScore + pvpEnchant
 			if explain then
 				local pveFormula, pvpFormula
@@ -726,6 +728,15 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 		elseif explain then
 			explain.pve.parts[#explain.pve.parts + 1] = { label = "Enchant", formula = "(missing enchant => +0)", delta = 0 }
 			explain.pvp.parts[#explain.pvp.parts + 1] = { label = "Enchant", formula = "(missing enchant => +0)", delta = 0 }
+		end
+	end
+	local pveScaledBonus = pveBonusBucket > 0 and floor(pveBonusBucket * pveScale * compatibilityPenaltyScale) or 0
+	pveScore = pveScore + pveScaledBonus
+	if explain and (pveScaledBonus ~= pveBonusBucket or pveScale ~= 1 or not compatible) then
+		local penaltySuffix = compatible and "" or (" * " .. GS_FormatNumber(GS_INCOMPATIBLE_PVE_BONUS_SCALE))
+		explain.pve.parts[#explain.pve.parts + 1] = { label = "Spec scale", formula = "floor(" .. pveBonusBucket .. " * " .. GS_FormatNumber(pveScale) .. penaltySuffix .. ")", delta = pveScaledBonus - pveBonusBucket }
+		if not compatible then
+			explain.flags[#explain.flags + 1] = "Item penalized: offspec / incompatible armor type / incompatible weapon type"
 		end
 	end
 	local pveBaseScore = pveScore > 0 and pveScore or 0
