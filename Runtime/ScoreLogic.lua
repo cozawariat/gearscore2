@@ -65,6 +65,28 @@ function GS_GetProfile(classToken, specKey)
 	return GS_SPEC_PROFILES[resolvedSpecKey], resolvedSpecKey
 end
 
+function GS_GetSlotMultiplier(profile, slotId, itemLevel)
+	if not profile or not profile.gs2SlotCurves or not slotId then
+		return 1
+	end
+	local curve = profile.gs2SlotCurves[slotId]
+	if not curve then
+		return 1
+	end
+	local ilvlStart = tonumber(curve.ilvlStart or 0) or 0
+	local ilvlEnd = tonumber(curve.ilvlEnd or ilvlStart) or ilvlStart
+	local multiplierHigh = tonumber(curve.multiplierHigh or 1) or 1
+	local level = tonumber(itemLevel or 0) or 0
+	if level <= ilvlStart or ilvlEnd <= ilvlStart then
+		return 1
+	end
+	if level >= ilvlEnd then
+		return multiplierHigh
+	end
+	local progress = (level - ilvlStart) / (ilvlEnd - ilvlStart)
+	return 1 - ((1 - multiplierHigh) * progress)
+end
+
 function GS_GetAuraNameFromId(spellId)
 	local name = spellId and GetSpellInfo(spellId)
 	return name
@@ -658,6 +680,7 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 	end
 	local pveScore, pvpScore = item.legacyBase, item.legacyBase
 	local pveScale = profile.gs2Scale or 1
+	local slotMultiplier = GS_GetSlotMultiplier(profile, item.slot, item.level)
 	local compatibilityPenaltyScale = compatible and 1 or GS_INCOMPATIBLE_PVE_BONUS_SCALE
 	local pveBonusBucket = 0
 	local pveStatRaw = GS_ScoreStats(item.stats, profile.pve)
@@ -745,6 +768,10 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 	local pvpMultiplier = GS_GetResilienceMultiplier(item.resilience, "PVP")
 	pveScore = floor(pveBaseScore * pveMultiplier)
 	pvpScore = floor(pvpBaseScore * pvpMultiplier)
+	local pvePreSlotScore = pveScore
+	if slotMultiplier ~= 1 then
+		pveScore = floor(pveScore * slotMultiplier)
+	end
 	if explain then
 		explain.pve.preMultiplier = pveBaseScore
 		explain.pvp.preMultiplier = pvpBaseScore
@@ -755,6 +782,9 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 		end
 		explain.pve.parts[#explain.pve.parts + 1] = { label = "PvE resilience multiplier", formula = "max(" .. GS_FormatNumber(GS_PVE_RESILIENCE_FLOOR) .. ", 1 - (" .. item.resilience .. " * " .. GS_FormatNumber(GS_PVE_RESILIENCE_RATE) .. "))", delta = pveScore - pveBaseScore }
 		explain.pvp.parts[#explain.pvp.parts + 1] = { label = "PvP resilience multiplier", formula = "min(" .. GS_FormatNumber(GS_PVP_RESILIENCE_CAP) .. ", 1 + (" .. item.resilience .. " * " .. GS_FormatNumber(GS_PVP_RESILIENCE_RATE) .. "))", delta = pvpScore - pvpBaseScore }
+		if slotMultiplier ~= 1 then
+			explain.pve.parts[#explain.pve.parts + 1] = { label = "Slot multiplier", formula = "floor(" .. pvePreSlotScore .. " * " .. GS_FormatNumber(slotMultiplier) .. ")", delta = pveScore - pvePreSlotScore }
+		end
 		explain.pve.final = pveScore
 		explain.pvp.final = pvpScore
 	end

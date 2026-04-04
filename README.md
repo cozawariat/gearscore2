@@ -2,289 +2,101 @@
 
 [![Character tooltip settings](/docs/GearScore2_character_tooltip.png "Character tooltip settings")](docs/GearScore2_character_tooltip.png)
 
-## `GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
+## What It Is
 
-It is a smarter PvE-oriented successor to `GearScoreLite: Reborn` (https://github.com/Arcitec/GearScoreLite_Reborn) and a practical alternative to classic `GearScore`.
+`GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
 
-I am fully aware that the chance of the wider WoW 3.3.5a community abandoning classic `GearScore` and migrating to `GS2` is probably very small, even if that would be the dream outcome.
-
-That is not really the main point.
-
-This addon is first and foremost a functional proof of concept: an attempt to show that a GearScore can be made much more intelligent, more spec-aware, and more useful than the original item-level-heavy model.
-
-Instead of treating item level as the whole story, `GearScore2` tries to answer a more useful question:
+It is a smarter PvE-oriented alternative to classic `GearScore`: a score that tries to answer a more useful question than "how high is the item level?"
 
 > how good is this gear for the actual class and specialization using it?
 
-That means the addon looks beyond legacy base value and takes into account:
+The addon is built as a practical, spec-aware scoring system rather than a strict reimplementation of older GearScore-family addons.
 
-- spec compatibility,
-- relevant PvE stats,
-- gems and enchants,
-- PvP stat devaluation in PvE,
-- character-level cap progress for important PvE stats.
+## What It Tries To Improve
+
+Classic `GearScore` is easy to read, but it also treats many very different items too similarly.
+
+`GearScore2` tries to improve that by looking at more than raw item level:
+
+- class and specialization fit
+- relevant PvE stats
+- gems
+- enchants
+- PvP stat devaluation in PvE
+- character-level progress toward important PvE caps
+
+That means two characters with similar item level can still score differently if one of them is wearing more appropriate, better optimized gear for their spec.
 
 > [!IMPORTANT]
-> - `GearScore2` may conflict with the original `GearScore` addon and with related forks such as `GearScoreLite` and `GearScoreLite: Reborn`.
-> - `GearScore2` includes conflict detection for other GearScore-family addons, but it is still strongly recommended to disable the others completely.
-> - Run only one addon from that family at a time, because overlapping tooltip hooks, slash commands, globals, or UI elements can cause duplicate lines, inconsistent values, or other unexpected behavior.
+> - `GearScore2` may conflict with the original `GearScore` addon and related forks such as `GearScoreLite` or `GearScoreLite: Reborn`.
+> - The addon includes conflict detection, but it is still strongly recommended to disable the others completely.
+> - Run only one addon from that family at a time to avoid duplicate tooltip lines, conflicting hooks, or inconsistent values.
 
-## What It Does
+## The Three Scores
 
-`GearScore2` is built around three score families:
+`GearScore2` shows three score families:
 
 - `GearScore2`
-  - PvE-aware score focused on gear usefulness for the active or inferred specialization.
+  - the main PvE-oriented score
 - `Legacy GearScore`
-  - classic-style baseline score driven mostly by item level and slot value.
+  - a familiar item-level-style baseline
 - `PvP GearScore`
-  - separate PvP-oriented score using PvP stat priorities.
+  - a separate PvP-oriented score
 
-In practice, `GearScore2` is meant to be the score you use when you want a more realistic picture of raid or dungeon gearing quality, while `Legacy GearScore` remains a familiar comparison baseline.
+These scores are intentionally different.
 
-## Why Use It
-
-[![GearScore2 Benchmark](docs/benchmark.png "GearScore2 Benchmark")](docs/benchmark.png)
-[GearScore2 Benchmark](https://docs.google.com/spreadsheets/d/1tRMymwR-nn13KqoDOHtIFytayMQhZsvDvcox4lgYlPA/edit?usp=sharing) (Probe from top 40 Naxxramas runs on Warmane)
-
-Classic `GearScore` is fast, but it is also easy to game. It tends to overvalue raw item level, ignores gems and enchants, and does not care whether the item is actually appropriate for the spec wearing it.
-
-`GearScore2` is designed to improve that by:
-
-- heavily penalizing obviously wrong off-role or off-spec gear instead of rewarding it like a normal match,
-- weighting stats per specialization,
-- rewarding useful gems and enchants,
-- reducing PvE value of `Resilience`,
-- adding a character-level cap layer for important PvE stats.
-
-Internally, runtime scoring now uses canonical `CLASS_SPEC` profile keys such as `PALADIN_PROTECTION` or `MAGE_ARCANE`, with only narrow input adapters where external text labels are not already canonical.
-
-The result is not meant to be a universal standard. It is an evolving system, but already much closer to real PvE gear quality than a pure item-level score.
-
-## GearScore2 vs Legacy GearScore
-
-| Area | GearScore2 | Legacy GearScore |
-|---|---|---|
-| Main goal | PvE usefulness | Item-level-style gear estimate |
-| Base math | Starts from legacy base, then adjusts | Pure legacy formula |
-| Class/spec aware | Yes | No |
-| Off-spec filtering | Yes | No |
-| Stat weights | Yes, per spec | No |
-| Gems | Matching gems add score | Ignored |
-| Enchants | Matching enchants add score | Ignored |
-| Missing gem/enchant | `+0`, no direct penalty | Ignored |
-| PvP `Resilience` in PvE | Reduces score through multiplier | Ignored |
-| Character stat caps | Yes, only for final character `GS2` | No |
-| Temporary buffs | Tooltip info only, no score impact | Not applicable |
-| PvP score | Separate `PvP GearScore` | No dedicated PvP score |
-| Same item for different specs | Can score differently | Mostly same outcome |
-| Best use | PvE gearing quality | Fast rough comparison |
+`Legacy GearScore` is there as a recognizable comparison point. `GearScore2` is the addon's main product: a score meant to reflect real PvE usefulness more closely. `PvP GearScore` exists so PvP evaluation does not have to distort PvE scoring.
 
 [![Item tooltip settings](/docs/GearScore2_item_tooltip.png "Item tooltip settings")](docs/GearScore2_item_tooltip.png)
 
-## Table of Contents
+## How To Read GearScore2
 
-- [1. Purpose](#1-purpose)
-- [2. What GearScore2 Measures](#2-what-gearscore2-measures)
-- [3. Core GearScore2 Rules](#3-core-gearscore2-rules)
-- [4. Character Cap Logic](#4-character-cap-logic)
-- [5. Current Limitations / Expectations](#5-current-limitations--expectations)
-- [6. Practical Reading Guide](#6-practical-reading-guide)
-- [7. Documentation Map](#7-documentation-map)
+In practice:
 
-## 1. Purpose
+- high `GearScore2` usually means the gear is both strong and appropriate for the spec
+- high `Legacy GearScore` with weaker `GearScore2` usually means "good item level, weaker real PvE fit"
+- strong PvP pieces tend to look worse in `GearScore2` than in `Legacy`
+- good gems and enchants help, but missing or bad ones are mostly "not rewarded" rather than hard-punished
+
+Because the system is spec-aware, the same item can be valued differently by different specs.
+
+## Spec Awareness
+
+The addon tries to score gear for the right specialization whenever possible.
+
+- for the local player, it uses the talent tab with the highest point count
+- for inspected targets, it tries to resolve the active spec from inspect talent data
+- if that is not available in time, it can fall back to gear-based inference
+
+The addon may therefore show both:
+
+- an `Active` result
+- an `Inferred` result
+
+This is intentional. It makes off-spec or mismatched gear sets easier to understand instead of silently hiding the comparison.
+
+## Current Direction
+
+`GearScore2` is not meant to be a frozen standard.
+
+It is an evolving system focused on:
+
+- better spec awareness
+- better PvE realism
+- clearer tooltip explanations
+- more useful comparisons than a pure item-level score
+
+Weights, profiles, and edge-case handling can still improve over time, but the product direction stays the same: practical usefulness first.
+
+## Documentation Map
 
 This README is the high-level overview of the addon.
 
-It explains the intent and the most important runtime behavior without trying to duplicate the full technical specification.
-
-Use this file when you want the product-level model. Use the docs for exact implementation detail.
-
-## 2. What GearScore2 Measures
-
-`GearScore2` is the PvE-oriented score.
-
-It starts from the old item-level-based `Legacy GearScore`, then adjusts the result using gameplay-aware rules:
-
-- class and specialization compatibility,
-- weighted PvE stats,
-- gems,
-- enchants,
-- PvE treatment of `Resilience`,
-- character-level cap awareness for important PvE stats.
-
-The goal is to score how useful a character's gear is for real PvE performance, not just how high the item level looks.
-
-## 3. Core GearScore2 Rules
-
-### 3.1 Legacy base still matters
-
-Each item still begins with the old legacy base derived from:
-
-- item level,
-- rarity,
-- slot modifier.
-
-Higher-ilvl gear still matters. It is just no longer the only thing that matters.
-
-### 3.2 Off-spec and obviously wrong gear is heavily penalized
-
-Items are scored much more weakly by `GearScore2` if they are clearly wrong for the class or spec, for example:
-
-- lower-than-expected armor class,
-- wrong role category,
-- caster-style item on a melee profile,
-- melee-style item on a caster profile.
-
-The important rule is that an incompatible item is not dropped to `0`. It keeps its legacy base, but loses most of the spec-aware PvE bonus.
-
-### 3.3 Stats are weighted per spec
-
-Each specialization has its own PvE stat profile.
-
-Examples:
-
-- Assassination values `AGI`, `HIT`, `EXPERTISE`, `HASTE`
-- tanks value `DEFENSE`, avoidance stats, and other tank-specific defenses
-- casters value `SP`, `HIT`, `HASTE`, and spec-specific secondaries
-
-Because of this, the same item can score differently for different specs.
-
-### 3.4 How specialization is matched
-
-For the local player, the addon reads the three talent tabs and picks the tab with the highest point count.
-
-That tab is then mapped through the class-specific specialization order used by the runtime.
-
-For inspected targets, the addon first tries to resolve the active spec from inspect talent data.
-
-If talent data still does not produce a usable result after a short wait, the addon falls back to gear-based inference and marks that result as `[INFERRED]`.
-
-If the inspect snapshot is still incomplete, the tooltip temporarily shows `Scanning...`.
-
-If no explicit specialization is available, item scoring can still fall back to the class default profile.
-
-### 3.5 Gems and enchants can help, but do not punish by themselves
-
-Current runtime behavior:
-
-- a matching gem adds score,
-- a matching enchant adds score,
-- a non-matching gem gives `+0`,
-- a non-matching enchant gives `+0`,
-- a missing gem gives `+0`,
-- a missing enchant gives `+0`.
-
-So `GearScore2` does not punish empty or bad enhancements directly; it simply refuses to reward them.
-
-### 3.6 Resilience lowers PvE value
-
-`Resilience` is not handled as a flat penalty.
-
-Instead, for PvE it reduces the item result through a multiplier:
-
-- more `Resilience` means lower final PvE value,
-- but the item is not automatically worth `0`.
-
-That makes PvP items look worse for PvE than equivalent PvE items, without completely breaking the score.
-
-## 4. Character Cap Logic
-
-The biggest addition on top of item scoring is the character-level cap layer.
-
-This applies only to final character `GearScore2`, not to individual item tooltip scores, `Legacy GearScore`, or `PvP GearScore`.
-
-### 4.1 Why it exists
-
-Some stats are extremely valuable until a cap, then much less valuable after that.
-
-Examples:
-
-- `HIT`
-- `SPELL_HIT`
-- `EXPERTISE`
-- `DEFENSE`
-- `ARP`
-
-Without cap logic, a character can appear stronger simply by stacking too much of a stat that has already passed the useful threshold.
-
-### 4.2 How the cap layer works
-
-After all item `GearScore2` values are summed, the addon:
-
-1. aggregates total character stats from gear, gems, and scoreable enchants,
-2. resolves the active PvE spec profile,
-3. measures progress toward important stat caps,
-4. adds a progress-based bonus to final character `GearScore2`.
-
-This cap model uses only permanent sources:
-
-- gear,
-- gems,
-- scoreable enchants,
-- spec passives / talents represented by the cap profile,
-- supported racials.
-
-Temporary buffs, elixirs, food, party auras, and target debuffs may still appear in the tooltip as informational context, but they do not change final `GS2`.
-
-### 4.3 Important runtime semantics
-
-- overcap does not reduce cap progress below `100%`
-- `ROGUE_ASSASSINATION`, `ROGUE_COMBAT`, and `ROGUE_SUBTLETY` track separate `HIT` and `SPELL_HIT` pools
-- caster spell-hit lines are presented as `SPHIT` in the UI
-- cap logic is used only for final character `GearScore2`
-
-### 4.4 Inspect behavior
-
-Inspect is asynchronous.
-
-For inspected targets, the addon now prefers inspect talent data first and only falls back to inference if talent data still is not usable after a short wait:
-
-- while item data is still loading, character and item tooltips show `Scanning...`
-- if inspect talents resolve in time, the active spec comes from the talent tab with the highest point count
-- if inspect talents still do not resolve in time, the addon infers the most likely specialization from the full gear setup and marks the result as `[INFERRED]`
-- if the active spec resolves from talents, the tooltip keeps that active result visible and also shows the best plausible inferred comparison result when one exists
-- if the inferred result leads the active result by more than `5%`, the `Spec` line is also marked as off-spec
-
-This was introduced not only for responsiveness, but also because inspected talent API data proved unreliable during debugging and did not always return usable specialization information in time.
-
-`[INFERRED]` makes that fallback explicit instead of pretending the specialization was confirmed directly from talents, while the off-spec warning highlights targets whose active spec and gear setup do not really match. To avoid noisy false positives, the marker now requires a plausible alternate spec and a lead of more than `5%`.
-
-## 5. Current Limitations / Expectations
-
-`GearScore2` is an evolving system, not a frozen standard.
-
-That means:
-
-- spec weights and cap profiles may still be rebalanced,
-- inspect results are asynchronous and may briefly show `Scanning...`,
-- benchmark reports are aligned with the same permanent cap model, compatibility rules, and offline off-spec comparison logic used by runtime,
-- tooltip informational lines can include temporary cap helpers even though they do not affect score,
-- edge cases around unusual gear setups can still improve over time.
-
-## 6. Practical Reading Guide
-
-In practice, `GearScore2` should be read like this:
-
-- high `GearScore2` means the gear is not only high ilvl, but also appropriate and efficient for PvE,
-- low `GearScore2` relative to legacy often means the character has:
-  - wrong-role items,
-  - PvP pieces,
-  - weak gem or enchant choices,
-  - too much wasted capped stat,
-- strong `Legacy GearScore` but weaker `GearScore2` usually means "high item level, lower real PvE efficiency".
-
-`PvP GearScore` is separate on purpose. It exists so PvP-oriented evaluation does not have to distort the PvE-oriented meaning of `GearScore2`.
-
-## 7. Documentation Map
-
-Use the deeper docs when you need exact runtime behavior:
+Use the deeper docs when you need exact behavior:
 
 - [docs/GS_ALGORITHM.md](docs/GS_ALGORITHM.md)
   - exact scoring behavior and formulas
 - [docs/GS_RUNTIME_TABLES.md](docs/GS_RUNTIME_TABLES.md)
-  - runtime constants, spec profiles, cap profiles, and tables
-- [docs/GS2_BALANCE_BENCHMARK.md](docs/GS2_BALANCE_BENCHMARK.md)
-  - benchmark workflow, output format, and interpretation
+  - runtime constants, profiles, cap data, and tables
 - [docs/GS_WOWHEAD_PROFILE_AUDIT.md](docs/GS_WOWHEAD_PROFILE_AUDIT.md)
-  - curated Wowhead WotLK PvE archetype audit and profile refactor notes
+  - curated Wowhead WotLK PvE archetype audit and profile notes

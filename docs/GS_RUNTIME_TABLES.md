@@ -250,7 +250,13 @@ Notes:
 - canonical runtime profile keys now always use the `CLASS_SPEC` format
 - runtime does not maintain a global short-key alias table anymore
 - `gs2Scale` is the explicit cross-spec normalization control for `GearScore2`
+- `gs2SlotCurves` is an optional slot-level PvE GS2 flattening map of `slotId -> { ilvlStart, ilvlEnd, multiplierHigh }`
+- cross-phase benchmark calibration is done by retuning these profiles, not by introducing runtime phase detection
+- if a profile drifts too hard from `PHASE_1` to `PHASE_4`, the first tuning knobs are `gs2Scale` and the most aggressive PvE secondary weights
+- if a profile only over-inflates on a few high-ilvl slots, prefer `gs2SlotCurves` over distorting the whole profile
 - `DRUID` still detects the feral talent tree as `FERAL`, but runtime scoring resolves that tree into `DRUID_FERAL_DPS` or `DRUID_FERAL_TANK` before final scoring.
+- `allowLowerArmor` is reserved for deliberate cross-armor PvE profile exceptions, not as a generic benchmark escape hatch
+- `hybridCasterItems` is intentionally narrow and currently exists only for real hybrid spellhance-style support
 
 ## 8. Enchant Data Runtime Shape
 
@@ -271,6 +277,8 @@ Cap profiles affect only final character `GearScore2`.
 
 Each pool contributes a `0..100%` progress value toward the character cap bonus.
 Resolved thresholds still come from the pool data below, but final scoring uses progress to a single target per pool instead of segment-by-segment overflow math.
+
+Cap profiles are not intended to be the first balancing knob for phase drift. If a spec inflates too strongly in later BiS phases, prefer retuning `gs2Scale` and PvE weights before changing cap targets or cap-bonus anchors.
 
 ### 9.1 Melee / Physical Specs
 

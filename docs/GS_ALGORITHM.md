@@ -126,6 +126,8 @@ It does not use:
 - enchant bonuses,
 - a PvE resilience multiplier.
 
+The runtime does not branch by progression phase. Stability from early to late WotLK gear is controlled by one shared model through profile weights, `gs2Scale`, and the character cap layer.
+
 For characters only, it also uses:
 
 - a character-level cap adjustment layer applied after all item scores are summed,
@@ -341,7 +343,7 @@ If the inspect snapshot itself is still incomplete, the target remains in `Scann
 - item armor class is below the target armor class for most armor slots
 - exceptions:
   - druid caster/healer specs do not hard-reject cloth armor for `GS2`
-  - any profile with `allowLowerArmor = true` also skips that hard reject
+  - profiles with `allowLowerArmor = true` also skip that hard reject, but only as deliberate profile-level PvE exceptions
 - item is a shield and the profile does not use shields
 - item is an off-hand weapon and the profile does not use dual wield
 - item is a holdable and the profile is neither caster nor healer
@@ -349,7 +351,7 @@ If the inspect snapshot itself is still incomplete, the target remains in `Scann
 - hunter is trying to use shield or holdable
 - a caster/healer item is treated as invalid when it has `STR` but no `SP` and no `INT`
 - a melee/ranged item is treated as invalid when it has `SP` but no `STR`, `AGI`, `AP`, or `RAP`
-- exception: profiles with `hybridCasterItems = true` do not hard-reject those hybrid spellpower items
+- exception: profiles with `hybridCasterItems = true` do not hard-reject those hybrid spellpower items; this is intentionally narrow rather than a generic fallback
 
 Helper-slot compatibility is class-aware:
 
@@ -479,6 +481,32 @@ This keeps:
 - PvE stat priorities intact inside each spec
 
 The scale is a cross-spec normalization knob, not a stat-priority table.
+It is also the first calibration knob used when benchmark runs show that a spec's `GS2 - Legacy` delta grows too quickly from `PHASE_1` to `PHASE_4`.
+
+Profiles may also define `gs2SlotCurves`.
+
+Those curves are applied only to the final PvE item `GS2` for selected slots after resilience and before character-level summation.
+
+Each curve is defined by:
+
+- `ilvlStart`
+- `ilvlEnd`
+- `multiplierHigh`
+
+The resolved slot multiplier is:
+
+- `1` when `item.level <= ilvlStart`
+- `multiplierHigh` when `item.level >= ilvlEnd`
+- linear interpolation between `1` and `multiplierHigh` between those two thresholds
+
+```text
+pveScore = floor(pveBaseScore * pveMultiplier)
+slotMultiplier = resolve from profile.gs2SlotCurves[item.slot] and item.level
+if slotMultiplier ~= 1:
+    pveScore = floor(pveScore * slotMultiplier)
+```
+
+This keeps slot-level flattening local to the slots that actually inflate a profile, while avoiding unnecessary cuts to earlier item-power bands.
 
 After that:
 
@@ -580,6 +608,13 @@ It does **not** affect:
 - item tooltip `GearScore2`,
 - `Legacy GearScore`,
 - `PvP GearScore`.
+
+In cross-phase balance work, this cap layer is treated as a secondary calibration surface. The preferred order is:
+
+1. fix parser or compatibility anomalies
+2. retune `gs2Scale`
+3. retune the most aggressive PvE weights
+4. only then adjust cap targets or cap-bonus anchors if drift still remains
 
 ### 9.4 Character Stat Aggregation
 
