@@ -25,6 +25,10 @@ local GS_MIN_INSPECT_ITEMS = C.MIN_INSPECT_ITEMS or 8
 local GS_FORCE_POLL_DELAY = C.FORCE_POLL_DELAY or 0.20
 local GS_TALENT_SPEC_WAIT = C.TALENT_SPEC_WAIT or 1.0
 local GS_OFFSPEC_MIN_RATIO = C.OFFSPEC_MIN_RATIO or 0.05
+local GS_OFFSPEC_FIT_MATCH_RATIO_FLOOR = C.OFFSPEC_FIT_MATCH_RATIO_FLOOR or 0.35
+local GS_OFFSPEC_FIT_MATCH_RATIO_FULL = C.OFFSPEC_FIT_MATCH_RATIO_FULL or 0.75
+local GS_OFFSPEC_FIT_MULTIPLIER_FLOOR = C.OFFSPEC_FIT_MULTIPLIER_FLOOR or 0.45
+local GS_OFFSPEC_FIT_SIGNATURE_PENALTY = C.OFFSPEC_FIT_SIGNATURE_PENALTY or 0.80
 local GS_InspectQueue = State.InspectQueue or {}
 local GS_InspectCache = State.InspectCache or {}
 local GS_InspectState = State.InspectState or { active = nil, lastInspectAt = 0, queued = {}, recent = {}, hoverGuid = nil, hoverStartedAt = 0 }
@@ -244,24 +248,8 @@ function GS_FinalizeSnapshotSpec(snapshot, specKey, specSource, scanExpired)
 end
 
 function GS_GetSnapshotSpecScore(snapshot, specKey)
-	local profile, resolvedSpecKey = nil, specKey
-	if snapshot and snapshot.classToken and specKey then
-		profile, resolvedSpecKey = GS_GetProfile(snapshot.classToken, specKey)
-	end
-	if not snapshot or not snapshot.classToken or not snapshot.items or not specKey or not profile then
-		return nil
-	end
-	local total = 0
-	for itemIndex = 1, #snapshot.items do
-		local entry = snapshot.items[itemIndex]
-		local itemGS2 = GS_ScoreItem(entry.item, snapshot.classToken, specKey)
-		if itemGS2 == nil then
-			return nil
-		end
-		total = total + itemGS2
-	end
-	local capAdjustedGs2 = GS_ApplyCharacterCaps({ unit = snapshot.unit, classToken = snapshot.classToken, specKey = resolvedSpecKey, raceToken = snapshot.raceToken, items = snapshot.items }, total)
-	return total + (capAdjustedGs2 or 0)
+	local diagnostics = GS_GetSnapshotSpecDiagnostics(snapshot, specKey)
+	return diagnostics and diagnostics.total or nil
 end
 
 local function GS_GetCandidateSignatureFloor(role, itemCount)
@@ -276,6 +264,49 @@ local function GS_GetCandidateSignatureFloor(role, itemCount)
 		return max(4, floor(itemCount * 0.25))
 	end
 	return max(4, floor(itemCount * 0.25))
+end
+
+local function GS_Clamp01(value)
+	value = tonumber(value) or 0
+	if value < 0 then
+		return 0
+	end
+	if value > 1 then
+		return 1
+	end
+	return value
+end
+
+local function GS_ShouldApplySignatureFitPenalty(role, specKey)
+	if specKey == "DRUID_FERAL_TANK" then
+		return false
+	end
+	return role == "TANK" or role == "HEALER" or role == "CASTER"
+end
+
+local function GS_CalculateSnapshotFitMultiplier(role, specKey, itemCount, matchedItems, signatureItems)
+	itemCount = tonumber(itemCount) or 0
+	matchedItems = tonumber(matchedItems) or 0
+	signatureItems = tonumber(signatureItems) or 0
+	if itemCount <= 0 then
+		return 1, 1
+	end
+	local matchedRatio = matchedItems / itemCount
+	local range = GS_OFFSPEC_FIT_MATCH_RATIO_FULL - GS_OFFSPEC_FIT_MATCH_RATIO_FLOOR
+	local fitProgress = 1
+	if range > 0 then
+		fitProgress = GS_Clamp01((matchedRatio - GS_OFFSPEC_FIT_MATCH_RATIO_FLOOR) / range)
+	elseif matchedRatio < GS_OFFSPEC_FIT_MATCH_RATIO_FULL then
+		fitProgress = 0
+	end
+	local fitMultiplier = GS_OFFSPEC_FIT_MULTIPLIER_FLOOR + ((1 - GS_OFFSPEC_FIT_MULTIPLIER_FLOOR) * fitProgress)
+	if GS_ShouldApplySignatureFitPenalty(role, specKey) then
+		local requiredSignatureItems = GS_GetCandidateSignatureFloor(role, itemCount)
+		if signatureItems < requiredSignatureItems then
+			fitMultiplier = fitMultiplier * GS_OFFSPEC_FIT_SIGNATURE_PENALTY
+		end
+	end
+	return fitMultiplier, matchedRatio
 end
 
 function GS_GetSnapshotSpecDiagnostics(snapshot, specKey)
@@ -320,6 +351,8 @@ function GS_GetSnapshotSpecDiagnostics(snapshot, specKey)
 		end
 	end
 	local capBonus = GS_ApplyCharacterCaps({ unit = snapshot.unit, classToken = snapshot.classToken, specKey = resolvedSpecKey, raceToken = snapshot.raceToken, items = snapshot.items }, totalBeforeCaps) or 0
+	local fitMultiplier, matchedRatio = GS_CalculateSnapshotFitMultiplier(profile.role, resolvedSpecKey, #snapshot.items, matchedItems, signatureItems)
+	local preFitTotal = totalBeforeCaps + capBonus
 	return {
 		specKey = resolvedSpecKey,
 		specLabel = GS_GetSpecLabel(resolvedSpecKey),
@@ -331,7 +364,10 @@ function GS_GetSnapshotSpecDiagnostics(snapshot, specKey)
 		legacyTotal = legacyTotal,
 		totalBeforeCaps = totalBeforeCaps,
 		capBonus = capBonus,
-		total = totalBeforeCaps + capBonus,
+		preFitTotal = preFitTotal,
+		matchedRatio = matchedRatio,
+		fitMultiplier = fitMultiplier,
+		total = floor(preFitTotal * fitMultiplier),
 		positiveSlots = positiveSlots,
 		signatureSlots = signatureSlots,
 	}
@@ -465,9 +501,18 @@ function GS_BuildRecord(snapshot)
 		detailLinks[entry.slotId] = entry.item.link
 	end
 	local capAdjustedGs2, capBreakdown, capStats = 0, nil, nil
+	local fitMultiplier, matchedRatio = 1, 1
 	if snapshot.specResolved and snapshot.specKey and not unresolvedData then
 		capAdjustedGs2, capBreakdown, capStats = GS_ApplyCharacterCaps(snapshot, gs2)
-		gs2 = gs2 + (capAdjustedGs2 or 0)
+		local activeDiagnostics = GS_GetSnapshotSpecDiagnostics(snapshot, snapshot.specKey)
+		if activeDiagnostics then
+			capAdjustedGs2 = activeDiagnostics.capBonus or capAdjustedGs2 or 0
+			fitMultiplier = activeDiagnostics.fitMultiplier or 1
+			matchedRatio = activeDiagnostics.matchedRatio or 1
+			gs2 = activeDiagnostics.total or floor(((gs2 or 0) + (capAdjustedGs2 or 0)) * fitMultiplier)
+		else
+			gs2 = gs2 + (capAdjustedGs2 or 0)
+		end
 	end
 	local offSpec = false
 	local offSpecBetterSpecKey, offSpecBetterSpecLabel, offSpecBetterGs2, offSpecReason = nil, nil, nil, nil
@@ -481,7 +526,7 @@ function GS_BuildRecord(snapshot)
 		if activeDiagnostics and betterDiagnostics then
 			local deltaPct = (gs2 > 0 and betterGs2) and (((betterGs2 - gs2) / gs2) * 100) or 0
 			local reason = GS_GetOffSpecReason(activeDiagnostics, betterDiagnostics)
-			GS_DebugInspect("offspec compare " .. tostring(snapshot.name) .. " active=" .. tostring(snapshot.specKey) .. " activeGs2=" .. tostring(floor(gs2)) .. " alt=" .. tostring(betterSpecKey) .. " altGs2=" .. tostring(betterGs2 and floor(betterGs2) or nil) .. " deltaPct=" .. string.format("%.2f", deltaPct) .. " reason=" .. tostring(reason) .. " activeMatched=" .. tostring(activeDiagnostics.matchedItems) .. " altMatched=" .. tostring(betterDiagnostics.matchedItems) .. " activeCompatible=" .. tostring(activeDiagnostics.compatibleItems) .. " altCompatible=" .. tostring(betterDiagnostics.compatibleItems))
+			GS_DebugInspect("offspec compare " .. tostring(snapshot.name) .. " active=" .. tostring(snapshot.specKey) .. " activeGs2=" .. tostring(floor(gs2)) .. " alt=" .. tostring(betterSpecKey) .. " altGs2=" .. tostring(betterGs2 and floor(betterGs2) or nil) .. " deltaPct=" .. string.format("%.2f", deltaPct) .. " reason=" .. tostring(reason) .. " activeMatched=" .. tostring(activeDiagnostics.matchedItems) .. " altMatched=" .. tostring(betterDiagnostics.matchedItems) .. " activeMatchedRatio=" .. string.format("%.2f", activeDiagnostics.matchedRatio or 0) .. " altMatchedRatio=" .. string.format("%.2f", betterDiagnostics.matchedRatio or 0) .. " activeFit=" .. string.format("%.2f", activeDiagnostics.fitMultiplier or 1) .. " altFit=" .. string.format("%.2f", betterDiagnostics.fitMultiplier or 1) .. " activeCompatible=" .. tostring(activeDiagnostics.compatibleItems) .. " altCompatible=" .. tostring(betterDiagnostics.compatibleItems))
 			if State.DebugInspectEnabled and #betterDiagnostics.positiveSlots > 0 then
 				GS_DebugInspect("offspec alt positive slots=" .. table.concat(betterDiagnostics.positiveSlots, ",") .. " signature slots=" .. table.concat(betterDiagnostics.signatureSlots, ","))
 			end
@@ -527,6 +572,8 @@ function GS_BuildRecord(snapshot)
 		legacy = floor(legacy),
 		pvp = (snapshot.specResolved and not unresolvedData) and floor(pvp or 0) or nil,
 		capAdjustedGs2 = capAdjustedGs2 or 0,
+		fitMultiplier = fitMultiplier,
+		matchedRatio = matchedRatio,
 		capBreakdown = capBreakdown,
 		capStats = capStats,
 		detailLinks = detailLinks,

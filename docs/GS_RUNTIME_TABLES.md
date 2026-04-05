@@ -101,6 +101,10 @@ For readability, section titles below still mention the legacy table names in pa
 | `GS_MIN_INSPECT_ITEMS` | `8` | Minimum item count required before finalizing a snapshot |
 | `GS_TALENT_SPEC_WAIT` | `1.0` | Time allowed for inspect talent data to resolve before gear-based spec inference is allowed |
 | `GS_OFFSPEC_MIN_RATIO` | `0.05` | Minimum relative `GS2` lead required before an alternate inferred spec is marked as off-spec |
+| `GS_OFFSPEC_FIT_MATCH_RATIO_FLOOR` | `0.35` | `matchedRatio` point where snapshot offspec fit starts clamping toward the low multiplier |
+| `GS_OFFSPEC_FIT_MATCH_RATIO_FULL` | `0.75` | `matchedRatio` point where snapshot offspec fit returns to full `1.0` value |
+| `GS_OFFSPEC_FIT_MULTIPLIER_FLOOR` | `0.45` | Lowest snapshot-level `GS2` multiplier applied by offspec fit before signature penalty |
+| `GS_OFFSPEC_FIT_SIGNATURE_PENALTY` | `0.80` | Extra snapshot-level penalty for tank/healer/caster candidates that miss role-signature floor |
 | `GS_CACHE_TTL` | `180` | Cached inspect record lifetime |
 | `GS_FRESH_TTL` | `15` | Freshness window used to avoid immediate re-inspection |
 | `GS_INSPECT_CACHE_MAX` | `300` | Hard cap on stored inspect records before LRU-style trimming runs |

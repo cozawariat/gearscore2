@@ -327,6 +327,7 @@ For inspected non-player units, the runtime prefers inspect talent data first.
 - it attempts to resolve the active spec from the talent tab with the highest point count
 - if inspect talent data is still unusable after a short wait window, it evaluates all candidate specs for that class against the observed gear
 - it selects the highest-scoring fallback candidate and marks the result as inferred
+- snapshot-level offspec fit is applied to every candidate's final character `GS2` before active-vs-inferred comparison
 - if talent-resolved active spec remains lower-scoring than the best plausible alternate inferred spec, the addon keeps the active score visible but also surfaces the inferred score for comparison
 - "plausible" means the alternate spec must pass whole-snapshot compatibility/signature checks before it can participate in off-spec comparison
 - the marker currently requires the alternate inferred spec to lead by more than `5%`
@@ -616,7 +617,41 @@ In cross-phase balance work, this cap layer is treated as a secondary calibratio
 3. retune the most aggressive PvE weights
 4. only then adjust cap targets or cap-bonus anchors if drift still remains
 
-### 9.4 Character Stat Aggregation
+### 9.4 Snapshot Fit Layer
+
+After cap bonus is resolved, snapshot scoring applies a whole-set fit multiplier before the character `GS2` is finalized:
+
+```text
+matchedRatio = matchedItems / itemCount
+fitProgress = clamp01((matchedRatio - GS_OFFSPEC_FIT_MATCH_RATIO_FLOOR) / (GS_OFFSPEC_FIT_MATCH_RATIO_FULL - GS_OFFSPEC_FIT_MATCH_RATIO_FLOOR))
+fitMultiplier = GS_OFFSPEC_FIT_MULTIPLIER_FLOOR + ((1 - GS_OFFSPEC_FIT_MULTIPLIER_FLOOR) * fitProgress)
+
+if role in { TANK, HEALER, CASTER } and signatureItems < requiredSignatureItems:
+    fitMultiplier = fitMultiplier * GS_OFFSPEC_FIT_SIGNATURE_PENALTY
+
+preFitTotal = totalBeforeCaps + capBonus
+finalGs2 = floor(preFitTotal * fitMultiplier)
+```
+
+Important runtime semantics:
+
+- this layer applies only to snapshot-level character `GearScore2`
+- item tooltip `GearScore2` remains unchanged
+- `Legacy GearScore` remains unchanged
+- `PvP GearScore` remains unchanged
+- `GS_OFFSPEC_MIN_RATIO` still only controls when an alternate inferred spec is marked as meaningfully better
+- `DRUID_FERAL_TANK` is exempt from the signature penalty branch, matching the existing plausibility exception
+
+`GS_GetSnapshotSpecDiagnostics(snapshot, specKey)` now exposes:
+
+- `totalBeforeCaps`
+- `capBonus`
+- `preFitTotal`
+- `matchedRatio`
+- `fitMultiplier`
+- `total`
+
+### 9.5 Character Stat Aggregation
 
 `GS_ApplyCharacterCaps(snapshot)` first aggregates total character stats through `GS_CollectSnapshotStats(snapshot)`.
 
