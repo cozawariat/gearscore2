@@ -204,12 +204,20 @@ function GS_GetTooltipRecordForItem(tooltip, itemLink)
 	local unit = nil
 	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and GS_TooltipInventoryContext.slot then
 		unit = GS_TooltipInventoryContext.unit
+		local contextLink = GetInventoryItemLink(unit, GS_TooltipInventoryContext.slot)
+		if contextLink ~= itemLink then
+			GS_TooltipInventoryContext.unit = nil
+			GS_TooltipInventoryContext.slot = nil
+			GS_TooltipInventoryContext.guid = nil
+			unit = nil
+		else
 		local record = GS_GetRecord(unit) or GS_GetScanRecord(GS_TooltipInventoryContext.guid)
-		if record and record.detailLinks and record.detailLinks[GS_TooltipInventoryContext.slot] == itemLink then
-			return record, unit, GS_TooltipInventoryContext.slot
-		end
-		if record and not record.detailLinks then
-			return record, unit, GS_TooltipInventoryContext.slot
+			if record and record.detailLinks and record.detailLinks[GS_TooltipInventoryContext.slot] == itemLink then
+				return record, unit, GS_TooltipInventoryContext.slot
+			end
+			if record and not record.detailLinks then
+				return record, unit, GS_TooltipInventoryContext.slot
+			end
 		end
 	end
 	local _, tooltipUnit = tooltip:GetUnit()
@@ -249,7 +257,11 @@ function GS_GetTooltipItemContext(tooltip, itemLink)
 			scanning = not record.specResolved and not record.scanExpired,
 		}
 	end
-	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and not UnitIsUnit(GS_TooltipInventoryContext.unit, "player") then
+	local contextLink = nil
+	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and GS_TooltipInventoryContext.slot then
+		contextLink = GetInventoryItemLink(GS_TooltipInventoryContext.unit, GS_TooltipInventoryContext.slot)
+	end
+	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and not UnitIsUnit(GS_TooltipInventoryContext.unit, "player") and contextLink == itemLink then
 		return {
 			record = nil,
 			unit = GS_TooltipInventoryContext.unit,

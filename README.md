@@ -114,5 +114,3 @@ Use the deeper docs when you need exact behavior:
   - exact scoring behavior and formulas
 - [docs/GS_RUNTIME_TABLES.md](docs/GS_RUNTIME_TABLES.md)
   - runtime constants, profiles, cap data, and tables
-- [docs/GS_WOWHEAD_PROFILE_AUDIT.md](docs/GS_WOWHEAD_PROFILE_AUDIT.md)
-  - curated Wowhead WotLK PvE archetype audit and profile notes
