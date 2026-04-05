@@ -20,7 +20,148 @@ jobs:
 
       - name: Build release package
         shell: pwsh
-        run: ./tools/release.ps1 -Version "${{ github.ref_name }}" -Ci
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+
+          $versionTag = "${{ github.ref_name }}"
+          if ($versionTag -notmatch '^v(\d+)\.(\d+)\.(\d+)$') {
+            throw "Version must match semantic tag format vX.Y.Z."
+          }
+
+          $addonVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+          $repoRoot = (Get-Location).Path
+          $tocPath = Join-Path $repoRoot "GearScore2.toc"
+          $changelogPath = Join-Path $repoRoot "CHANGELOG.md"
+          $distDir = Join-Path $repoRoot "dist"
+          $stagingDir = Join-Path $distDir "staging"
+          $packageRoot = Join-Path $stagingDir "GearScore2"
+          $packagePath = Join-Path $distDir "GearScore2-$versionTag.zip"
+          $notesPath = Join-Path $distDir "release-notes-$versionTag.md"
+
+          function Write-Utf8File {
+            param(
+              [string]$Path,
+              [string]$Content
+            )
+
+            $encoding = New-Object System.Text.UTF8Encoding($false)
+            [System.IO.File]::WriteAllText($Path, $Content, $encoding)
+          }
+
+          function Get-TocPackageEntries {
+            param([string]$TocFile)
+
+            $entries = New-Object System.Collections.Generic.List[string]
+            $lines = Get-Content -LiteralPath $TocFile
+            foreach ($line in $lines) {
+              $trimmed = $line.Trim()
+              if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
+              if ($trimmed.StartsWith("##")) { continue }
+              if ($trimmed.StartsWith("#")) { continue }
+              $entries.Add(($trimmed -replace '\\', [System.IO.Path]::DirectorySeparatorChar))
+            }
+            return $entries
+          }
+
+          function Get-ReleaseNotes {
+            param(
+              [string]$VersionTag,
+              [string]$ChangelogFile
+            )
+
+            $fallback = @"
+          ## $VersionTag
+
+          Release notes for $VersionTag were not found in CHANGELOG.md.
+
+          Edit CHANGELOG.md and the GitHub Release body before publishing the final release.
+          "@
+
+            if (-not (Test-Path -LiteralPath $ChangelogFile)) {
+              return $fallback.Trim()
+            }
+
+            $lines = Get-Content -LiteralPath $ChangelogFile
+            $escapedVersion = [regex]::Escape($VersionTag)
+            $startPattern = "^##\s+\[$escapedVersion\](?:\s+-\s+.+)?$"
+            $nextSectionPattern = "^##\s+\["
+            $startIndex = -1
+
+            for ($index = 0; $index -lt $lines.Count; $index++) {
+              if ($lines[$index] -match $startPattern) {
+                $startIndex = $index
+                break
+              }
+            }
+
+            if ($startIndex -lt 0) {
+              return $fallback.Trim()
+            }
+
+            $bodyLines = New-Object System.Collections.Generic.List[string]
+            for ($index = $startIndex + 1; $index -lt $lines.Count; $index++) {
+              if ($lines[$index] -match $nextSectionPattern) { break }
+              $bodyLines.Add($lines[$index])
+            }
+
+            $sectionBody = ($bodyLines -join "`r`n").Trim()
+            if ([string]::IsNullOrWhiteSpace($sectionBody)) {
+              return $fallback.Trim()
+            }
+
+            return @"
+          ## $VersionTag
+
+          $sectionBody
+          "@.Trim()
+          }
+
+          $tocContent = Get-Content -LiteralPath $tocPath -Raw
+          $versionMatches = [regex]::Matches($tocContent, '(?m)^## Version:\s+.*$')
+          if ($versionMatches.Count -ne 1) {
+            throw "GearScore2.toc must contain exactly one '## Version:' line."
+          }
+
+          $updatedToc = [regex]::Replace($tocContent, '(?m)^## Version:\s+.*$', "## Version: $addonVersion", 1)
+          Write-Utf8File -Path $tocPath -Content $updatedToc
+
+          if (Test-Path -LiteralPath $stagingDir) {
+            Remove-Item -LiteralPath $stagingDir -Recurse -Force
+          }
+          if (Test-Path -LiteralPath $packagePath) {
+            Remove-Item -LiteralPath $packagePath -Force
+          }
+
+          New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
+          $packageEntries = New-Object System.Collections.Generic.List[string]
+          $packageEntries.Add("GearScore2.toc")
+          foreach ($entry in (Get-TocPackageEntries -TocFile $tocPath)) {
+            $packageEntries.Add($entry)
+          }
+
+          foreach ($entry in $packageEntries) {
+            $sourcePath = Join-Path $repoRoot $entry
+            if (-not (Test-Path -LiteralPath $sourcePath)) {
+              throw "Missing package entry: $entry"
+            }
+
+            $destinationPath = Join-Path $packageRoot $entry
+            $destinationDir = Split-Path -Path $destinationPath -Parent
+            if (-not (Test-Path -LiteralPath $destinationDir)) {
+              New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
+            }
+
+            Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
+          }
+
+          Compress-Archive -Path $packageRoot -DestinationPath $packagePath -Force
+          $releaseNotes = Get-ReleaseNotes -VersionTag $versionTag -ChangelogFile $changelogPath
+          Write-Utf8File -Path $notesPath -Content $releaseNotes
+
+          Write-Host "Prepared release $versionTag"
+          Write-Host "Package: $packagePath"
+          Write-Host "Release notes: $notesPath"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
