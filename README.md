@@ -22,7 +22,7 @@ The addon is built as a practical, spec-aware scoring system rather than a stric
 
 - `GearScore2`, `Legacy GearScore`, and `PvP GearScore` shown side by side for clearer comparison
 - [`spec-aware`](#spec-awareness) PvE scoring instead of treating raw item level as the whole story
-- [`Inferred scoring`](#inferred-scoring) as a safety mechanism for cases where the detected spec does not match the equipped gear set
+- [`inferred scoring`](#inferred-scoring) as a safety mechanism for cases where the detected spec does not match the equipped gear set
 - rewards for good gems and enchants instead of relying only on base item value
 - PvP stat devaluation in PvE contexts
 - [`stat-cap awareness`](#stat-cap-awareness), so valuable PvE stats are judged with cap progress in mind
