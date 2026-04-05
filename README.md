@@ -12,28 +12,28 @@ That is not really the main point.
 
 `GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
 
-It is a smarter PvE-oriented alternative to classic `GearScore` / `GearScoreLite: Reborn`: a score that tries to answer a more useful question than "how high is the item level?"
+It is a smarter PvE-oriented alternative to classic `GearScore` / `GearScoreLite: Reborn`.
 
 > how good is this gear for the actual class and specialization using it?
 
 The addon is built as a practical, spec-aware scoring system rather than a strict reimplementation of older GearScore-family addons.
 
+## Key Features
+
+- `GearScore2`, `Legacy GearScore`, and `PvP GearScore` shown side by side for clearer comparison
+- [`spec-aware`](#spec-awareness) PvE scoring instead of treating raw item level as the whole story
+- [`Inferred scoring`](#inferred-scoring) as a safety mechanism for cases where the detected spec does not match the equipped gear set
+- rewards for good gems and enchants instead of relying only on base item value
+- PvP stat devaluation in PvE contexts
+- [`stat-cap awareness`](#stat-cap-awareness), so valuable PvE stats are judged with cap progress in mind
+
 ## What It Tries To Improve
 
 Classic `GearScore` is easy to read, but it also treats many very different items too similarly.
 
-`GearScore2` tries to improve that by looking at more than raw item level:
+`GearScore2` tries to improve that by producing more realistic PvE evaluations for the actual specialization and gear set being worn, instead of collapsing everything into raw item level.
 
-- class and specialization fit
-- relevant PvE stats
-- gems
-- enchants
-- PvP stat devaluation in PvE
-- character-level progress toward important PvE caps
-
-That means two characters with similar item level can still score differently if one of them is wearing more appropriate, better optimized gear for their spec.
-
-> [!IMPORTANT]
+> [!CAUTION]
 > - `GearScore2` may conflict with the original `GearScore` addon and related forks such as `GearScoreLite` or `GearScoreLite: Reborn`.
 > - The addon includes conflict detection, but it is still strongly recommended to disable the others completely.
 > - Run only one addon from that family at a time to avoid duplicate tooltip lines, conflicting hooks, or inconsistent values.
@@ -64,8 +64,6 @@ In practice:
 - strong PvP pieces tend to look worse in `GearScore2` than in `Legacy`
 - good gems and enchants help, but missing or bad ones are mostly "not rewarded" rather than hard-punished
 
-Because the system is spec-aware, the same item can be valued differently by different specs.
-
 ## Spec Awareness
 
 The addon tries to score gear for the right specialization whenever possible.
@@ -79,7 +77,19 @@ The addon may therefore show both:
 - an `Active` result
 - an `Inferred` result
 
-This is intentional. It makes off-spec or mismatched gear sets easier to understand instead of silently hiding the comparison.
+## Inferred Scoring
+
+`Inferred` is one of the addon's most important features. It calculates a score for every spec of the character's class and, if one of them scores higher than the currently detected spec, shows it as a separate comparison.
+
+This acts as a safety mechanism when someone forgets to switch spec or gear set, and it makes off-spec or mismatched equipment much easier to interpret.
+
+## Stat-Cap Awareness
+
+`GearScore2` does not treat important PvE stats as equally valuable at every point on the gear curve.
+
+For cap-aware stats such as hit, expertise, defense, or armor penetration, the addon looks at whole-character progress toward meaningful PvE targets and adds value based on how much those caps are being meaningfully approached or satisfied.
+
+This helps the score better distinguish between gear that only looks strong on paper and gear that is actually improving the character's real PvE readiness.
 
 ## Current Direction
 
