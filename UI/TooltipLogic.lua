@@ -145,10 +145,20 @@ function GS_AddScoreLines(tooltip, record)
 	local showCharacterLegacy = not GS_Settings or GS_Settings["showCharacterLegacy"]
 	local showCharacterPvp = not GS_Settings or GS_Settings["showCharacterPvp"]
 	local showCharacterAverage = not GS_Settings or GS_Settings["showCharacterAverage"]
+	local showCharacterInferred = not GS_Settings or GS_Settings["showCharacterInferred"]
+	local hideCharacterInferredUnderThreshold = not GS_Settings or GS_Settings["hideCharacterInferredUnderThreshold"]
 	local showCharacterCapSummary = not GS_Settings or GS_Settings["showCharacterCapSummary"]
 	if record.gs2Available and record.gs2 ~= nil then
 		if showCharacterGS2 then
-			if record.specLabel and record.offSpecBetterSpecLabel and record.offSpecBetterGs2 ~= nil then
+			local showInferredLine = false
+			if showCharacterInferred and record.specLabel and record.offSpecBetterSpecLabel and record.offSpecBetterGs2 ~= nil then
+				if hideCharacterInferredUnderThreshold then
+					showInferredLine = record.offSpec and true or false
+				else
+					showInferredLine = true
+				end
+			end
+			if showInferredLine then
 				local activeR, activeG, activeB = GS2_GetQuality(record.gs2)
 				local offR, offG, offB = GS2_GetQuality(record.offSpecBetterGs2)
 				tooltip:AddLine("GearScore2", 0.85, 0.9, 1)

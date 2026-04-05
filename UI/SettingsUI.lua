@@ -27,6 +27,8 @@ local GS_OptionsSections = {
 			{ key = "showCharacterPvp", label = "Show PvP GearScore" },
 			{ key = "showCharacterAverage", label = "Show Average iLevel" },
 			{ key = "showCharacterSpec", label = "Show specialization" },
+			{ key = "showCharacterInferred", label = "Show inferred" },
+			{ key = "hideCharacterInferredUnderThreshold", label = "Hide inferred if score difference is < 5%" },
 			{ key = "showCharacterCapSummary", label = "Show cap summary" },
 			{ key = "showCharacterCompare", label = "Show compare line" },
 		},
@@ -152,6 +154,24 @@ function GS_RefreshOptionsUI()
 		local enabled = GS_Settings[key] and true or false
 		for index = 1, #controls do
 			controls[index]:SetChecked(enabled and 1 or nil)
+		end
+	end
+	local inferredEnabled = GS_Settings["showCharacterInferred"] and true or false
+	local inferredThresholdControls = GS_OptionsBindings["hideCharacterInferredUnderThreshold"] or {}
+	for index = 1, #inferredThresholdControls do
+		local control = inferredThresholdControls[index]
+		if inferredEnabled then
+			control:Enable()
+			control:SetAlpha(1)
+			if control.text then
+				control.text:SetTextColor(1, 0.82, 0)
+			end
+		else
+			control:Disable()
+			control:SetAlpha(0.6)
+			if control.text then
+				control.text:SetTextColor(0.5, 0.5, 0.5)
+			end
 		end
 	end
 	GS_ApplyMinimapButtonVisibility()
