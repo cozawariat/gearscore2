@@ -2,11 +2,17 @@
 
 [![Character tooltip settings](/docs/GearScore2_character_tooltip.png "Character tooltip settings")](docs/GearScore2_character_tooltip.png)
 
+## Intro
+
+I am fully aware that the chance of the wider WoW 3.3.5a community abandoning classic `GearScore` and migrating to `GS2` is probably very small, even if that would be the dream outcome.
+
+That is not really the main point.
+
 ## What It Is
 
 `GearScore2` is a hobby addon for World of Warcraft 3.3.5a.
 
-It is a smarter PvE-oriented alternative to classic `GearScore`: a score that tries to answer a more useful question than "how high is the item level?"
+It is a smarter PvE-oriented alternative to classic `GearScore` / `GearScoreLite: Reborn`: a score that tries to answer a more useful question than "how high is the item level?"
 
 > how good is this gear for the actual class and specialization using it?
 
