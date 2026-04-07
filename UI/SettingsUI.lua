@@ -10,6 +10,9 @@ GS.SettingsUI = GS.SettingsUI or {
 	OptionsBindings = {},
 	InterfaceOptionsPanel = nil,
 	MinimapButton = nil,
+	TabButtons = {},
+	TabFrames = {},
+	ActiveTabKey = nil,
 }
 local SettingsUI = GS.SettingsUI
 local GS_OptionsBindings = SettingsUI.OptionsBindings
@@ -17,68 +20,99 @@ local GS_InterfaceOptionsPanel = SettingsUI.InterfaceOptionsPanel
 local GS_MinimapButton = SettingsUI.MinimapButton
 local GS_ExplainState = State.ExplainState or { owner = nil, itemLink = nil, itemSlot = nil }
 local GS_DEFAULT_SETTINGS = Tables.DefaultSettings or {}
+local GS_TabButtons = SettingsUI.TabButtons
+local GS_TabFrames = SettingsUI.TabFrames
 
-local GS_OptionsSections = {
+local GS_OptionsTabs = {
 	{
+		key = "general",
+		title = "General",
+		description = "General addon settings, reset tools, and quick tips.",
+		sections = {
+			{
+				title = "Interface",
+				items = {
+					{ key = "showMinimapButton", label = "Show minimap button" },
+				},
+			},
+		},
+	},
+	{
+		key = "character",
 		title = "Character Tooltip",
-		items = {
-			{ key = "showCharacterGS2", label = "Show GearScore2" },
-			{ key = "showCharacterLegacy", label = "Show Legacy GearScore" },
-			{ key = "showCharacterPvp", label = "Show PvP GearScore" },
-			{ key = "showCharacterAverage", label = "Show Average iLevel" },
-			{ key = "showCharacterSpec", label = "Show specialization" },
-			{ key = "showCharacterInferred", label = "Show inferred" },
-			{ key = "hideCharacterInferredUnderThreshold", label = "Hide inferred if score difference is < 5%" },
-			{ key = "showCharacterCapSummary", label = "Show cap summary" },
-			{ key = "showCharacterCompare", label = "Show compare line" },
+		description = "Choose which lines appear on player and inspect tooltips.",
+		sections = {
+			{
+				title = "Character Tooltip",
+				items = {
+					{ key = "showCharacterGS2", label = "Show GearScore2" },
+					{ key = "showCharacterLegacy", label = "Show Legacy GearScore" },
+					{ key = "showCharacterPvp", label = "Show PvP GearScore" },
+					{ key = "showCharacterAverage", label = "Show Average iLevel" },
+					{ key = "showCharacterSpec", label = "Show specialization" },
+					{ key = "showCharacterInferred", label = "Show inferred" },
+					{ key = "hideCharacterInferredUnderThreshold", label = "Hide inferred if score difference is < 5%" },
+					{ key = "showCharacterCapSummary", label = "Show cap summary" },
+					{ key = "showCharacterCompare", label = "Show compare line" },
+				},
+			},
 		},
 	},
 	{
+		key = "item",
 		title = "Item Tooltip",
-		items = {
-			{ key = "showItemGS2", label = "Show GearScore2" },
-			{ key = "showItemLegacy", label = "Show Legacy GearScore" },
-			{ key = "showItemPvp", label = "Show PvP GearScore" },
+		description = "Control which item score families show on item tooltips.",
+		sections = {
+			{
+				title = "Item Tooltip",
+				items = {
+					{ key = "showItemGS2", label = "Show GearScore2" },
+					{ key = "showItemLegacy", label = "Show Legacy GearScore" },
+					{ key = "showItemPvp", label = "Show PvP GearScore" },
+				},
+			},
 		},
 	},
 	{
+		key = "explain",
 		title = "Explain Tooltip",
-		items = {
-			{ key = "enableExplainTooltip", label = "Enable explain tooltip on CTRL" },
-			{ key = "showExplainHeader", label = "Show summary header" },
-			{ key = "showExplainFlags", label = "Show flags" },
-			{ key = "showExplainZeroComponents", label = "Show zero-score components" },
-			{ key = "hideExplainNeutralResilienceMultiplier", label = "Hide resilience multiplier when it does not change the result" },
-		},
-	},
-	{
-		title = "Explain Tooltip - Legacy",
-		items = {
-			{ key = "showExplainLegacy", label = "Show legacy section" },
-		},
-	},
-	{
-		title = "Explain Tooltip - PvE",
-		items = {
-			{ key = "showExplainPveFormula", label = "Show PvE formula line" },
-			{ key = "showExplainPveParts", label = "Show PvE parts list" },
-			{ key = "showExplainPveTotals", label = "Show PvE totals and multiplier" },
-			{ key = "showExplainTopPveStats", label = "Show top PvE stats" },
-		},
-	},
-	{
-		title = "Explain Tooltip - PvP",
-		items = {
-			{ key = "showExplainPvpFormula", label = "Show PvP formula line" },
-			{ key = "showExplainPvpParts", label = "Show PvP parts list" },
-			{ key = "showExplainPvpTotals", label = "Show PvP totals and multiplier" },
-			{ key = "showExplainTopPvpStats", label = "Show top PvP stats" },
-		},
-	},
-	{
-		title = "Minimap Button",
-		items = {
-			{ key = "showMinimapButton", label = "Show minimap button" },
+		description = "Configure the CTRL explain tooltip and its detail blocks.",
+		sections = {
+			{
+				title = "Explain Tooltip",
+				items = {
+					{ key = "enableExplainTooltip", label = "Enable explain tooltip on CTRL" },
+					{ key = "alwaysShowExplainTooltip", label = "Always show (no CTRL required)" },
+					{ key = "showExplainHeader", label = "Show summary header" },
+					{ key = "showExplainFlags", label = "Show flags" },
+					{ key = "showExplainZeroComponents", label = "Show zero-score components" },
+					{ key = "hideExplainNeutralResilienceMultiplier", label = "Hide resilience multiplier when it does not change the result" },
+				},
+			},
+			{
+				title = "Legacy",
+				items = {
+					{ key = "showExplainLegacy", label = "Show legacy section" },
+				},
+			},
+			{
+				title = "PvE",
+				items = {
+					{ key = "showExplainPveFormula", label = "Show PvE formula line" },
+					{ key = "showExplainPveParts", label = "Show PvE parts list" },
+					{ key = "showExplainPveTotals", label = "Show PvE totals and multiplier" },
+					{ key = "showExplainTopPveStats", label = "Show top PvE stats" },
+				},
+			},
+			{
+				title = "PvP",
+				items = {
+					{ key = "showExplainPvpFormula", label = "Show PvP formula line" },
+					{ key = "showExplainPvpParts", label = "Show PvP parts list" },
+					{ key = "showExplainPvpTotals", label = "Show PvP totals and multiplier" },
+					{ key = "showExplainTopPvpStats", label = "Show top PvP stats" },
+				},
+			},
 		},
 	},
 }
@@ -186,6 +220,23 @@ local function GS_OnSettingChanged(key, enabled)
 	GS_RefreshVisibleTooltips()
 end
 
+local function GS_ResetSettingsToDefaults()
+	if not GS_Settings then
+		return
+	end
+	for key in pairs(GS_Settings) do
+		if GS_DEFAULT_SETTINGS[key] == nil then
+			GS_Settings[key] = nil
+		end
+	end
+	for key, value in pairs(GS_DEFAULT_SETTINGS) do
+		GS_Settings[key] = value
+	end
+	GS_RefreshOptionsUI()
+	GS_UpdatePaperDoll()
+	GS_RefreshVisibleTooltips()
+end
+
 local function GS_CreateCheckbox(parent, key, label, anchor, offsetY, offsetX, textWidth)
 	local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
 	checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", offsetX or 0, offsetY)
@@ -209,15 +260,24 @@ local function GS_CreateSectionHeader(parent, text, anchor, offsetY)
 	return header
 end
 
-local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottomInset)
-	local hostName = hostFrame and hostFrame:GetName()
-	local scrollFrameName = hostName and (hostName .. "ScrollFrame") or nil
-	local contentName = hostName and (hostName .. "ScrollChild") or nil
-	local scrollFrame = CreateFrame("ScrollFrame", scrollFrameName, hostFrame, "UIPanelScrollFrameTemplate")
-	scrollFrame:SetPoint("TOPLEFT", hostFrame, "TOPLEFT", 16, topInset or -48)
-	scrollFrame:SetPoint("BOTTOMRIGHT", hostFrame, "BOTTOMRIGHT", -30, bottomInset or 16)
+local function GS_CreateActionButton(parent, text, anchor, offsetY, width, onClick)
+	local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+	button:SetWidth(width or 180)
+	button:SetHeight(22)
+	button:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 4, offsetY)
+	button:SetText(text)
+	button:SetScript("OnClick", onClick)
+	return button
+end
 
-	local content = CreateFrame("Frame", contentName, scrollFrame)
+local function GS_BuildTabContent(hostFrame, tab, viewportWidth)
+	local panelName = GS_InterfaceOptionsPanel and GS_InterfaceOptionsPanel:GetName() or "GS2InterfaceOptionsPanel"
+	local tabPrefix = panelName .. tab.key:gsub("^%l", string.upper)
+	local scrollFrame = CreateFrame("ScrollFrame", tabPrefix .. "ScrollFrame", hostFrame, "UIPanelScrollFrameTemplate")
+	scrollFrame:SetPoint("TOPLEFT", hostFrame, "TOPLEFT", 0, 0)
+	scrollFrame:SetPoint("BOTTOMRIGHT", hostFrame, "BOTTOMRIGHT", 0, 0)
+
+	local content = CreateFrame("Frame", tabPrefix .. "ScrollChild", scrollFrame)
 	content:SetWidth(viewportWidth)
 	content:SetHeight(900)
 	scrollFrame:SetScrollChild(content)
@@ -227,15 +287,18 @@ local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottom
 	local columnWidth = floor((viewportWidth - columnGap) / 2)
 	local columnOffset = columnWidth + columnGap
 	local columnTextWidth = columnWidth - 38
+	local estimatedHeight = 64
 	local header = content:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	header:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 	header:SetWidth(viewportWidth - 12)
 	header:SetJustifyH("LEFT")
-	header:SetText("Configure which score lines and explain sections GearScore2 displays. Changes apply immediately.")
+	header:SetText(tab.description or "Configure which score lines and explain sections GearScore2 displays. Changes apply immediately.")
 	anchor = header
 
-	for sectionIndex = 1, #GS_OptionsSections do
-		local section = GS_OptionsSections[sectionIndex]
+	for sectionIndex = 1, #(tab.sections or {}) do
+		local section = tab.sections[sectionIndex]
+		local rowCount = math.ceil(#section.items / 2)
+		estimatedHeight = estimatedHeight + 34 + (rowCount * 26)
 		local title = GS_CreateSectionHeader(content, section.title, anchor, -18)
 		local rowAnchor = title
 		local sectionBottom = title
@@ -252,14 +315,99 @@ local function GS_BuildOptionsContent(hostFrame, viewportWidth, topInset, bottom
 		anchor = sectionBottom
 	end
 
+	if tab.key == "general" then
+		local resetHeader = GS_CreateSectionHeader(content, "Maintenance", anchor, -18)
+		local resetNote = content:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+		resetNote:SetPoint("TOPLEFT", resetHeader, "BOTTOMLEFT", 4, -10)
+		resetNote:SetWidth(viewportWidth - 24)
+		resetNote:SetJustifyH("LEFT")
+		resetNote:SetText("Reset all GearScore2 settings back to their default values.")
+		local resetButton = GS_CreateActionButton(content, "Reset to Defaults", resetNote, -12, 150, GS_ResetSettingsToDefaults)
+		anchor = resetButton
+		estimatedHeight = estimatedHeight + 92
+	end
+
 	local footer = content:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
 	footer:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 4, -18)
 	footer:SetWidth(viewportWidth - 12)
 	footer:SetJustifyH("LEFT")
 	footer:SetText("Tip: drag the minimap button to move it. Use /gs2 settings to open the GearScore2 settings panel.")
 
-	content:SetHeight(860)
+	content:SetHeight(math.max(420, estimatedHeight + 60))
 	return scrollFrame, content
+end
+
+local function GS_SelectOptionsTab(tabKey)
+	SettingsUI.ActiveTabKey = tabKey
+	for index = 1, #GS_TabButtons do
+		local button = GS_TabButtons[index]
+		local selected = button.tabKey == tabKey
+		button:SetButtonState(selected and "PUSHED" or "NORMAL")
+		if selected then
+			button:Disable()
+		else
+			button:Enable()
+		end
+	end
+	for key, frame in pairs(GS_TabFrames) do
+		if key == tabKey then
+			frame:Show()
+		else
+			frame:Hide()
+		end
+	end
+end
+
+local function GS_CreateOptionsTabs(panel)
+	local tabsAnchor = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	tabsAnchor:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -56)
+	tabsAnchor:SetText("Tabs")
+
+	local firstButton
+	local previousButton
+	for index = 1, #GS_OptionsTabs do
+		local tab = GS_OptionsTabs[index]
+		local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+		if tab.key == "general" then
+			button:SetWidth(72)
+		elseif tab.key == "character" then
+			button:SetWidth(96)
+		elseif tab.key == "item" then
+			button:SetWidth(86)
+		else
+			button:SetWidth(96)
+		end
+		button:SetHeight(22)
+		button.tabKey = tab.key
+		button:SetText(tab.title)
+		if previousButton then
+			button:SetPoint("LEFT", previousButton, "RIGHT", 8, 0)
+		else
+			button:SetPoint("TOPLEFT", tabsAnchor, "BOTTOMLEFT", 0, -8)
+			firstButton = button
+		end
+		button:SetScript("OnClick", function(self)
+			GS_SelectOptionsTab(self.tabKey)
+		end)
+		GS_TabButtons[#GS_TabButtons + 1] = button
+		previousButton = button
+	end
+
+	local container = CreateFrame("Frame", nil, panel)
+	container:SetPoint("TOPLEFT", firstButton, "BOTTOMLEFT", 0, -12)
+	container:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -30, 16)
+
+	for index = 1, #GS_OptionsTabs do
+		local tab = GS_OptionsTabs[index]
+		local panelName = panel:GetName() or "GS2InterfaceOptionsPanel"
+		local frame = CreateFrame("Frame", panelName .. tab.key:gsub("^%l", string.upper) .. "Tab", container)
+		frame:SetAllPoints(container)
+		GS_BuildTabContent(frame, tab, 400)
+		frame:Hide()
+		GS_TabFrames[tab.key] = frame
+	end
+
+	GS_SelectOptionsTab(SettingsUI.ActiveTabKey or GS_OptionsTabs[1].key)
 end
 
 local function GS_CreateInterfaceOptionsPanel()
@@ -276,9 +424,9 @@ local function GS_CreateInterfaceOptionsPanel()
 
 	local subtitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-	subtitle:SetText("Native settings for tooltip output, explain sections, and the minimap button.")
+	subtitle:SetText("Native settings for tooltip output, organized into General, Character, Item, and Explain tabs.")
 
-	GS_BuildOptionsContent(panel, 400, -56, 16)
+	GS_CreateOptionsTabs(panel)
 
 	panel.refresh = GS_RefreshOptionsUI
 	panel:SetScript("OnShow", GS_RefreshOptionsUI)

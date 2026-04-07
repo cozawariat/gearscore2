@@ -465,6 +465,9 @@ GS_ExplainTooltip:EnableMouse(false)
 GS_ExplainTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 GS_ExplainTooltip:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -40, -220)
 GS_ExplainTooltip:SetScale(1)
+if GS_ApplyExplainTooltipSkin then
+	GS_ApplyExplainTooltipSkin()
+end
 
 GameTooltip:HookScript("OnTooltipSetUnit", GS2_HookSetUnit)
 GameTooltip:HookScript("OnTooltipSetItem", GS2_HookSetItem)

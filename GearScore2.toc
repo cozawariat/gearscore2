@@ -5,7 +5,7 @@
 ## Author: Mizianolas <JezuKurna> [Warmane-Onyxia(A)]
 ## SavedVariables: GS2_Settings
 
-# Original authors
+# Original authors of GearScoreLite: Reborn
 # Mirrikat45, Gnomezilla [Warmane-Icecrown(A)]
 
 Data\RuntimeTables.lua

@@ -10,9 +10,41 @@ local Tables = Data.Tables or {}
 local GS_RATING_CONVERSIONS = Tables.RatingConversions or {}
 local GS_CLASS_DEFAULTS = Tables.ClassDefaults or {}
 local GS_RARITY = Tables.Rarity or {}
+local GS_ITEM_TYPES = Tables.ItemTypes or {}
 local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
 local GS_ExplainState = State.ExplainState or { owner = nil, itemLink = nil, itemSlot = nil }
 local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
+
+local function GS_CopyTooltipBackdropStyle(targetTooltip, sourceTooltip)
+	if not targetTooltip or not sourceTooltip or not targetTooltip.SetBackdrop or not sourceTooltip.GetBackdrop then
+		return
+	end
+	local backdrop = sourceTooltip:GetBackdrop()
+	if backdrop then
+		targetTooltip:SetBackdrop(backdrop)
+	end
+	if targetTooltip.SetBackdropColor and sourceTooltip.GetBackdropColor then
+		local r, g, b, a = sourceTooltip:GetBackdropColor()
+		if r then
+			targetTooltip:SetBackdropColor(r, g, b, a or 1)
+		end
+	end
+	if targetTooltip.SetBackdropBorderColor and sourceTooltip.GetBackdropBorderColor then
+		local r, g, b, a = sourceTooltip:GetBackdropBorderColor()
+		if r then
+			targetTooltip:SetBackdropBorderColor(r, g, b, a or 1)
+		end
+	end
+end
+
+function GS_ApplyExplainTooltipSkin()
+	if not GS_ExplainTooltip then
+		return
+	end
+	if _G.ElvUI or _G.E then
+		GS_CopyTooltipBackdropStyle(GS_ExplainTooltip, GameTooltip)
+	end
+end
 
 function GS_TooltipHasLine(tooltip, text)
 	if not tooltip or not tooltip.GetName or not text then
@@ -200,6 +232,16 @@ function GS_HideExplainTooltip()
 	GS_ExplainState.itemSlot = nil
 end
 
+local function GS_ShouldShowExplainForItem(item)
+	if not item then
+		return false
+	end
+	if not item.equipLoc or not GS_ITEM_TYPES[item.equipLoc] then
+		return false
+	end
+	return (tonumber(item.legacyBase) or 0) > 0
+end
+
 function GS_GetTooltipRecordForItem(tooltip, itemLink)
 	local unit = nil
 	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and GS_TooltipInventoryContext.slot then
@@ -344,10 +386,28 @@ function GS_PositionExplainTooltip(ownerTooltip)
 	if ownerTooltip and ownerTooltip:GetCenter() then
 		local uiCenter = UIParent:GetCenter() or 0
 		local ownerCenter = ownerTooltip:GetCenter() or 0
-		if ownerCenter >= uiCenter then
-			GS_ExplainTooltip:SetPoint("TOPRIGHT", ownerTooltip, "TOPLEFT", -18, 0)
+		local anchorTooltip = ownerTooltip
+		local placeLeft = ownerCenter >= uiCenter
+		local compareTooltips = { ShoppingTooltip1, ShoppingTooltip2 }
+		for index = 1, #compareTooltips do
+			local compareTooltip = compareTooltips[index]
+			if compareTooltip and compareTooltip:IsShown() and compareTooltip:GetCenter() then
+				local compareCenter = compareTooltip:GetCenter() or 0
+				if placeLeft then
+					if compareCenter < (anchorTooltip:GetCenter() or 0) then
+						anchorTooltip = compareTooltip
+					end
+				else
+					if compareCenter > (anchorTooltip:GetCenter() or 0) then
+						anchorTooltip = compareTooltip
+					end
+				end
+			end
+		end
+		if placeLeft then
+			GS_ExplainTooltip:SetPoint("TOPRIGHT", anchorTooltip, "TOPLEFT", 0, -10)
 		else
-			GS_ExplainTooltip:SetPoint("TOPLEFT", ownerTooltip, "TOPRIGHT", 18, 0)
+			GS_ExplainTooltip:SetPoint("TOPLEFT", anchorTooltip, "TOPRIGHT", 0, -10)
 		end
 	else
 		GS_ExplainTooltip:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -40, -220)
@@ -368,7 +428,10 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 	GS_ExplainState.owner = ownerTooltip
 	GS_ExplainState.itemLink = itemLink
-	if State.PlayerIsInCombat or not IsControlKeyDown() or (GS_Settings and not GS_Settings["enableExplainTooltip"]) then
+	local explainEnabled = not GS_Settings or GS_Settings["enableExplainTooltip"]
+	local alwaysShowExplain = GS_Settings and GS_Settings["alwaysShowExplainTooltip"] and true or false
+	local explainHotkeyActive = alwaysShowExplain or IsControlKeyDown()
+	if State.PlayerIsInCombat or not explainHotkeyActive or not explainEnabled then
 		if GS_ExplainTooltip:IsShown() then
 			GS_ExplainTooltip:Hide()
 		end
@@ -376,6 +439,11 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 	local item = GS_GetItemData(itemLink)
 	if not item then
+		GS_HideExplainTooltip()
+		return
+	end
+	if not GS_ShouldShowExplainForItem(item) then
+		GS_HideExplainTooltip()
 		return
 	end
 	if item.unresolvedData then
@@ -397,6 +465,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 
 	GS_BeginExplainTooltip()
+	GS_ApplyExplainTooltipSkin()
 	GS_PositionExplainTooltip(ownerTooltip)
 	GS_ExplainTooltip:AddLine(item.name or "GearScore2 Explain", 1, 0.82, 0.18)
 	GS_ExplainTooltip:AddDoubleLine("Spec context", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
@@ -572,9 +641,19 @@ local function GS2_GetItemTooltipQualityColor(score)
 end
 
 function GS_AddItemLines(tooltip, itemLink)
-	if not itemLink or not IsEquippableItem(itemLink) then return end
+	if not itemLink or not IsEquippableItem(itemLink) then
+		GS_HideExplainTooltip()
+		return
+	end
 	local item = GS_GetItemData(itemLink)
-	if not item then return end
+	if not item then
+		GS_HideExplainTooltip()
+		return
+	end
+	if not GS_ShouldShowExplainForItem(item) then
+		GS_HideExplainTooltip()
+		return
+	end
 	if item.unresolvedData then
 		tooltip:AddLine("GS2 unavailable: unresolved gem/enchant stats.", 1, 0.55, 0.55, true)
 		tooltip:AddLine("Use /gs2 issues to open the copyable report.", 1, 0.72, 0.72, true)
