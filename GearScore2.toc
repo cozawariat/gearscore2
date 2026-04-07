@@ -1,11 +1,11 @@
 ## Interface: 30300
 ## Title: GearScore2
 ## Notes: Smart PvE-oriented gear scoring with Legacy GearScore and PvP GearScore support.
-## Version: 1.1.0
+## Version: 1.2.0
 ## Author: Mizianolas <JezuKurna> [Warmane-Onyxia(A)]
 ## SavedVariables: GS2_Settings
 
-# Original authors
+# Original authors of GearScoreLite: Reborn
 # Mirrikat45, Gnomezilla [Warmane-Icecrown(A)]
 
 Data\RuntimeTables.lua

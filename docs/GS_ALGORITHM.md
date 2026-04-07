@@ -417,6 +417,12 @@ gemPveBonus = floor(gemPveRaw * GS_GEM_SCALE) only if gemPveRaw > 0 else 0
 gemPvpBonus = floor(gemPvpRaw * GS_GEM_SCALE) only if gemPvpRaw > 0 else 0
 ```
 
+PvE cap-helper adjustment:
+
+- if a PvE-matching gem contributes to an active cap pool for the resolved spec, its PvE gem bonus is rounded up with `ceil(...)` instead of `floor(...)`
+- this applies to cap-relevant stats such as `HIT`, `SPELL_HIT`, `EXPERTISE`, `DEFENSE`, or `ARP` when that cap pool exists for the spec
+- PvP gem bonus remains unchanged
+
 - if the socket exists but no gem is present:
 
 ```text
@@ -829,6 +835,12 @@ It shows:
 - final score after multiplier
 - flags
 - top 4 base-item stats by weighted contribution
+
+Default visibility behavior:
+
+- component rows with `0` delta are hidden by default
+- `Top PvE stats` and `Top PvP stats` entries with `0` contribution are hidden by default
+- the resilience input base and a neutral resilience multiplier line (`x1`) are hidden together when that multiplier is hidden via settings
 
 Important runtime detail:
 

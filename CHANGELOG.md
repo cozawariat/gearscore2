@@ -8,6 +8,19 @@ The release script reads version sections in the format `## [vX.Y.Z] - YYYY-MM-D
 
 - Update this section while preparing the next release.
 
+## [v1.2.0] - 2026-04-07
+
+- Rounded PvE gem bonuses up for cap-relevant matched stats when the resolved spec actively uses that cap pool.
+- Added explain tooltip settings to hide zero-contribution rows by default and optionally suppress neutral resilience multiplier lines.
+- Updated explain tooltip rendering to filter zero-score parts and top-stat entries for cleaner item breakdowns.
+- Reorganized the settings panel into General, Character Tooltip, Item Tooltip, and Explain Tooltip tabs.
+- Added a reset-to-defaults action in General settings.
+- Added an Explain Tooltip option to always show without holding CTRL.
+- Prevented explain tooltips from appearing on non-gear bag items.
+- Adjusted explain tooltip positioning to play nicer with compare tooltips.
+- Added basic explain tooltip skin mirroring for ElvUI users.
+- Synced the algorithm docs and offline benchmark parity logic with the new gem rounding behavior.
+
 ## [v1.1.0] - 2026-04-05
 
 - Refactored `GearScore2` into clearer runtime and UI modules for better structure and maintainability.

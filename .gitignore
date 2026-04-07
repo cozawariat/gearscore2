@@ -1,8 +1,8 @@
-tools/
-tools_/
-output/
+tools/__pycache__/
+tools/cache/
+tools/data/
+tools/output/
+tools/test_fixtures/
 dist/
 GearScore2-*.zip
 GearScore2_v*.zip
-docs/GS2_BALANCE_BENCHMARK.md
-docs/GS_WOWHEAD_PROFILE_AUDIT.md

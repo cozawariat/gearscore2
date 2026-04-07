@@ -10,9 +10,41 @@ local Tables = Data.Tables or {}
 local GS_RATING_CONVERSIONS = Tables.RatingConversions or {}
 local GS_CLASS_DEFAULTS = Tables.ClassDefaults or {}
 local GS_RARITY = Tables.Rarity or {}
+local GS_ITEM_TYPES = Tables.ItemTypes or {}
 local GS_SCAN_TEXT = C.SCAN_TEXT or "|cffaaaaaaScanning...|r"
 local GS_ExplainState = State.ExplainState or { owner = nil, itemLink = nil, itemSlot = nil }
 local GS_TooltipInventoryContext = State.TooltipInventoryContext or { unit = nil, slot = nil, guid = nil }
+
+local function GS_CopyTooltipBackdropStyle(targetTooltip, sourceTooltip)
+	if not targetTooltip or not sourceTooltip or not targetTooltip.SetBackdrop or not sourceTooltip.GetBackdrop then
+		return
+	end
+	local backdrop = sourceTooltip:GetBackdrop()
+	if backdrop then
+		targetTooltip:SetBackdrop(backdrop)
+	end
+	if targetTooltip.SetBackdropColor and sourceTooltip.GetBackdropColor then
+		local r, g, b, a = sourceTooltip:GetBackdropColor()
+		if r then
+			targetTooltip:SetBackdropColor(r, g, b, a or 1)
+		end
+	end
+	if targetTooltip.SetBackdropBorderColor and sourceTooltip.GetBackdropBorderColor then
+		local r, g, b, a = sourceTooltip:GetBackdropBorderColor()
+		if r then
+			targetTooltip:SetBackdropBorderColor(r, g, b, a or 1)
+		end
+	end
+end
+
+function GS_ApplyExplainTooltipSkin()
+	if not GS_ExplainTooltip then
+		return
+	end
+	if _G.ElvUI or _G.E then
+		GS_CopyTooltipBackdropStyle(GS_ExplainTooltip, GameTooltip)
+	end
+end
 
 function GS_TooltipHasLine(tooltip, text)
 	if not tooltip or not tooltip.GetName or not text then
@@ -200,6 +232,16 @@ function GS_HideExplainTooltip()
 	GS_ExplainState.itemSlot = nil
 end
 
+local function GS_ShouldShowExplainForItem(item)
+	if not item then
+		return false
+	end
+	if not item.equipLoc or not GS_ITEM_TYPES[item.equipLoc] then
+		return false
+	end
+	return (tonumber(item.legacyBase) or 0) > 0
+end
+
 function GS_GetTooltipRecordForItem(tooltip, itemLink)
 	local unit = nil
 	if tooltip == GameTooltip and GS_TooltipInventoryContext.unit and GS_TooltipInventoryContext.slot then
@@ -295,15 +337,77 @@ function GS_AddExplainPart(tooltip, title, part, r, g, b)
 	tooltip:AddLine("  " .. part.formula, 0.72, 0.72, 0.72, true)
 end
 
+local function GS_ShouldShowZeroExplainComponents()
+	return GS_Settings and GS_Settings["showExplainZeroComponents"] and true or false
+end
+
+local function GS_ShouldShowExplainPart(part)
+	if not part then
+		return false
+	end
+	if GS_ShouldShowZeroExplainComponents() then
+		return true
+	end
+	return (tonumber(part.delta) or 0) ~= 0
+end
+
+local function GS_CountVisibleExplainParts(parts)
+	local count = 0
+	for index = 1, #(parts or {}) do
+		if GS_ShouldShowExplainPart(parts[index]) then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+local function GS_ShouldShowExplainStatEntry(entry)
+	if not entry then
+		return false
+	end
+	if GS_ShouldShowZeroExplainComponents() then
+		return true
+	end
+	return math.abs(tonumber(entry.score) or 0) > 0
+end
+
+local function GS_CountVisibleExplainStatEntries(entries)
+	local count = 0
+	for index = 1, #(entries or {}) do
+		if GS_ShouldShowExplainStatEntry(entries[index]) then
+			count = count + 1
+		end
+	end
+	return count
+end
+
 function GS_PositionExplainTooltip(ownerTooltip)
 	GS_ExplainTooltip:ClearAllPoints()
 	if ownerTooltip and ownerTooltip:GetCenter() then
 		local uiCenter = UIParent:GetCenter() or 0
 		local ownerCenter = ownerTooltip:GetCenter() or 0
-		if ownerCenter >= uiCenter then
-			GS_ExplainTooltip:SetPoint("TOPRIGHT", ownerTooltip, "TOPLEFT", -18, 0)
+		local anchorTooltip = ownerTooltip
+		local placeLeft = ownerCenter >= uiCenter
+		local compareTooltips = { ShoppingTooltip1, ShoppingTooltip2 }
+		for index = 1, #compareTooltips do
+			local compareTooltip = compareTooltips[index]
+			if compareTooltip and compareTooltip:IsShown() and compareTooltip:GetCenter() then
+				local compareCenter = compareTooltip:GetCenter() or 0
+				if placeLeft then
+					if compareCenter < (anchorTooltip:GetCenter() or 0) then
+						anchorTooltip = compareTooltip
+					end
+				else
+					if compareCenter > (anchorTooltip:GetCenter() or 0) then
+						anchorTooltip = compareTooltip
+					end
+				end
+			end
+		end
+		if placeLeft then
+			GS_ExplainTooltip:SetPoint("TOPRIGHT", anchorTooltip, "TOPLEFT", 0, -10)
 		else
-			GS_ExplainTooltip:SetPoint("TOPLEFT", ownerTooltip, "TOPRIGHT", 18, 0)
+			GS_ExplainTooltip:SetPoint("TOPLEFT", anchorTooltip, "TOPRIGHT", 0, -10)
 		end
 	else
 		GS_ExplainTooltip:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -40, -220)
@@ -324,7 +428,10 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 	GS_ExplainState.owner = ownerTooltip
 	GS_ExplainState.itemLink = itemLink
-	if State.PlayerIsInCombat or not IsControlKeyDown() or (GS_Settings and not GS_Settings["enableExplainTooltip"]) then
+	local explainEnabled = not GS_Settings or GS_Settings["enableExplainTooltip"]
+	local alwaysShowExplain = GS_Settings and GS_Settings["alwaysShowExplainTooltip"] and true or false
+	local explainHotkeyActive = alwaysShowExplain or IsControlKeyDown()
+	if State.PlayerIsInCombat or not explainHotkeyActive or not explainEnabled then
 		if GS_ExplainTooltip:IsShown() then
 			GS_ExplainTooltip:Hide()
 		end
@@ -332,6 +439,11 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 	local item = GS_GetItemData(itemLink)
 	if not item then
+		GS_HideExplainTooltip()
+		return
+	end
+	if not GS_ShouldShowExplainForItem(item) then
+		GS_HideExplainTooltip()
 		return
 	end
 	if item.unresolvedData then
@@ -353,6 +465,7 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	end
 
 	GS_BeginExplainTooltip()
+	GS_ApplyExplainTooltipSkin()
 	GS_PositionExplainTooltip(ownerTooltip)
 	GS_ExplainTooltip:AddLine(item.name or "GearScore2 Explain", 1, 0.82, 0.18)
 	GS_ExplainTooltip:AddDoubleLine("Spec context", context.specLabel or GS_GetSpecLabel(context.specKey), 0.85, 0.9, 1, 0.85, 0.9, 1)
@@ -370,12 +483,19 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	local showExplainFlags = not GS_Settings or GS_Settings["showExplainFlags"]
 	local showExplainTopPveStats = not GS_Settings or GS_Settings["showExplainTopPveStats"]
 	local showExplainTopPvpStats = not GS_Settings or GS_Settings["showExplainTopPvpStats"]
+	local hideExplainNeutralResilienceMultiplier = not GS_Settings or GS_Settings["hideExplainNeutralResilienceMultiplier"]
+	local visiblePveParts = GS_CountVisibleExplainParts(explain.pve.parts)
+	local visiblePvpParts = GS_CountVisibleExplainParts(explain.pvp.parts)
+	local visiblePveTopStats = GS_CountVisibleExplainStatEntries(explain.pve.statEntries)
+	local visiblePvpTopStats = GS_CountVisibleExplainStatEntries(explain.pvp.statEntries)
+	local showPveResilienceMultiplier = not hideExplainNeutralResilienceMultiplier or math.abs((explain.pve.multiplier or 1) - 1) > 0
+	local showPvpResilienceMultiplier = not hideExplainNeutralResilienceMultiplier or math.abs((explain.pvp.multiplier or 1) - 1) > 0
 	local showExplainPvpSectionContent = showExplainPvpFormula or showExplainPvpParts or showExplainPvpTotals
 	local hasPveFlags = showExplainFlags and explain.pve.flags and #explain.pve.flags > 0
 	local hasPvpFlags = showExplainPvpSectionContent and showExplainFlags and explain.pvp.flags and #explain.pvp.flags > 0
 	local hasGeneralFlags = showExplainFlags and #explain.flags > 0
-	local showPveSection = showExplainPveFormula or showExplainPveParts or showExplainPveTotals or hasPveFlags
-	local showPvpSection = showExplainPvpFormula or showExplainPvpParts or showExplainPvpTotals or hasPvpFlags
+	local showPveSection = showExplainPveFormula or (showExplainPveParts and visiblePveParts > 0) or showExplainPveTotals or hasPveFlags
+	local showPvpSection = showExplainPvpFormula or (showExplainPvpParts and visiblePvpParts > 0) or showExplainPvpTotals or hasPvpFlags
 	if showExplainHeader then
 		if showExplainGS2 then
 			GS_ExplainTooltip:AddDoubleLine("GearScore2", tostring(gs2), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
@@ -402,12 +522,16 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 		end
 		if showExplainPveParts then
 			for index = 1, #explain.pve.parts do
-				GS_AddExplainPart(GS_ExplainTooltip, explain.pve.parts[index].label, explain.pve.parts[index], 0.25, 0.95, 0.35)
+				if GS_ShouldShowExplainPart(explain.pve.parts[index]) then
+					GS_AddExplainPart(GS_ExplainTooltip, explain.pve.parts[index].label, explain.pve.parts[index], 0.25, 0.95, 0.35)
+				end
 			end
 		end
 		if showExplainPveTotals then
-			GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pve.preMultiplier or explain.pve.base or 0), 0.75, 0.95, 0.75, 0.75, 0.95, 0.75)
-			GS_ExplainTooltip:AddDoubleLine("PvE resilience multiplier", "x" .. GS_FormatNumber(explain.pve.multiplier or 1), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
+			if showPveResilienceMultiplier then
+				GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pve.preMultiplier or explain.pve.base or 0), 0.75, 0.95, 0.75, 0.75, 0.95, 0.75)
+				GS_ExplainTooltip:AddDoubleLine("PvE resilience multiplier", "x" .. GS_FormatNumber(explain.pve.multiplier or 1), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
+			end
 			GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pve.final), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
 		end
 		if hasPveFlags then
@@ -427,12 +551,16 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 		end
 		if showExplainPvpParts then
 			for index = 1, #explain.pvp.parts do
-				GS_AddExplainPart(GS_ExplainTooltip, explain.pvp.parts[index].label, explain.pvp.parts[index], 0.95, 0.55, 0.25)
+				if GS_ShouldShowExplainPart(explain.pvp.parts[index]) then
+					GS_AddExplainPart(GS_ExplainTooltip, explain.pvp.parts[index].label, explain.pvp.parts[index], 0.95, 0.55, 0.25)
+				end
 			end
 		end
 		if showExplainPvpTotals then
-			GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pvp.preMultiplier or explain.pvp.base or 0), 1, 0.8, 0.45, 1, 0.8, 0.45)
-			GS_ExplainTooltip:AddDoubleLine("PvP resilience multiplier", "x" .. GS_FormatNumber(explain.pvp.multiplier or 1), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
+			if showPvpResilienceMultiplier then
+				GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pvp.preMultiplier or explain.pvp.base or 0), 1, 0.8, 0.45, 1, 0.8, 0.45)
+				GS_ExplainTooltip:AddDoubleLine("PvP resilience multiplier", "x" .. GS_FormatNumber(explain.pvp.multiplier or 1), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
+			end
 			GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pvp.final), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
 		end
 		if hasPvpFlags then
@@ -449,20 +577,34 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 			GS_ExplainTooltip:AddLine(" - " .. explain.flags[index], 1, 0.55, 0.55, true)
 		end
 	end
-	if showExplainTopPveStats and explain.pve.statEntries and #explain.pve.statEntries > 0 then
+	if showExplainTopPveStats and explain.pve.statEntries and visiblePveTopStats > 0 then
 		GS_ExplainTooltip:AddLine(" ")
 		GS_ExplainTooltip:AddLine("Top PvE stats", 0.45, 0.85, 1)
-		for index = 1, math.min(4, #explain.pve.statEntries) do
+		local shown = 0
+		for index = 1, #explain.pve.statEntries do
 			local entry = explain.pve.statEntries[index]
-			GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 0.78, 0.92, 1, true)
+			if GS_ShouldShowExplainStatEntry(entry) then
+				GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 0.78, 0.92, 1, true)
+				shown = shown + 1
+				if shown >= 4 then
+					break
+				end
+			end
 		end
 	end
-	if showExplainTopPvpStats and explain.pvp.statEntries and #explain.pvp.statEntries > 0 then
+	if showExplainTopPvpStats and explain.pvp.statEntries and visiblePvpTopStats > 0 then
 		GS_ExplainTooltip:AddLine(" ")
 		GS_ExplainTooltip:AddLine("Top PvP stats", 1, 0.72, 0.35)
-		for index = 1, math.min(4, #explain.pvp.statEntries) do
+		local shown = 0
+		for index = 1, #explain.pvp.statEntries do
 			local entry = explain.pvp.statEntries[index]
-			GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 1, 0.85, 0.6, true)
+			if GS_ShouldShowExplainStatEntry(entry) then
+				GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 1, 0.85, 0.6, true)
+				shown = shown + 1
+				if shown >= 4 then
+					break
+				end
+			end
 		end
 	end
 	GS_ExplainTooltip:Show()
@@ -499,9 +641,19 @@ local function GS2_GetItemTooltipQualityColor(score)
 end
 
 function GS_AddItemLines(tooltip, itemLink)
-	if not itemLink or not IsEquippableItem(itemLink) then return end
+	if not itemLink or not IsEquippableItem(itemLink) then
+		GS_HideExplainTooltip()
+		return
+	end
 	local item = GS_GetItemData(itemLink)
-	if not item then return end
+	if not item then
+		GS_HideExplainTooltip()
+		return
+	end
+	if not GS_ShouldShowExplainForItem(item) then
+		GS_HideExplainTooltip()
+		return
+	end
 	if item.unresolvedData then
 		tooltip:AddLine("GS2 unavailable: unresolved gem/enchant stats.", 1, 0.55, 0.55, true)
 		tooltip:AddLine("Use /gs2 issues to open the copyable report.", 1, 0.72, 0.72, true)
