@@ -159,6 +159,28 @@ class BenchmarkCoreParityTests(unittest.TestCase):
         )
         self.assertEqual(diagnostics["pre_fit_total"], diagnostics["total_before_caps"] + diagnostics["cap_bonus"])
 
+    def test_cap_relevant_gems_round_up_pve_bonus_for_active_cap_stats(self) -> None:
+        item = {
+            "legacyBase": 100,
+            "slot": 10,
+            "equipLoc": "INVTYPE_HAND",
+            "armorRank": 2,
+            "stats": {"AGI": 40.0, "AP": 60.0},
+            "gemStats": [{"EXPERTISE": 10.0}, {"HIT": 10.0}],
+            "enchantInfo": None,
+            "hasEnchant": False,
+            "resilience": 0.0,
+            "level": 232,
+        }
+        _pve_score, _pvp_score, flags, debug = benchmark_core.score_item_with_debug(
+            item, "ROGUE", "ROGUE_COMBAT", self.tables
+        )
+        self.assertNotIn("gem-mismatch", flags)
+        self.assertEqual(debug["gem_breakdown"][0]["bonus_pve"], 2)
+        self.assertEqual(debug["gem_breakdown"][1]["bonus_pve"], 3)
+        self.assertTrue(debug["gem_breakdown"][0]["cap_round_up_pve"])
+        self.assertTrue(debug["gem_breakdown"][1]["cap_round_up_pve"])
+
 
 if __name__ == "__main__":
     unittest.main()

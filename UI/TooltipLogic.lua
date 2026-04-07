@@ -295,6 +295,50 @@ function GS_AddExplainPart(tooltip, title, part, r, g, b)
 	tooltip:AddLine("  " .. part.formula, 0.72, 0.72, 0.72, true)
 end
 
+local function GS_ShouldShowZeroExplainComponents()
+	return GS_Settings and GS_Settings["showExplainZeroComponents"] and true or false
+end
+
+local function GS_ShouldShowExplainPart(part)
+	if not part then
+		return false
+	end
+	if GS_ShouldShowZeroExplainComponents() then
+		return true
+	end
+	return (tonumber(part.delta) or 0) ~= 0
+end
+
+local function GS_CountVisibleExplainParts(parts)
+	local count = 0
+	for index = 1, #(parts or {}) do
+		if GS_ShouldShowExplainPart(parts[index]) then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+local function GS_ShouldShowExplainStatEntry(entry)
+	if not entry then
+		return false
+	end
+	if GS_ShouldShowZeroExplainComponents() then
+		return true
+	end
+	return math.abs(tonumber(entry.score) or 0) > 0
+end
+
+local function GS_CountVisibleExplainStatEntries(entries)
+	local count = 0
+	for index = 1, #(entries or {}) do
+		if GS_ShouldShowExplainStatEntry(entries[index]) then
+			count = count + 1
+		end
+	end
+	return count
+end
+
 function GS_PositionExplainTooltip(ownerTooltip)
 	GS_ExplainTooltip:ClearAllPoints()
 	if ownerTooltip and ownerTooltip:GetCenter() then
@@ -370,12 +414,19 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	local showExplainFlags = not GS_Settings or GS_Settings["showExplainFlags"]
 	local showExplainTopPveStats = not GS_Settings or GS_Settings["showExplainTopPveStats"]
 	local showExplainTopPvpStats = not GS_Settings or GS_Settings["showExplainTopPvpStats"]
+	local hideExplainNeutralResilienceMultiplier = not GS_Settings or GS_Settings["hideExplainNeutralResilienceMultiplier"]
+	local visiblePveParts = GS_CountVisibleExplainParts(explain.pve.parts)
+	local visiblePvpParts = GS_CountVisibleExplainParts(explain.pvp.parts)
+	local visiblePveTopStats = GS_CountVisibleExplainStatEntries(explain.pve.statEntries)
+	local visiblePvpTopStats = GS_CountVisibleExplainStatEntries(explain.pvp.statEntries)
+	local showPveResilienceMultiplier = not hideExplainNeutralResilienceMultiplier or math.abs((explain.pve.multiplier or 1) - 1) > 0
+	local showPvpResilienceMultiplier = not hideExplainNeutralResilienceMultiplier or math.abs((explain.pvp.multiplier or 1) - 1) > 0
 	local showExplainPvpSectionContent = showExplainPvpFormula or showExplainPvpParts or showExplainPvpTotals
 	local hasPveFlags = showExplainFlags and explain.pve.flags and #explain.pve.flags > 0
 	local hasPvpFlags = showExplainPvpSectionContent and showExplainFlags and explain.pvp.flags and #explain.pvp.flags > 0
 	local hasGeneralFlags = showExplainFlags and #explain.flags > 0
-	local showPveSection = showExplainPveFormula or showExplainPveParts or showExplainPveTotals or hasPveFlags
-	local showPvpSection = showExplainPvpFormula or showExplainPvpParts or showExplainPvpTotals or hasPvpFlags
+	local showPveSection = showExplainPveFormula or (showExplainPveParts and visiblePveParts > 0) or showExplainPveTotals or hasPveFlags
+	local showPvpSection = showExplainPvpFormula or (showExplainPvpParts and visiblePvpParts > 0) or showExplainPvpTotals or hasPvpFlags
 	if showExplainHeader then
 		if showExplainGS2 then
 			GS_ExplainTooltip:AddDoubleLine("GearScore2", tostring(gs2), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
@@ -402,12 +453,16 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 		end
 		if showExplainPveParts then
 			for index = 1, #explain.pve.parts do
-				GS_AddExplainPart(GS_ExplainTooltip, explain.pve.parts[index].label, explain.pve.parts[index], 0.25, 0.95, 0.35)
+				if GS_ShouldShowExplainPart(explain.pve.parts[index]) then
+					GS_AddExplainPart(GS_ExplainTooltip, explain.pve.parts[index].label, explain.pve.parts[index], 0.25, 0.95, 0.35)
+				end
 			end
 		end
 		if showExplainPveTotals then
-			GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pve.preMultiplier or explain.pve.base or 0), 0.75, 0.95, 0.75, 0.75, 0.95, 0.75)
-			GS_ExplainTooltip:AddDoubleLine("PvE resilience multiplier", "x" .. GS_FormatNumber(explain.pve.multiplier or 1), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
+			if showPveResilienceMultiplier then
+				GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pve.preMultiplier or explain.pve.base or 0), 0.75, 0.95, 0.75, 0.75, 0.95, 0.75)
+				GS_ExplainTooltip:AddDoubleLine("PvE resilience multiplier", "x" .. GS_FormatNumber(explain.pve.multiplier or 1), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
+			end
 			GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pve.final), 0.25, 0.95, 0.35, 0.25, 0.95, 0.35)
 		end
 		if hasPveFlags then
@@ -427,12 +482,16 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 		end
 		if showExplainPvpParts then
 			for index = 1, #explain.pvp.parts do
-				GS_AddExplainPart(GS_ExplainTooltip, explain.pvp.parts[index].label, explain.pvp.parts[index], 0.95, 0.55, 0.25)
+				if GS_ShouldShowExplainPart(explain.pvp.parts[index]) then
+					GS_AddExplainPart(GS_ExplainTooltip, explain.pvp.parts[index].label, explain.pvp.parts[index], 0.95, 0.55, 0.25)
+				end
 			end
 		end
 		if showExplainPvpTotals then
-			GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pvp.preMultiplier or explain.pvp.base or 0), 1, 0.8, 0.45, 1, 0.8, 0.45)
-			GS_ExplainTooltip:AddDoubleLine("PvP resilience multiplier", "x" .. GS_FormatNumber(explain.pvp.multiplier or 1), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
+			if showPvpResilienceMultiplier then
+				GS_ExplainTooltip:AddDoubleLine("Base before multiplier", tostring(explain.pvp.preMultiplier or explain.pvp.base or 0), 1, 0.8, 0.45, 1, 0.8, 0.45)
+				GS_ExplainTooltip:AddDoubleLine("PvP resilience multiplier", "x" .. GS_FormatNumber(explain.pvp.multiplier or 1), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
+			end
 			GS_ExplainTooltip:AddDoubleLine("Final result", tostring(explain.pvp.final), 0.95, 0.55, 0.25, 0.95, 0.55, 0.25)
 		end
 		if hasPvpFlags then
@@ -449,20 +508,34 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 			GS_ExplainTooltip:AddLine(" - " .. explain.flags[index], 1, 0.55, 0.55, true)
 		end
 	end
-	if showExplainTopPveStats and explain.pve.statEntries and #explain.pve.statEntries > 0 then
+	if showExplainTopPveStats and explain.pve.statEntries and visiblePveTopStats > 0 then
 		GS_ExplainTooltip:AddLine(" ")
 		GS_ExplainTooltip:AddLine("Top PvE stats", 0.45, 0.85, 1)
-		for index = 1, math.min(4, #explain.pve.statEntries) do
+		local shown = 0
+		for index = 1, #explain.pve.statEntries do
 			local entry = explain.pve.statEntries[index]
-			GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 0.78, 0.92, 1, true)
+			if GS_ShouldShowExplainStatEntry(entry) then
+				GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 0.78, 0.92, 1, true)
+				shown = shown + 1
+				if shown >= 4 then
+					break
+				end
+			end
 		end
 	end
-	if showExplainTopPvpStats and explain.pvp.statEntries and #explain.pvp.statEntries > 0 then
+	if showExplainTopPvpStats and explain.pvp.statEntries and visiblePvpTopStats > 0 then
 		GS_ExplainTooltip:AddLine(" ")
 		GS_ExplainTooltip:AddLine("Top PvP stats", 1, 0.72, 0.35)
-		for index = 1, math.min(4, #explain.pvp.statEntries) do
+		local shown = 0
+		for index = 1, #explain.pvp.statEntries do
 			local entry = explain.pvp.statEntries[index]
-			GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 1, 0.85, 0.6, true)
+			if GS_ShouldShowExplainStatEntry(entry) then
+				GS_ExplainTooltip:AddLine("  " .. GS_GetDisplayStatKey(entry.stat) .. ": " .. entry.value .. " * " .. GS_FormatNumber(entry.weight) .. " = " .. GS_FormatNumber(entry.score), 1, 0.85, 0.6, true)
+				shown = shown + 1
+				if shown >= 4 then
+					break
+				end
+			end
 		end
 	end
 	GS_ExplainTooltip:Show()

@@ -523,6 +523,45 @@ function GS_ScoreStats(stats, weights)
 	return total
 end
 
+function GS_IsCapRelevantStat(specKey, stat)
+	local capProfile = specKey and GS_CAP_PROFILES[specKey] or nil
+	local pools = capProfile and capProfile.pools or nil
+	if not pools or not stat then
+		return false
+	end
+	if stat == "HIT" then
+		return pools.HIT ~= nil or pools.SPELL_HIT ~= nil
+	end
+	if stat == "SPELL_HIT" then
+		return pools.SPELL_HIT ~= nil or pools.HIT ~= nil
+	end
+	return pools[stat] ~= nil
+end
+
+function GS_HasCapRelevantMatchedStat(stats, weights, specKey)
+	if not stats or not weights or not specKey then
+		return false
+	end
+	for stat, value in pairs(stats) do
+		if (value or 0) > 0 and weights[stat] and GS_IsCapRelevantStat(specKey, stat) then
+			return true
+		end
+	end
+	return false
+end
+
+function GS_ScaleBonus(rawValue, scale, roundUp)
+	local raw = tonumber(rawValue) or 0
+	if raw <= 0 then
+		return 0
+	end
+	local scaled = raw * (tonumber(scale) or 0)
+	if roundUp then
+		return ceil(scaled)
+	end
+	return floor(scaled)
+end
+
 GS_ExplainIgnoredStats = {
 	STA = true,
 }
@@ -698,12 +737,13 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 		if item.gemStats[index] then
 			local gemPveRaw = GS_ScoreStats(item.gemStats[index], profile.pve)
 			local gemPvpRaw = GS_ScoreStats(item.gemStats[index], profile.pvp)
-			local gemPveBonus = gemPveRaw > 0 and floor(gemPveRaw * GS_GEM_SCALE) or 0
+			local gemUsesCapRounding = GS_HasCapRelevantMatchedStat(item.gemStats[index], profile.pve, resolvedSpecKey)
+			local gemPveBonus = GS_ScaleBonus(gemPveRaw, GS_GEM_SCALE, gemUsesCapRounding)
 			local gemPvpBonus = gemPvpRaw > 0 and floor(gemPvpRaw * GS_GEM_SCALE) or 0
 			pveBonusBucket = pveBonusBucket + gemPveBonus
 			pvpScore = pvpScore + gemPvpBonus
 			if explain then
-				local pveFormula = gemPveRaw > 0 and ("(" .. GS_FormatNumber(gemPveRaw) .. " * " .. GS_FormatNumber(GS_GEM_SCALE) .. ")") or ("(" .. GS_FormatNumber(gemPveRaw) .. " <= 0 => +0)")
+				local pveFormula = gemPveRaw > 0 and ((gemUsesCapRounding and "ceil" or "floor") .. "(" .. GS_FormatNumber(gemPveRaw) .. " * " .. GS_FormatNumber(GS_GEM_SCALE) .. ")") or ("(" .. GS_FormatNumber(gemPveRaw) .. " <= 0 => +0)")
 				local pvpFormula = gemPvpRaw > 0 and ("(" .. GS_FormatNumber(gemPvpRaw) .. " * " .. GS_FormatNumber(GS_GEM_SCALE) .. ")") or ("(" .. GS_FormatNumber(gemPvpRaw) .. " <= 0 => +0)")
 				local pveFlag = GS_ShouldFlagStats(item.gemStats[index], profile.pve)
 				local pvpFlag = GS_ShouldFlagStats(item.gemStats[index], profile.pvp)
@@ -757,7 +797,7 @@ function GS_ScoreItem(item, classToken, specKey, wantExplain)
 	pveScore = pveScore + pveScaledBonus
 	if explain and (pveScaledBonus ~= pveBonusBucket or pveScale ~= 1 or not compatible) then
 		local penaltySuffix = compatible and "" or (" * " .. GS_FormatNumber(GS_INCOMPATIBLE_PVE_BONUS_SCALE))
-		explain.pve.parts[#explain.pve.parts + 1] = { label = "Spec scale", formula = "floor(" .. pveBonusBucket .. " * " .. GS_FormatNumber(pveScale) .. penaltySuffix .. ")", delta = pveScaledBonus - pveBonusBucket }
+		explain.pve.parts[#explain.pve.parts + 1] = { label = "Spec balance", formula = "floor(" .. pveBonusBucket .. " * " .. GS_FormatNumber(pveScale) .. penaltySuffix .. ")", delta = pveScaledBonus - pveBonusBucket }
 		if not compatible then
 			explain.flags[#explain.flags + 1] = "Item penalized: offspec / incompatible armor type / incompatible weapon type"
 		end

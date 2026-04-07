@@ -1041,6 +1041,34 @@ def score_stats(stats: dict[str, float] | None, weights: dict[str, float] | None
     return total
 
 
+def is_cap_relevant_stat(spec_key: str | None, stat: str, tables: dict[str, Any]) -> bool:
+    pools = ((tables.get("GS_CapProfiles") or {}).get(spec_key or "") or {}).get("pools") or {}
+    if stat == "HIT":
+        return "HIT" in pools or "SPELL_HIT" in pools
+    if stat == "SPELL_HIT":
+        return "SPELL_HIT" in pools or "HIT" in pools
+    return stat in pools
+
+
+def has_cap_relevant_matched_stat(
+    stats: dict[str, float] | None, weights: dict[str, float] | None, spec_key: str | None, tables: dict[str, Any]
+) -> bool:
+    if not stats or not weights or not spec_key:
+        return False
+    for stat, value in stats.items():
+        if value > 0 and stat in weights and is_cap_relevant_stat(spec_key, stat, tables):
+            return True
+    return False
+
+
+def scale_bonus(raw_value: float, scale: float, round_up: bool = False) -> int:
+    raw = float(raw_value or 0.0)
+    if raw <= 0:
+        return 0
+    scaled = raw * float(scale)
+    return math.ceil(scaled) if round_up else math.floor(scaled)
+
+
 def should_flag_stats(stats: dict[str, float] | None, weights: dict[str, float]) -> bool:
     if not stats:
         return False
@@ -1208,7 +1236,8 @@ def score_item_with_debug(item: dict[str, Any], class_token: str, spec_key: str,
     for gem in item.get("gemStats", []):
         gem_pve_raw = score_stats(gem, profile.get("pve"))
         gem_pvp_raw = score_stats(gem, profile.get("pvp"))
-        gem_pve_bonus = math.floor(gem_pve_raw * GS_GEM_SCALE) if gem_pve_raw > 0 else 0
+        gem_uses_cap_rounding = has_cap_relevant_matched_stat(gem, profile.get("pve"), resolved_spec, tables)
+        gem_pve_bonus = scale_bonus(gem_pve_raw, GS_GEM_SCALE, gem_uses_cap_rounding)
         gem_pvp_bonus = math.floor(gem_pvp_raw * GS_GEM_SCALE) if gem_pvp_raw > 0 else 0
         pve_bonus_bucket += gem_pve_bonus
         pvp_score += gem_pvp_bonus
@@ -1219,6 +1248,7 @@ def score_item_with_debug(item: dict[str, Any], class_token: str, spec_key: str,
                 "bonus_pve": gem_pve_bonus,
                 "raw_pvp": gem_pvp_raw,
                 "bonus_pvp": gem_pvp_bonus,
+                "cap_round_up_pve": gem_uses_cap_rounding,
             }
         )
         if should_flag_stats(gem, profile.get("pve", {})):

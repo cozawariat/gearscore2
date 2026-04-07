@@ -47,6 +47,8 @@ local GS_OptionsSections = {
 			{ key = "enableExplainTooltip", label = "Enable explain tooltip on CTRL" },
 			{ key = "showExplainHeader", label = "Show summary header" },
 			{ key = "showExplainFlags", label = "Show flags" },
+			{ key = "showExplainZeroComponents", label = "Show zero-score components" },
+			{ key = "hideExplainNeutralResilienceMultiplier", label = "Hide resilience multiplier when it does not change the result" },
 		},
 	},
 	{
