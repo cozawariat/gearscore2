@@ -1,8 +1,5 @@
 tools/
 tools_/
-output/
 dist/
 GearScore2-*.zip
 GearScore2_v*.zip
-docs/GS2_BALANCE_BENCHMARK.md
-docs/GS_WOWHEAD_PROFILE_AUDIT.md
