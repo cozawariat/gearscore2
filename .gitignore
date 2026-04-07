@@ -1,5 +1,8 @@
-tools/
-tools_/
+tools/__pycache__/
+tools/cache/
+tools/data/
+tools/output/
+tools/test_fixtures/
 dist/
 GearScore2-*.zip
 GearScore2_v*.zip
