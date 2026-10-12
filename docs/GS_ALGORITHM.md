@@ -838,6 +838,9 @@ It shows:
 
 Default visibility behavior:
 
+- the explanation belongs to the current item tooltip and is dismissed when that source tooltip is hidden or cleared
+- clearing another comparison tooltip does not dismiss the active owner's explanation
+- rendering validates the source tooltip's current item link to prevent reuse of stale item context
 - component rows with `0` delta are hidden by default
 - `Top PvE stats` and `Top PvP stats` entries with `0` contribution are hidden by default
 - the resilience input base and a neutral resilience multiplier line (`x1`) are hidden together when that multiplier is hidden via settings
