@@ -8,6 +8,12 @@ I am fully aware that the chance of the wider WoW 3.3.5a community abandoning cl
 
 That is not really the main point.
 
+## Unreleased Fixes
+
+The [`codex/live-changes` branch](https://github.com/cozawariat/gearscore2/tree/codex/live-changes) contains fixes available before the next release. Download its [ZIP archive](https://github.com/cozawariat/gearscore2/archive/refs/heads/codex/live-changes.zip), extract it, and copy the addon files into `Interface/AddOns/GearScore2` (with `GearScore2.toc` directly inside that folder). Reload the game UI after replacing the files.
+
+These changes do not create a new release or change the addon version. See `CHANGELOG.md` under `Unreleased` for the included fixes.
+
 ## What It Is
 
 `GearScore2` is a hobby addon for World of Warcraft 3.3.5a.

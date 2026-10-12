@@ -232,6 +232,13 @@ function GS_HideExplainTooltip()
 	GS_ExplainState.itemSlot = nil
 end
 
+function GS_OnExplainOwnerCleared(tooltip)
+	-- Comparison tooltips may clear independently of the active explain owner.
+	if GS_ExplainState.owner == tooltip then
+		GS_HideExplainTooltip()
+	end
+end
+
 local function GS_ShouldShowExplainForItem(item)
 	if not item then
 		return false
@@ -426,6 +433,11 @@ function GS_RenderExplainTooltip(ownerTooltip, itemLink)
 	if not GS_ExplainTooltip or not ownerTooltip or not itemLink then
 		return
 	end
+	local _, currentItemLink = ownerTooltip:GetItem()
+	if currentItemLink ~= itemLink then
+		GS_OnExplainOwnerCleared(ownerTooltip)
+		return
+	end
 	GS_ExplainState.owner = ownerTooltip
 	GS_ExplainState.itemLink = itemLink
 	local explainEnabled = not GS_Settings or GS_Settings["enableExplainTooltip"]
@@ -612,11 +624,14 @@ end
 
 function GS_TryShowExplainFromOwner(ownerTooltip)
 	if not ownerTooltip or not ownerTooltip:IsShown() then
+		GS_OnExplainOwnerCleared(ownerTooltip)
 		return
 	end
 	local _, itemLink = ownerTooltip:GetItem()
 	if itemLink and IsEquippableItem(itemLink) then
 		GS_RenderExplainTooltip(ownerTooltip, itemLink)
+	else
+		GS_OnExplainOwnerCleared(ownerTooltip)
 	end
 end
 

@@ -6,7 +6,7 @@ The release script reads version sections in the format `## [vX.Y.Z] - YYYY-MM-D
 
 ## [Unreleased]
 
-- Update this section while preparing the next release.
+- Fixed the explain tooltip retaining the last item's breakdown after its source tooltip is hidden or cleared, including when hovering over achievements.
 
 ## [v1.2.0] - 2026-04-07
 

@@ -475,6 +475,11 @@ ShoppingTooltip1:HookScript("OnTooltipSetItem", GS2_HookCompareItem)
 ShoppingTooltip2:HookScript("OnTooltipSetItem", GS2_HookCompareItem2)
 ItemRefTooltip:HookScript("OnTooltipSetItem", GS2_HookRefItem)
 
+for _, tooltip in ipairs({ GameTooltip, ShoppingTooltip1, ShoppingTooltip2, ItemRefTooltip }) do
+	tooltip:HookScript("OnHide", GS_OnExplainOwnerCleared)
+	tooltip:HookScript("OnTooltipCleared", GS_OnExplainOwnerCleared)
+end
+
 GS_OriginalSetInventoryItem = State.OriginalSetInventoryItem or GameTooltip.SetInventoryItem
 State.OriginalSetInventoryItem = GS_OriginalSetInventoryItem
 GameTooltip.SetInventoryItem = GS2_OnEnter
